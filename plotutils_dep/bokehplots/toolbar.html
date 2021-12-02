@@ -1,0 +1,85 @@
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+  
+  <head>
+    
+      <meta charset="utf-8">
+      <title>Bokeh Plot</title>
+      
+      
+        
+          
+        
+        
+          
+        <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-2.3.2.min.js" integrity="sha384-XypntL49z55iwGVUW4qsEu83zKL3XEcz0MjuGOQ9SlaaQ68X/g+k1FcioZi7oQAc" crossorigin="anonymous"></script>
+        <script type="text/javascript">
+            Bokeh.set_log_level("info");
+        </script>
+        
+      
+      
+    
+  </head>
+  
+  
+  <body>
+    
+      
+        
+          
+          
+            
+              <div class="bk-root" id="66eafe75-9fe5-4f33-9e5b-864188a0bc2b" data-root-id="1242"></div>
+            
+          
+        
+      
+      
+        <script type="application/json" id="1358">
+          {"cb08e1f2-0d32-42ff-b5a6-24186713c30b":{"defs":[],"roots":{"references":[{"attributes":{"fill_color":{"value":"#1f77b4"},"line_color":{"value":"#1f77b4"},"size":{"value":20},"x":{"field":"x"},"y":{"field":"y"}},"id":"1264","type":"Circle"},{"attributes":{"axis":{"id":"1253"},"ticker":null},"id":"1256","type":"Grid"},{"attributes":{"data":{"desc":["A","b","C","d","E"],"imgs":["https://avosouth.wr.usgs.gov/spectrograms/AVO/Pavlof/2021/205/Pavlof_20210724-1350.png","https://avosouth.wr.usgs.gov/spectrograms/AVO/Pavlof/2021/205/Pavlof_20210724-1400.png","https://avosouth.wr.usgs.gov/spectrograms/AVO/Pavlof/2021/205/Pavlof_20210724-1410.png","https://avosouth.wr.usgs.gov/spectrograms/AVO/Pavlof/2021/205/Pavlof_20210724-1420.png","https://avosouth.wr.usgs.gov/spectrograms/AVO/Pavlof/2021/205/Pavlof_20210724-1430.png","https://avosouth.wr.usgs.gov/spectrograms/AVO/Pavlof/2021/205/Pavlof_20210724-1440.png","https://avosouth.wr.usgs.gov/spectrograms/AVO/Pavlof/2021/205/Pavlof_20210724-1450.png","https://avosouth.wr.usgs.gov/spectrograms/AVO/Pavlof/2021/205/Pavlof_20210724-1500.png","https://avosouth.wr.usgs.gov/spectrograms/AVO/Pavlof/2021/205/Pavlof_20210724-1510.png","https://avosouth.wr.usgs.gov/spectrograms/AVO/Pavlof/2021/205/Pavlof_20210724-1520.png"],"x":[0,1,2,3,4,5,6,7,8,9],"y":[1,2,3,4,3,3,1,1,6,15]},"selected":{"id":"1276"},"selection_policy":{"id":"1275"}},"id":"1240","type":"ColumnDataSource"},{"attributes":{},"id":"1276","type":"Selection"},{"attributes":{},"id":"1245","type":"DataRange1d"},{"attributes":{"active_multi":null,"tools":[{"id":"1241"}]},"id":"1261","type":"Toolbar"},{"attributes":{},"id":"1249","type":"LinearScale"},{"attributes":{},"id":"1274","type":"BasicTickFormatter"},{"attributes":{"formatter":{"id":"1274"},"major_label_policy":{"id":"1273"},"ticker":{"id":"1258"}},"id":"1257","type":"LinearAxis"},{"attributes":{},"id":"1251","type":"LinearScale"},{"attributes":{},"id":"1273","type":"AllLabels"},{"attributes":{"text":"Mouse over the dots"},"id":"1243","type":"Title"},{"attributes":{"formatter":{"id":"1271"},"major_label_policy":{"id":"1270"},"ticker":{"id":"1254"}},"id":"1253","type":"LinearAxis"},{"attributes":{"callback":null,"tooltips":"\n        &lt;div&gt;\n            &lt;div&gt;\n                &lt;img\n                    src=\"@imgs\" height=\"300\" alt=\"@imgs\" width=\"300\"\n                    style=\"float: left; margin: 0px 15px 15px 0px;\"\n                    border=\"2\"\n                &gt;&lt;/img&gt;\n            &lt;/div&gt;\n        &lt;/div&gt;\n        "},"id":"1241","type":"HoverTool"},{"attributes":{},"id":"1258","type":"BasicTicker"},{"attributes":{"below":[{"id":"1253"}],"center":[{"id":"1256"},{"id":"1260"}],"height":400,"left":[{"id":"1257"}],"renderers":[{"id":"1266"}],"title":{"id":"1243"},"toolbar":{"id":"1261"},"width":1200,"x_range":{"id":"1245"},"x_scale":{"id":"1249"},"y_range":{"id":"1247"},"y_scale":{"id":"1251"}},"id":"1242","subtype":"Figure","type":"Plot"},{"attributes":{"axis":{"id":"1257"},"dimension":1,"ticker":null},"id":"1260","type":"Grid"},{"attributes":{},"id":"1271","type":"BasicTickFormatter"},{"attributes":{},"id":"1254","type":"BasicTicker"},{"attributes":{"fill_alpha":{"value":0.1},"fill_color":{"value":"#1f77b4"},"line_alpha":{"value":0.1},"line_color":{"value":"#1f77b4"},"size":{"value":20},"x":{"field":"x"},"y":{"field":"y"}},"id":"1265","type":"Circle"},{"attributes":{},"id":"1247","type":"DataRange1d"},{"attributes":{"data_source":{"id":"1240"},"glyph":{"id":"1264"},"hover_glyph":null,"muted_glyph":null,"nonselection_glyph":{"id":"1265"},"view":{"id":"1267"}},"id":"1266","type":"GlyphRenderer"},{"attributes":{},"id":"1270","type":"AllLabels"},{"attributes":{},"id":"1275","type":"UnionRenderers"},{"attributes":{"source":{"id":"1240"}},"id":"1267","type":"CDSView"}],"root_ids":["1242"]},"title":"Bokeh Application","version":"2.3.2"}}
+        </script>
+        <script type="text/javascript">
+          (function() {
+            var fn = function() {
+              Bokeh.safely(function() {
+                (function(root) {
+                  function embed_document(root) {
+                    
+                  var docs_json = document.getElementById('1358').textContent;
+                  var render_items = [{"docid":"cb08e1f2-0d32-42ff-b5a6-24186713c30b","root_ids":["1242"],"roots":{"1242":"66eafe75-9fe5-4f33-9e5b-864188a0bc2b"}}];
+                  root.Bokeh.embed.embed_items(docs_json, render_items);
+                
+                  }
+                  if (root.Bokeh !== undefined) {
+                    embed_document(root);
+                  } else {
+                    var attempts = 0;
+                    var timer = setInterval(function(root) {
+                      if (root.Bokeh !== undefined) {
+                        clearInterval(timer);
+                        embed_document(root);
+                      } else {
+                        attempts++;
+                        if (attempts > 100) {
+                          clearInterval(timer);
+                          console.log("Bokeh: ERROR: Unable to run BokehJS code because BokehJS library is missing");
+                        }
+                      }
+                    }, 10, root)
+                  }
+                })(window);
+              });
+            };
+            if (document.readyState != "loading") fn();
+            else document.addEventListener("DOMContentLoaded", fn);
+          })();
+        </script>
+    
+  </body>
+  
+</html>
