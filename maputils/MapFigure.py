@@ -6,9 +6,9 @@ from vdapseisutils.maputils.utils import elev_profile
 class MapFigure:
 
     def __init__(self,
-                 origin=(-77.53, 167.17),  # -> tuple    # (lat,lon) Defaults to Mount Erebus
-                 radial_extent=50,  # -> float    #km
-                 depth_extent=(3.5, -50),
+                 origin=(-77.53, 167.17),             # -> tuple    # (lat,lon) Defaults to Mount Erebus
+                 radial_extent=50,                    # -> float    #km
+                 depth_extent=(3.5, -50),             # -> float # km
                  zoom=12,
                  map_type='terrain-background',
                  map_color=True,
@@ -20,6 +20,7 @@ class MapFigure:
         self.origin = origin
         self.radial_extent = radial_extent
         self.depth_extent = depth_extent
+        self.depth_extent_h = (depth_extent[1], depth_extent[0]) # inverted depth_extent used for horizontal x-section
         self.zoom = zoom
         self.map_type = map_type
         self.map_color = map_color
@@ -37,6 +38,7 @@ class MapFigure:
         print('::: {} (MapFigure) :::'.format(self.title))
         print('      origin        : {}'.format(self.origin))
         print('      radial_exetnt : {} km'.format(self.radial_extent))
+        print('      depth_exetnt  : {}:{} km'.format(self.depth_extent[0], self.depth_extent[1]))
         print('')
 
     # [Unimplemented] Save .png and .svg versions of the image. Handles oddities for publication quality images.
@@ -60,6 +62,10 @@ class MapFigure:
     def set_origin(self):
         pass
 
+    def set_depth_extent(self, depth_extent):
+        self.depth_extent = depth_extent
+        self.depth_extent_v = (depth_extent[1], depth_extent[0])
+
     # not-necessary?
     def set_title(self, title):
         self.title = title
@@ -67,8 +73,28 @@ class MapFigure:
 
     # Map Features
 
-    def plot(self):
-        pass
+    def scatter(self, lat, lon, *args, **kwargs):
+        '''Generic scatter plotting. Assumes data input are lat, lon, depth (optional), **kwargs
+
+        **kwargs : any keyword arguments understood by matplotlib.pyplot.plot()
+        '''
+
+        self.fig.axes[0].scatter(lon, lat, **kwargs)
+        if len(args) > 0:
+            depth = args[0]
+            self.fig.axes[1].scatter(lon, depth*-1)
+            self.fig.axes[2].scatter(depth*-1, lat)
+
+
+        # Set axes extents. Do this elsewhere?
+        radextent = vmaputils.radial_map_extent(self.origin[0], self.origin[1],
+                                                self.radial_extent)  # This needs to come right from the object
+        lonextent = radextent[0:2];
+        latextent = radextent[2:]  # This needs to come right form the object
+        self.fig.axes[1].set_xlim(lonextent)
+        self.fig.axes[1].set_ylim(self.depth_extent_h)
+        self.fig.axes[2].set_ylim(latextent)
+        self.fig.axes[2].set_xlim(self.depth_extent)
 
     # Change this to vmpautils call
     def plot_radius(self, lats, lons, rad_km):
@@ -134,6 +160,7 @@ class MapFigure:
 
     # Plot Catalog
     def plot_catalog(self, catalog):
+        print('!!! This function relies on stub setting of cross-section extents')
 
         # Plot to Map (handles hypo and error bars)
         self.fig.axes[0] = vmaputils.plot_catalog(self.fig.axes[0], catalog)
@@ -145,10 +172,10 @@ class MapFigure:
                                                 self.radial_extent)  # This needs to come right from the object
         lonextent = radextent[0:2];
         latextent = radextent[2:]  # This needs to come right form the object
-        self.fig.axes[1].set_xlim(lonextent);
-        self.fig.axes[1].set_ylim([-50, 3.5])
-        self.fig.axes[2].set_ylim(latextent);
-        self.fig.axes[2].set_xlim([3.5, -50])
+        self.fig.axes[1].set_xlim(lonextent)
+        self.fig.axes[1].set_ylim(self.depth_extent_h)
+        self.fig.axes[2].set_ylim(latextent)
+        self.fig.axes[2].set_xlim(self.depth_extent)
 
     # Plot Stations
     def plot_station(self):
