@@ -1,4 +1,5 @@
 import vdapseisutils.maputils.utils.utils as vmaputils
+from vdapseisutils.maputils.utils import elev_profile
 
 
 # Experimental (Unused) BasicMap class for easier map creation
@@ -154,10 +155,46 @@ class MapFigure:
         pass
 
     # Plot Inventory
-    def plot_inventory(self, inventory, include_xs=False):
+    def plot_inventory(self, inventory):
         self.fig.axes[0] = vmaputils.plot_station_inventory(self.fig.axes[0], inventory)
-        if include_xs:
-            print('Not yet an option.')
+
+    # ADD CROSS-SECTIONAL PROFILES
+
+    # Cross-Section Profile (Generic)
+    # !!! Draw lines across map
+    def add_profile_p1p2(self, P1, P2, n=100, axis='h', depth=50, color='black', linewidth=1):
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # THIS ASSUMES THAT THE BASIC WINGPLOT IS STRUCTURED SUCH THAT
+        # FIG.AXES[1] IS THE HORIZONTAL CROSS-SECTION &
+        # FIG.AXES[2] IS THE VERTICAL CROSS-SECTION
+        #
+        # depth is in km
+
+        d, elev = elev_profile.download_profile(P1, P2, n=n)  # elevation returned in meters
+        elev /= 1000 # convert to km
+
+        # PLOT ELEVATION PROFILE
+        base_reg = depth * -1
+        if axis == 'h':
+            self.fig.axes[1].plot(d, elev, color=color, linewidth=linewidth)
+            self.fig.axex[1].fill_between(d, elev, base_reg, color=color, alpha=0.1)
+        if axis == 'v':
+            self.fig.axes[2].plot(elev, d, color=color, linewidth=linewidth)
+            self.fig.axes[2].fill_between(elev, d, base_reg, color=color, alpha=0.1)
+
+    # Adds EW profile (horizontal); NS profile (vertical)
+    def add_default_profile(self, n=100, depth=50, color='black', linewidth=1, drawmapline=False):
+        # Determine lat/lon for horiztonal P1, P2
+        # Determine lat/lon for vertical P1/P2
+        # Download profile for h/v
+        # Plot profile for h/v
+        pass
+
+
+    def add_profile(self, *args, **kwargs):
+        # If *args: add_profile_p1p2
+        # If no *args: add_default_profile
+        pass
 
 
 def _create_wingplot(lat, lon, radial_extent_km=50,
