@@ -1,3 +1,5 @@
+print('maputils.data.__init__ will soon be deprecated, and each component will become its own file')
+
 ########### VOLCANO #######################################
 volc2 = [
     dict({'name':'Agung', 'lat':-8.343, 'lon':115.508, 'elev':2997}),

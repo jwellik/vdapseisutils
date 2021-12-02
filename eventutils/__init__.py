@@ -1,0 +1,1 @@
+# Scripts to augment functionality of obspy.event.Event and other obects (Catalog, Origin, etc.)

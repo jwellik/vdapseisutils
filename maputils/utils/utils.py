@@ -230,33 +230,36 @@ def plot_catalog2xs_dep(fig, catalog, marker='o', color='black', markersize=8, a
     return fig
 
 
-def plot_catalog2xs(fig, catalog, marker='o', color='black', markersize=8, alpha=0.95,
-                    plot_errors=True):
-    # Get origin info for xsection plots
-    lon = catalog[0].origins[-1].longitude
-    lat = catalog[0].origins[-1].latitude
-    depth = catalog[0].origins[-1].depth / 1000 * -1  # km
-    lat_uncertainty = catalog[0].origins[-1].latitude_errors.uncertainty
-    lon_uncertainty = catalog[0].origins[-1].longitude_errors.uncertainty
-    z_uncertainty = catalog[0].origins[
-                        -1].depth_errors.uncertainty / 1000  # km (does not need to be negative bc abosolute value)
-    laterrory = [lat - lat_uncertainty / 110, lat + lat_uncertainty / 110]
-    laterrorx = [lon, lon]
-    lonerrorx = [lon - lon_uncertainty / 110, lon + lon_uncertainty / 100]
-    lonerrory = [lat, lat]
-    zerror = [depth - z_uncertainty, depth + z_uncertainty]
+def plot_catalog2xs(fig, catalog, marker='o', color='black', markersize=8, alpha=0.95):
 
-    # Plot to horizontal xsection
-    if plot_errors:
-        fig.axes[1].plot(lonerrorx, [depth, depth], color=color, alpha=alpha, linewidth=1)
-        fig.axes[1].plot([lon, lon], zerror, color=color, alpha=alpha, linewidth=1)
-    fig.axes[1].plot(lon, depth, marker=marker, color=color, markersize=markersize, alpha=alpha)
+    for eqevent in catalog:
+        # Get origin info for xsection plots
+        lon = eqevent.origins[-1].longitude
+        lat = eqevent.origins[-1].latitude
+        depth = eqevent.origins[-1].depth / 1000 * -1  # km
+        contains_errors = eqevent.origins[-1].latitude_errors.uncertainty
+        if contains_errors:
+            lat_uncertainty = eqevent.origins[-1].latitude_errors.uncertainty
+            lon_uncertainty = eqevent.origins[-1].longitude_errors.uncertainty
+            z_uncertainty = eqevent.origins[
+                                -1].depth_errors.uncertainty / 1000  # km (does not need to be negative bc abosolute value)
+            laterrory = [lat - lat_uncertainty / 110, lat + lat_uncertainty / 110]
+            laterrorx = [lon, lon]
+            lonerrorx = [lon - lon_uncertainty / 110, lon + lon_uncertainty / 100]
+            lonerrory = [lat, lat]
+            zerror = [depth - z_uncertainty, depth + z_uncertainty]
 
-    # Plot to vertical xsection
-    if plot_errors:
-        fig.axes[2].plot([depth, depth], laterrory, color=color, alpha=alpha, linewidth=1)
-        fig.axes[2].plot(zerror, [lat, lat], color=color, alpha=alpha, linewidth=1)
-    fig.axes[2].plot(depth, lat, marker=marker, color=color, markersize=markersize, alpha=alpha)
+        # Plot to horizontal xsection
+        if contains_errors:
+            fig.axes[1].plot(lonerrorx, [depth, depth], color=color, alpha=alpha, linewidth=1)
+            fig.axes[1].plot([lon, lon], zerror, color=color, alpha=alpha, linewidth=1)
+        fig.axes[1].plot(lon, depth, marker=marker, color=color, markersize=markersize, alpha=alpha)
+
+        # Plot to vertical xsection
+        if contains_errors:
+            fig.axes[2].plot([depth, depth], laterrory, color=color, alpha=alpha, linewidth=1)
+            fig.axes[2].plot(zerror, [lat, lat], color=color, alpha=alpha, linewidth=1)
+        fig.axes[2].plot(depth, lat, marker=marker, color=color, markersize=markersize, alpha=alpha)
 
     return fig
 
