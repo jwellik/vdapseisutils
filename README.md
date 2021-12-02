@@ -1,3 +1,2 @@
 # vdapseisutils
-Personal toolbox for working with seismic data.
-# vdapseisutils
+Collection of (mostly) Python codes for VDAP Seismology/Geophysics
