@@ -9,3 +9,6 @@ class CCMatrix():
     """Return histogram of CCMatrix"""
     def histogram( self, histogram_kwargs ):
         pass
+
+def test():
+    pass
