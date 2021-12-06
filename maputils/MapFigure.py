@@ -4,8 +4,6 @@
 
 '''
 
-
-
 import vdapseisutils.maputils.utils.utils as vmaputils
 from vdapseisutils.maputils.utils import elev_profile
 
@@ -14,9 +12,9 @@ from vdapseisutils.maputils.utils import elev_profile
 class MapFigure:
 
     def __init__(self,
-                 origin=(-77.53, 167.17),             # -> tuple    # (lat,lon) Defaults to Mount Erebus
-                 radial_extent=50,                    # -> float    #km
-                 depth_extent=(3.5, -50),             # -> float # km
+                 origin=(-77.53, 167.17),  # -> tuple    # (lat,lon) Defaults to Mount Erebus
+                 radial_extent=50,  # -> float    #km
+                 depth_extent=(4.0, -50),  # -> float # km
                  zoom=12,
                  map_type='terrain-background',
                  map_color=True,
@@ -28,7 +26,7 @@ class MapFigure:
         self.origin = origin
         self.radial_extent = radial_extent
         self.depth_extent = depth_extent
-        self.depth_extent_h = (depth_extent[1], depth_extent[0]) # inverted depth_extent used for horizontal x-section
+        self.depth_extent_h = (depth_extent[1], depth_extent[0])  # inverted depth_extent used for horizontal x-section
         self.zoom = zoom
         self.map_type = map_type
         self.map_color = map_color
@@ -90,9 +88,8 @@ class MapFigure:
         self.fig.axes[0].scatter(lon, lat, **kwargs)
         if len(args) > 0:
             depth = args[0]
-            self.fig.axes[1].scatter(lon, depth*-1)
-            self.fig.axes[2].scatter(depth*-1, lat)
-
+            self.fig.axes[1].scatter(lon, depth * -1)
+            self.fig.axes[2].scatter(depth * -1, lat)
 
         # Set axes extents. Do this elsewhere?
         radextent = vmaputils.radial_map_extent(self.origin[0], self.origin[1],
@@ -206,7 +203,7 @@ class MapFigure:
         # depth is in km
 
         d, elev = elev_profile.download_profile(P1, P2, n=n)  # elevation returned in meters
-        elev /= 1000 # convert to km
+        elev /= 1000  # convert to km
 
         # PLOT ELEVATION PROFILE
         base_reg = depth * -1
@@ -224,7 +221,6 @@ class MapFigure:
         # Download profile for h/v
         # Plot profile for h/v
         pass
-
 
     def add_profile(self, *args, **kwargs):
         # If *args: add_profile_p1p2
@@ -282,8 +278,7 @@ def _create_wingplot(lat, lon, radial_extent_km=50,
         axm.add_image(tiles, zoom, cmap='Greys_r')
 
     # Map gridlines
-    glv = axm.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
-                        linewidth=1, color='gray', alpha=0.5)
+    glv = axm.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, linewidth=1, color='gray', alpha=0.5)
     glv.xlabels_top = True
     glv.xlabels_bottom = False
     glv.ylabels_left = True
