@@ -85,7 +85,7 @@ def get_waveforms_from_files(self, nslc_list, tstart, tend,
                 emptytr = createEmptyTrace(nslc, tstart, tend, sampling_rate=100)
         stmp += emptytr
                 
-    st = sortStreamByNSLClist( stmp, nslc_list)
+    st = sortStreamByNSLClist(stmp, nslc_list)
 
     return st
 
