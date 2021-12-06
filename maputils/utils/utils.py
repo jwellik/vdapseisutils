@@ -181,6 +181,8 @@ def plot_hypo(ax, lat, lon, transform=ccrs.Geodetic(), marker='o', color='black'
 def plot_catalog(axm, catalog, transform=ccrs.Geodetic(), plot_errors=True, verbose=False, **eqkwargs):
     '''Prints Hypocenters for ObsPy Catalog object
     Currently prints just the last origin available (assumes that's the preferred origin)
+
+    **EQKWARGS Anything undertsood by matplotlib.pyplot.plot()
     '''
 
     if verbose: print('Printing {} event(s) from Catalog object.'.format(len(catalog)))
