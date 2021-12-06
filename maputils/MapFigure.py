@@ -1,3 +1,11 @@
+'''TO DO
+
+[ ] Limit earthquake catalog to map extent or xsection extent
+
+'''
+
+
+
 import vdapseisutils.maputils.utils.utils as vmaputils
 from vdapseisutils.maputils.utils import elev_profile
 
