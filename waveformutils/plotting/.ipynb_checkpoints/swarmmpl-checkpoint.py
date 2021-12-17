@@ -123,7 +123,7 @@ def swarmwg( st, gylim=[0.1,10], cmap='plasma',
                     wspace=0.00, hspace=0.00
                     )
     
-        w = fig.add_subplot(wg[0, :])                                                  # Create subplot for Waveform
+        w = fig  # Create subplot for Waveform
         w.plot(tr.times("matplotlib"), tr.data, color=wave_color)
         w.set_xlim([tr.times("matplotlib")[0],tr.times("matplotlib")[-1]])
         #if wylim not None: w.set_ylim(wylim)
