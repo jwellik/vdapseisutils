@@ -1,4 +1,4 @@
-from waveformutils.ioutils.filestructure import sds_standard
+from vdapseisutils.waveformutils.ioutils.filestructure import sds_standard
 
 def archive( self, nslc_list, tstart, tend,
             basedir='./',

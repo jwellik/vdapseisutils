@@ -28,7 +28,7 @@ import math
 import numpy as np
 from matplotlib import mlab
 from matplotlib.colors import Normalize
-import matplotlib.dates as mdates # JJW
+import matplotlib.dates as mdates  # JJW
 
 from obspy.imaging.cm import obspy_sequential
 
@@ -54,14 +54,15 @@ def _nearest_pow_2(x):
     else:
         return b
 
+
 # Change input argument 'data' to 'st'
 # Remove samp_rate from input arguments
 def spectrogram(tr, per_lap=0.9, wlen=None, log=False,
                 outfile=None, fmt=None, axes=None, dbscale=False,
                 mult=8.0, cmap=obspy_sequential, zorder=None, title=None,
                 show=True, sphinx=False, clip=[0.0, 1.0],
-                ylim=[0,10],
-               ):
+                ylim=[0, 10],
+                ):
     """
     Computes and plots spectrogram of the input data.
 
@@ -112,11 +113,10 @@ def spectrogram(tr, per_lap=0.9, wlen=None, log=False,
     """
     import matplotlib.pyplot as plt
 
-    
     data = tr.data
     # JJW --> Add line to remove nan from data. Replace w zero
-    samp_rate = float(tr.stats.sampling_rate)     # enforce float for samp_rate
-    
+    samp_rate = float(tr.stats.sampling_rate)  # enforce float for samp_rate
+
     # set wlen from samp_rate if not specified otherwise
     if not wlen:
         wlen = samp_rate / 100.
@@ -188,17 +188,16 @@ def spectrogram(tr, per_lap=0.9, wlen=None, log=False,
         # this method is much much faster!
         specgram = np.flipud(specgram)
         # center bin
-        #extent = (time[0] - halfbin_time, time[-1] + halfbin_time,
+        # extent = (time[0] - halfbin_time, time[-1] + halfbin_time,
         #          freq[0] - halfbin_freq, freq[-1] + halfbin_freq)
-        extent = (tr.times("matplotlib")[0] , tr.times("matplotlib")[-1],
+        extent = (tr.times("matplotlib")[0], tr.times("matplotlib")[-1],
                   freq[0] - halfbin_freq, freq[-1] + halfbin_freq)
         ax.imshow(specgram, interpolation="nearest", extent=extent, **kwargs)
-
 
     # set correct way of axis, whitespace before and after with window
     # length
     ax.axis('tight')
-    #ax.set_xlim(0, end)
+    # ax.set_xlim(0, end)
     ax.set_ylim(ylim)
     ax.grid(False)
 

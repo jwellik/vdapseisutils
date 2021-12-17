@@ -54,6 +54,7 @@ volcs = dict({
         'stations': []
     }),
 
+
     'Augustine': dict({
         'lat': 59.363, 'lon': -153.43, 'elev': 1252,
         'stations': []

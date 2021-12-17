@@ -1,3 +1,5 @@
+print('[Deprecation warning!] Please use vdapseisutils.maputils.data.volcanoes_jjw.py instead')
+
 volcs = dict({
     'Agung': dict({
         'lat': -8.343, 'lon':115.508, 'elev':2997,

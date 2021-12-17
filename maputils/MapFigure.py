@@ -4,8 +4,14 @@
 
 '''
 
+import numpy as np
+
 import vdapseisutils.maputils.utils.utils as vmaputils
 from vdapseisutils.maputils.utils import elev_profile
+
+import cartopy.crs as ccrs
+import cartopy.io.img_tiles as cimgt
+import cartopy.feature as cfeature
 
 
 # Experimental (Unused) BasicMap class for easier map creation
@@ -102,7 +108,7 @@ class MapFigure:
         self.fig.axes[2].set_xlim(self.depth_extent)
 
     # Change this to vmpautils call
-    def plot_radius(self, lats, lons, rad_km):
+    def plot_radius(self, lats, lons, rad_km, n_samples=90):
         """
         Adds Tissot's indicatrices to the axes.
         https://scitools.org.uk/cartopy/docs/v0.15/_modules/cartopy/mpl/geoaxes.html#GeoAxes.tissot
@@ -125,12 +131,23 @@ class MapFigure:
         **kwargs are passed through to `class:ShapelyFeature`.
 
         """
+        # import matplotlib.axes
+        import numpy as np
+        import shapely.geometry as sgeom
+
+        import cartopy.crs as ccrs
+        import cartopy.img_transform
+
+        # assert matplotlib.__version__ >= '1.3', ('Cartopy is only supported with '
+        #                                          'matplotlib 1.3 or greater.')
+
         from cartopy import geodesic
+
 
         geod = geodesic.Geodesic()
         geoms = []
 
-        if lon is None:
+        if lons is None:
             lons = np.linspace(-180, 180, 6, endpoint=False)
         else:
             lons = np.asarray(lons)
@@ -151,17 +168,18 @@ class MapFigure:
                                  n_samples=n_samples)
             geoms.append(sgeom.Polygon(circle))
 
-        feature = cartopy.feature.ShapelyFeature(geoms, ccrs.Geodetic(),
-                                                 **kwargs)
+        # feature = cartopy.feature.ShapelyFeature(geoms, ccrs.Geodetic(),
+        #                                          **kwargs)
+        feature = cartopy.feature.ShapelyFeature(geoms, ccrs.Geodetic())
         return self.add_feature(feature)
 
     # Plot volcano
     def plot_volcano(self, *args, **kwargs):
         self.fig.axes[0] = vmaputils.plot_volcano(self.fig.axes[0], *args, **kwargs)
 
-    # Plot Hypocenters
-    def plot_hypo(self):
-        pass
+    # Plot hypocenter
+    def plot_hypo(self, lat, lon, transform=ccrs.Geodetic(), marker='o', color='black', markersize=8, alpha=0.95):
+        self.fig.axes[0].plot(lon, lat, transform=transform, marker=marker, color=color, markersize=markersize, alpha=alpha)
 
     # Plot Catalog
     def plot_catalog(self, catalog):
