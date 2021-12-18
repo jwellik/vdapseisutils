@@ -154,7 +154,7 @@ def plot(d_list_rev, elev_list, depth=0, color='black', linewidth=1):
     # PLOT ELEVATION PROFILE
     base_reg = depth*-1
     fig = plt.figure(figsize=(10, 4))
-    ax = fig.add_subplot()
+    ax = fig
     ax.plot(d_list_rev, elev_list, color=color, linewidth=linewidth)
     # plt.plot([0, distance], [min_elev, min_elev], '--g', label='min: ' + str(min_elev) + ' m')
     # plt.plot([0, distance], [max_elev, max_elev], '--r', label='max: ' + str(max_elev) + ' m')

@@ -103,7 +103,7 @@ def swarmwg( st, gylim=[0,10] ):
                     bottom=axbottom, top=axtop,
                     wspace=0.00, hspace=0.00
                     )
-        w = fig.add_subplot(wg[0, :])
+        w = fig
         w.plot(tr.times("matplotlib"), tr.data, color='k')
         w.set_xlim([tr.times("matplotlib")[0],tr.times("matplotlib")[-1]])
         w.yaxis.set_ticks_position('right')

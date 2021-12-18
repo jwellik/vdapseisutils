@@ -74,7 +74,7 @@ def location_map(fig, lat, lon, marker='or', location='top_left'):
         position = [0, 0.785, 0.2, 0.2]
     else:
         position = [0.785, 0.785, 0.2, 0.2]
-    ax = fig.add_subplot(position=position, projection=ccrs.Orthographic(lon, lat))
+    ax = fig
     ax.add_feature(cfeature.OCEAN, zorder=0)
     ax.add_feature(cfeature.LAND, zorder=0, edgecolor='black')
     ax.plot(lon, lat, marker)

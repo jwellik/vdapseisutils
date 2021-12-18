@@ -127,9 +127,9 @@ def get_waveforms_from_client(
 
     from obspy import UTCDateTime, Stream
 
-    from waveformutils.nslcutils import str2nslc, setNSLC
-    from waveformutils.streamutils import removeWinstonGaps, sortStreamByNSLClist
-    from waveformutils import timeutils
+    from vdapseisutils.waveformutils.nslcutils import str2nslc, setNSLC
+    from vdapseisutils.waveformutils.streamutils import removeWinstonGaps, sortStreamByNSLClist
+    from vdapseisutils.waveformutils import timeutils
 
     client = self.datasource
 

@@ -17,13 +17,13 @@ def replaceGapValue( st, gap_value=np.nan, fill_value=0 ):
     return st
 
            
-def sortStreamByNSLClist( st_in, nslc_list ):
+def sortStreamByNSLClist(st_in, nslc_list):
 
     import numpy as np
     from obspy import Stream, Trace
     
     st_in = st_in.merge().sort()         # Ensure that data are merged and sorted
-    # print('>>> sortStreamByNLSClist : len(st_in) {} ?= len(nslc_list) {}'.format(len(st_in), len(nslc_list)))
+    print('>>> sortStreamByNLSClist : len(st_in) {} ?= len(nslc_list) {}'.format(len(st_in), len(nslc_list)))
     # print(st_in)
     # print(nslc_list)
     # print('')

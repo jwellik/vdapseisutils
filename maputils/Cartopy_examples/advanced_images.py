@@ -16,7 +16,7 @@ def main():
     img_extent = (-120.67660000000001, -106.32104523100001, 13.2301484511245, 30.766899999999502)
     img = plt.imread(fname)
 
-    ax = plt.axes(projection=ccrs.PlateCarree())
+    ax = plt
     plt.title('Hurricane Miriam from the Aqua/MODIS satellite\n'
               '2012 09/26/2012 20:50 UTC')
 
