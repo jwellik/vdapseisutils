@@ -1,7 +1,7 @@
 from obspy import UTCDateTime
 
 def info():
-    print('!!! jjwutils.timeutils')
+    print('!!! vdapseisutils.waveformutils.timeutils')
 
 
 def createTimeChunks_v1(tstart, tend, nsec, verbose=False):
