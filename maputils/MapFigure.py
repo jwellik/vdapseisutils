@@ -14,13 +14,13 @@ import cartopy.io.img_tiles as cimgt
 import cartopy.feature as cfeature
 
 
-# Experimental (Unused) BasicMap class for easier map creation
+# BasicMap class for easier map creation
 class MapFigure:
 
     def __init__(self,
                  origin=(-77.53, 167.17),  # -> tuple    # (lat,lon) Defaults to Mount Erebus
                  radial_extent=50,  # -> float    #km
-                 depth_extent=(4.0, -50),  # -> float # km
+                 depth_extent=(4.0, -50),  # -> float # km (top_altitude, bottom_altitude)
                  zoom=12,
                  map_type='terrain-background',
                  map_color=True,
@@ -31,6 +31,7 @@ class MapFigure:
         # Configurable features
         self.origin = origin
         self.radial_extent = radial_extent
+        # self.map_extent = radial_extent_to_map_extent()
         self.depth_extent = depth_extent
         self.depth_extent_h = (depth_extent[1], depth_extent[0])  # inverted depth_extent used for horizontal x-section
         self.zoom = zoom
@@ -41,6 +42,7 @@ class MapFigure:
 
         self.fig = _create_wingplot(self.origin[0], self.origin[1], radial_extent_km=self.radial_extent,
                                     zoom=self.zoom, map_type=self.map_type, map_color=self.map_color,
+                                    depth_extent=depth_extent,
                                     figsize=self.figsize, title=self.title)
 
     # I/O
@@ -83,12 +85,13 @@ class MapFigure:
         self.title = title
         self.fig.set_title(title)
 
-    # Map Features
+
+    # Basic Plotting routines
 
     def scatter(self, lat, lon, *args, **kwargs):
         '''Generic scatter plotting. Assumes data input are lat, lon, depth (optional), **kwargs
 
-        **kwargs : any keyword arguments understood by matplotlib.pyplot.plot()
+        **kwargs : any keyword arguments understood by matplotlib.pyplot.scatter()
         '''
 
         self.fig.axes[0].scatter(lon, lat, **kwargs)
@@ -106,6 +109,10 @@ class MapFigure:
         self.fig.axes[1].set_ylim(self.depth_extent_h)
         self.fig.axes[2].set_ylim(latextent)
         self.fig.axes[2].set_xlim(self.depth_extent)
+
+
+
+    # Volcano Map Plotting routines
 
     # Change this to vmpautils call
     def plot_radius(self, lats, lons, rad_km, n_samples=90):
@@ -178,8 +185,28 @@ class MapFigure:
         self.fig.axes[0] = vmaputils.plot_volcano(self.fig.axes[0], *args, **kwargs)
 
     # Plot hypocenter
-    def plot_hypo(self, lat, lon, transform=ccrs.Geodetic(), marker='o', color='black', markersize=8, alpha=0.95):
-        self.fig.axes[0].plot(lon, lat, transform=transform, marker=marker, color=color, markersize=markersize, alpha=alpha)
+    def plot_hypo(self, lat, lon, *args, transform=ccrs.Geodetic(), marker='o', color='black', markersize=8, alpha=0.95, **kwargs):
+        """*args is supposed to be an optional length 1 to provide the depth"""
+
+        self.fig.axes[0].plot(lon, lat, transform=transform, marker=marker, color=color, markersize=markersize, alpha=alpha, **kwargs)
+
+        if len(args) > 0:
+            depth = args[0]
+            self.fig.axes[1].plot(lon, depth * -1, marker=marker, color=color, markersize=markersize, alpha=alpha, **kwargs)
+            self.fig.axes[2].plot(depth * -1, lat, marker=marker, color=color, markersize=markersize, alpha=alpha, **kwargs)
+
+        # Set axes extents. Do this elsewhere?
+        radextent = vmaputils.radial_map_extent(self.origin[0], self.origin[1],
+                                                self.radial_extent)  # This needs to come right from the object
+        lonextent = radextent[0:2]
+        latextent = radextent[2:]  # This needs to come right form the object
+        self.fig.axes[1].set_xlim(lonextent)
+        self.fig.axes[1].set_ylim(self.depth_extent_h)
+        self.fig.axes[2].set_ylim(latextent)
+        self.fig.axes[2].set_xlim(self.depth_extent)
+
+        # self.fig.axes[1].plot(lon, depth*-1, marker=marker, color=color, markersize=markersize, alpha=alpha)  # horizontal cross-section
+        # self.fig.axes[2].plot(depth*-1, lat, marker=marker, color=color, markersize=markersize, alpha=alpha)  # vertical cross-section
 
     # Plot Catalog
     def plot_catalog(self, catalog):
@@ -193,8 +220,8 @@ class MapFigure:
         # Set axes extents. Do this elsewhere?
         radextent = vmaputils.radial_map_extent(self.origin[0], self.origin[1],
                                                 self.radial_extent)  # This needs to come right from the object
-        lonextent = radextent[0:2];
-        latextent = radextent[2:]  # This needs to come right form the object
+        lonextent = radextent[0:2]
+        latextent = radextent[2:]  # This needs to come right from the object
         self.fig.axes[1].set_xlim(lonextent)
         self.fig.axes[1].set_ylim(self.depth_extent_h)
         self.fig.axes[2].set_ylim(latextent)
@@ -248,6 +275,7 @@ class MapFigure:
 
 def _create_wingplot(lat, lon, radial_extent_km=50,
                      map_type='terrain-background', map_color=True, zoom=9,
+                     depth_extent=(4.0, -50),
                      title='Volcano Map', figsize=(12, 12)) -> object:
     import matplotlib.pyplot as plt
 
@@ -332,6 +360,15 @@ def _create_wingplot(lat, lon, radial_extent_km=50,
                     bottom=False, labelbottom=False,
                     left=False, labelleft=False,
                     right=False, labelright=False)
+
+    # Set XSection Depth Extent
+    # depth extents
+    axh.set_ylim([depth_extent[1], depth_extent[0]])
+    axv.set_xlim([depth_extent[0], depth_extent[1]])  # Flipping the normal order of the axis lim values creates an axis in "reverse" order
+
+    # lat/lon extents
+    axh.set_xlim(axm.get_xlim())
+    axv.set_ylim(axm.get_ylim())
 
     # Draw plot but do not show
     plt.draw()
