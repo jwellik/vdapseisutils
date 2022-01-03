@@ -2,16 +2,18 @@ import obspy
 import numpy as np
 
 
-def get_filelist(self, nslc_list, tstart, tend, output=None):
+def get_filelist(self, nslc_list, tstart, tend, filepattern='*', output=None):
     '''GET_FILELIST
 
     If 'output' is specified, it will overwrite the filesublist to the specified file
     '''
 
     from obspy import UTCDateTime
-    from waveformutils.nslcutils import getNSLCstr
+    from vdapseisutils.waveformutils.nslcutils import getNSLCstr
+    import glob, os, itertools
 
-    print('>>> waveforms.datasource[__init__].get_filelist()')
+
+    print('>>> vdapseisutils.waveformutils.datasource._get_waveforms.get_filelist()')
 
     tstart = UTCDateTime(tstart)
     tend = UTCDateTime(tend)
@@ -19,9 +21,16 @@ def get_filelist(self, nslc_list, tstart, tend, output=None):
     # Create file sublist (only files w relevant nslc & time)
     # Determine which subset of files to load based on start and end times and
     # station name; we'll fully deal with stations below
+    
+    # print(self.datasource)
+    
+    # # Generate list of files (all files under top directory)
+    flist = list(itertools.chain.from_iterable(glob.iglob(os.path.join(
+        root, filepattern)) for root, dirs, files in os.walk(self.datasource)))
+    
     flist = self.datasource
     flist_sub = []
-    print(flist)
+   #  print(flist)
     for f in flist:
         # Load header only
         stmp = obspy.read(f, headonly=True)
@@ -86,6 +95,7 @@ def get_waveforms_from_files(self, nslc_list, tstart, tend,
     #     print(nslc_loaded)
 
     #     # Only grab stations in our nslc_list
+    # Modify this to remove '*' and '?' so that if BH in BHZ works
     #     for n in range(len(nslc_list)):
     #         for m in range(len(nslc_loaded)):
     #             print('{} == {} ? --> '.format(nslc_list[n], nslc_loaded[m], nslc_list[n] in nslc_loaded[m]))

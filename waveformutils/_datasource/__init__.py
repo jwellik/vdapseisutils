@@ -30,7 +30,7 @@ class DataSource:
     
     """
 
-    from ._get_waveforms import get_waveforms_from_files, get_waveforms_from_client
+    from ._get_waveforms import get_waveforms_from_files, get_waveforms_from_client, get_filelist
     from ._archive import archive
 
     def __init__(self, ds_type, ds_string, filepattern='*'):
@@ -123,19 +123,7 @@ class DataSource:
 
         return st
 
-<<<<<<< HEAD
-=======
-    def archive():
-        return []
 
-    def getFileList():
-        return []
-
-    def getDataGaps():
-        print('Only available for Winston Wave Servers')
-        return []
-
->>>>>>> c17fd0d0d4613111acf7376102a9145103a043f5
 # TO DO
 # [ ] Functionalize createFileList & createClient ??
 # [ ] Assume FDSN or EW or filelist, as appropriate if only one argument given???
