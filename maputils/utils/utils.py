@@ -305,9 +305,9 @@ def plot_eventerror2xs(ax, event, color='black', linewidth=1, alpha=0.95,
 ########################################################################################################################
 
 def plot_volcano(ax, lat, lon, marker='^', color='red', edgecolor='black', markersize=12, alpha=0.95,
-                 transform=ccrs.Geodetic()):
-    ax.plot(lon, lat, marker=marker, markerfacecolor=color, markeredgecolor='black', markersize=markersize,
-            alpha=alpha, transform=transform, linewidth=0)
+                 transform=ccrs.Geodetic(), **kwargs):
+    ax.plot(lon, lat, marker=marker, color=edgecolor, markerfacecolor=color, markeredgecolor='black', markersize=markersize,
+            alpha=alpha, transform=transform, linewidth=0, **kwargs)
     return ax
 
 
