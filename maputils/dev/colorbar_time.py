@@ -1,6 +1,6 @@
-# Developing code to create the magnitude scale in the bottom right of a wingplot
-# This link was helpful (size of scatter markers):
-# https://stackoverflow.com/questions/14827650/pyplot-scatter-plot-marker-size
+# Developing code to create the colobar for N or Time
+# This is a good resource:
+# https://matplotlib.org/stable/tutorials/colors/colorbar_only.html#sphx-glr-tutorials-colors-colorbar-only-py
 
 import numpy as np
 import matplotlib.pyplot as plt
