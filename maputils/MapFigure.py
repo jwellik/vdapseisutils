@@ -369,9 +369,9 @@ class MapFigure:
         pass
 
 
-def _create_wingplot(lat, lon, radial_extent_km=50,
+def _create_wingplot(lat, lon, radial_extent_km=50.,
                      map_type='terrain-background', map_color=True, zoom=9,
-                     depth_extent=(4.0, -50),
+                     depth_extent=(7.0, -50.),
                      title='Volcano Map', figsize=(12, 12)) -> object:
     import matplotlib.pyplot as plt
 
@@ -393,22 +393,23 @@ def _create_wingplot(lat, lon, radial_extent_km=50,
         tiles = cimgt.Stamen(map_type, desired_tile_form="L")
 
     # definitions for the axes (% of figure size)
-    bottom, left = 0.10, 0.10
+    bottom, left = 0.08, 0.10
     top, right = 0.1, 0.1
-    mwidth, mheight, xsheight = 0.55, 0.55, 0.2  # This is modified
-    cbar_height = 0.02  # <-- THIS IS NEW!!!!!!!
+    mwidth, mheight, xsheight = 0.55, 0.55, 0.2
+    cbar_height = 0.02
     spacing = 0.005
 
     # define axes positions
-    map_pos = [left, bottom + cbar_height + xsheight + spacing, mwidth, mheight]
-    hxs_pos = [left, bottom + cbar_height, mwidth, xsheight]
-    vxs_pos = [left + mwidth + spacing, bottom + cbar_height + xsheight + spacing, xsheight, mheight]
-    mag_scale_pos = [left + mwidth + spacing, bottom + cbar_height, xsheight, xsheight]
-    cbar_pos = [left, 0.08, mwidth + spacing + xsheight, cbar_height]
+    map_pos = [left, bottom + cbar_height*2 + xsheight + spacing, mwidth, mheight]
+    hxs_pos = [left, bottom + cbar_height*2, mwidth, xsheight]
+    vxs_pos = [left + mwidth + spacing, bottom + cbar_height*2 + xsheight + spacing, xsheight, mheight]
+    mag_scale_pos = [left + mwidth + spacing, bottom + cbar_height*2, xsheight, xsheight]
+    cbar_pos = [left, bottom, mwidth + spacing + xsheight, cbar_height]
+    title_pos = [0.5, 0.95]
 
     # start with a square Figure
     fig = plt.figure(figsize=figsize)
-    axm = fig.add_axes(map_pos, projection=tiles.crs, title=title)
+    axm = fig.add_axes(map_pos, projection=tiles.crs)
     # axh = fig.add_axes(hxs_pos, sharex=axm)
     # axv = fig.add_axes(vxs_pos, sharey=axm)
     axh = fig.add_axes(hxs_pos)
@@ -417,6 +418,10 @@ def _create_wingplot(lat, lon, radial_extent_km=50,
     cbar_ax = fig.add_axes(cbar_pos)
     mag_ax.set_visible(False)
     cbar_ax.set_visible(False)
+
+    # Title as custom text
+    fig.text(title_pos[0], title_pos[1], title, fontsize=14,
+             verticalalignment='center', horizontalalignment='center')
 
     # Can this be handled better?
     extent = vdapseisutils.maputils.utils.utils.radial_map_extent(lat, lon, radial_extent_km)
