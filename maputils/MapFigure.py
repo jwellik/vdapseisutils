@@ -1,6 +1,7 @@
 '''TO DO
 
 [ ] Limit earthquake catalog to map extent or xsection extent
+[ ] We could enumerate the FIGURE AXES SO THERE IS NO CONFUSION
 
 '''
 
@@ -12,6 +13,8 @@ from vdapseisutils.maputils.utils import elev_profile
 import cartopy.crs as ccrs
 import cartopy.io.img_tiles as cimgt
 import cartopy.feature as cfeature
+
+from obspy import UTCDateTime
 
 
 # BasicMap class for easier map creation
@@ -85,7 +88,6 @@ class MapFigure:
         self.title = title
         self.fig.set_title(title)
 
-
     # Basic Plotting routines
 
     def scatter(self, lat, lon, *args, **kwargs):
@@ -109,8 +111,6 @@ class MapFigure:
         self.fig.axes[1].set_ylim(self.depth_extent_h)
         self.fig.axes[2].set_ylim(latextent)
         self.fig.axes[2].set_xlim(self.depth_extent)
-
-
 
     # Volcano Map Plotting routines
 
@@ -150,7 +150,6 @@ class MapFigure:
 
         from cartopy import geodesic
 
-
         geod = geodesic.Geodesic()
         geoms = []
 
@@ -185,15 +184,19 @@ class MapFigure:
         self.fig.axes[0] = vmaputils.plot_volcano(self.fig.axes[0], *args, **kwargs)
 
     # Plot hypocenter
-    def plot_hypo(self, lat, lon, *args, transform=ccrs.Geodetic(), marker='o', color='black', markersize=8, alpha=0.95, **kwargs):
+    def plot_hypo(self, lat, lon, *args, transform=ccrs.Geodetic(), marker='o', color='black', markersize=8, alpha=0.95,
+                  **kwargs):
         """*args is supposed to be an optional length 1 to provide the depth"""
 
-        self.fig.axes[0].plot(lon, lat, transform=transform, marker=marker, color=color, markersize=markersize, alpha=alpha, **kwargs)
+        self.fig.axes[0].plot(lon, lat, transform=transform, marker=marker, color=color, markersize=markersize,
+                              alpha=alpha, **kwargs)
 
         if len(args) > 0:
             depth = args[0]
-            self.fig.axes[1].plot(lon, depth * -1, marker=marker, color=color, markersize=markersize, alpha=alpha, **kwargs)
-            self.fig.axes[2].plot(depth * -1, lat, marker=marker, color=color, markersize=markersize, alpha=alpha, **kwargs)
+            self.fig.axes[1].plot(lon, depth * -1, marker=marker, color=color, markersize=markersize, alpha=alpha,
+                                  **kwargs)
+            self.fig.axes[2].plot(depth * -1, lat, marker=marker, color=color, markersize=markersize, alpha=alpha,
+                                  **kwargs)
 
         # Set axes extents. Do this elsewhere?
         radextent = vmaputils.radial_map_extent(self.origin[0], self.origin[1],
@@ -216,6 +219,99 @@ class MapFigure:
         self.fig.axes[0] = vmaputils.plot_catalog(self.fig.axes[0], catalog)
         # Plot to XSection (handles hypo and errors)
         self.fig = vmaputils.plot_catalog2xs(self.fig, catalog)
+
+        # Set axes extents. Do this elsewhere?
+        radextent = vmaputils.radial_map_extent(self.origin[0], self.origin[1],
+                                                self.radial_extent)  # This needs to come right from the object
+        lonextent = radextent[0:2]
+        latextent = radextent[2:]  # This needs to come right from the object
+        self.fig.axes[1].set_xlim(lonextent)
+        self.fig.axes[1].set_ylim(self.depth_extent_h)
+        self.fig.axes[2].set_ylim(latextent)
+        self.fig.axes[2].set_xlim(self.depth_extent)
+
+    def scatter_catalog(self, catalog, cmap='viridis_r', transform=ccrs.Geodetic(), alpha=0.5, **kwargs):
+        print('!!! scatter_catalog() In development')
+
+        import matplotlib as mpl
+        import matplotlib.dates as mdates
+
+        self.fig.axes[3].set_visible(True)
+        self.fig.axes[4].set_visible(True)  # Turn the axis ON
+
+        # set up scatter colorbar
+        # cmap = mpl.cm.viridis_r  # hard-coded
+        norm = mpl.colors.Normalize(vmin=catalog[0].origins[-1].time.matplotlib_date,
+                                    vmax=catalog[-1].origins[-1].time.matplotlib_date)
+        cb = self.fig.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap),
+                               cax=self.fig.axes[4], orientation='horizontal', label='Time')
+        loc = mdates.AutoDateLocator()  # from matplotlib import dates as mdates
+        cb.ax.xaxis.set_major_locator(loc)
+        cb.ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(loc))
+
+        # Get info out of Events object
+        lat = []
+        lon = []
+        depth = []
+        mag = []
+        time = []
+        for event in catalog:
+            lat.append(event.origins[-1].latitude)
+            lon.append(event.origins[-1].longitude)
+            depth.append(event.origins[-1].depth / 1000 * -1)  # km
+            mag.append(event.magnitudes[-1].mag if event.magnitudes[-1].mag is not None else -1)  # -1 is the default
+            if type(mag[-1]) is None: print('Mag is None!!!')
+            time.append(event.origins[-1].time.matplotlib_date)
+
+        # Set up the magnitude scale parameters
+        mso = 0 if min(mag) >= 0 else np.floor(np.min(mag)) * -1  # magnitude offset scale to avoid negatives
+        mag += mso  # adjusted Magnitude value for plotting purposes
+        scale_mag = np.array([1, 2, 3, 4, 5]) + mso  # Array of values for the scale box
+
+        # Define size for each marker
+        scale_type = 'linear'
+        # #  -Exponential
+        if scale_type == 'exponential':
+            scatter_scale = 2  # converts magnitude to scatter plot size (try many numbers across orders of magnitude)
+            s = scatter_scale ** mag  # markersize**2 for the map
+            scale_s = scatter_scale ** scale_mag  # markersize**2 for scale box; alternatively, ms=scatter_scale (and use ms in the scatter() function)
+        #  -Linear
+        elif scale_type == 'linear':
+            scatter_scale = 1  # converts magnitude to scatter plot size (try many numbers across orders of magnitude)
+            s = scatter_scale * mag ** 2  # markersize**2 for the map
+            scale_s = scatter_scale * scale_mag ** 2  # markersize**2 for scale box; alternatively, ms=scatter_scale (and use ms in the scatter() function)
+
+        # Plot to axes
+        self.fig.axes[0].scatter(lon, lat, s=s, c=time,
+                                 norm=norm, cmap=cmap, transform=transform, alpha=alpha, **kwargs)
+        self.fig.axes[1].scatter(lon, depth, s=s, c=time, norm=norm, cmap=cmap, alpha=alpha, **kwargs)  # Horizontal XSection
+        self.fig.axes[2].scatter(depth, lat, s=s, c=time, norm=norm, cmap=cmap, alpha=alpha, **kwargs)  # Vertical XSection
+
+
+        # MAGNITUDE SCALE (define positiong and limits)
+        mag_scale_xpos = np.array([0] * len(scale_mag))  # xpos of mag scale circles is 0, make the array
+        if scale_type == 'exponential':
+            mag_scale_ypos = scale_mag ** 2  # largest on top, smallest on bottom, 1 order of magnitude apart looks nice
+            ylim = (0, (scale_mag[-1] + 2) ** 2)
+        elif scale_type == 'linear':
+            mag_scale_ypos = scale_mag * 10
+            ylim = (scale_mag[1] * 10 - 15, scale_mag[-1] * 10 + 15)
+
+        # Add scale box to figure
+        self.fig.axes[3].scatter(mag_scale_xpos, y=mag_scale_ypos, s=scale_s, color='none',
+                                 edgecolor='k')  # Plot scatter makers to scale axis
+
+        # Change settings on scale box axes
+        self.fig.axes[3].set_ylim(ylim[0], ylim[1])  # Works best with exponential version
+        self.fig.axes[3].set_xlim(-0.03, 0.05)  # arbitrarily determined
+        self.fig.axes[3].set_xticks([])  # remove xticks
+        self.fig.axes[3].set_yticks(mag_scale_ypos)  # set yticks at height for each circle
+        self.fig.axes[3].set_yticklabels(
+            ['M{}'.format(m - mso) for m in scale_mag])  # give them a label in the format M3, for example
+        self.fig.axes[3].yaxis.tick_right()  # put yticklabels on the right
+        self.fig.axes[3].tick_params(axis="y", direction="in", pad=-30, right=False)  # put labels on inside and remove ticks
+        [self.fig.axes[3].spines[pos].set_visible(False) for pos in ["top", "bottom", "left", "right"]]  # remove axis frames
+        self.fig.axes[3].patch.set_alpha(0.0)  # set axis background to transparent
 
         # Set axes extents. Do this elsewhere?
         radextent = vmaputils.radial_map_extent(self.origin[0], self.origin[1],
@@ -297,14 +393,18 @@ def _create_wingplot(lat, lon, radial_extent_km=50,
         tiles = cimgt.Stamen(map_type, desired_tile_form="L")
 
     # definitions for the axes (% of figure size)
-    bottom, left = 0.05, 0.10
+    bottom, left = 0.10, 0.10
     top, right = 0.1, 0.1
-    mwidth, mheight, xsheight = 0.65, 0.65, 0.2
+    mwidth, mheight, xsheight = 0.55, 0.55, 0.2  # This is modified
+    cbar_height = 0.02  # <-- THIS IS NEW!!!!!!!
     spacing = 0.005
 
-    map_pos = [left, bottom + xsheight + spacing, mwidth, mheight]
-    hxs_pos = [left, bottom, mwidth, xsheight]
-    vxs_pos = [left + mwidth + spacing, bottom + xsheight + spacing, xsheight, mheight]
+    # define axes positions
+    map_pos = [left, bottom + cbar_height + xsheight + spacing, mwidth, mheight]
+    hxs_pos = [left, bottom + cbar_height, mwidth, xsheight]
+    vxs_pos = [left + mwidth + spacing, bottom + cbar_height + xsheight + spacing, xsheight, mheight]
+    mag_scale_pos = [left + mwidth + spacing, bottom + cbar_height, xsheight, xsheight]
+    cbar_pos = [left, 0.08, mwidth + spacing + xsheight, cbar_height]
 
     # start with a square Figure
     fig = plt.figure(figsize=figsize)
@@ -313,6 +413,10 @@ def _create_wingplot(lat, lon, radial_extent_km=50,
     # axv = fig.add_axes(vxs_pos, sharey=axm)
     axh = fig.add_axes(hxs_pos)
     axv = fig.add_axes(vxs_pos)
+    mag_ax = fig.add_axes(mag_scale_pos)
+    cbar_ax = fig.add_axes(cbar_pos)
+    mag_ax.set_visible(False)
+    cbar_ax.set_visible(False)
 
     # Can this be handled better?
     extent = vdapseisutils.maputils.utils.utils.radial_map_extent(lat, lon, radial_extent_km)
@@ -364,7 +468,8 @@ def _create_wingplot(lat, lon, radial_extent_km=50,
     # Set XSection Depth Extent
     # depth extents
     axh.set_ylim([depth_extent[1], depth_extent[0]])
-    axv.set_xlim([depth_extent[0], depth_extent[1]])  # Flipping the normal order of the axis lim values creates an axis in "reverse" order
+    axv.set_xlim([depth_extent[0], depth_extent[
+        1]])  # Flipping the normal order of the axis lim values creates an axis in "reverse" order
 
     # lat/lon extents
     axh.set_xlim(axm.get_xlim())
