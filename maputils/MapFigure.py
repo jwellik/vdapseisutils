@@ -17,6 +17,13 @@ import cartopy.feature as cfeature
 from obspy import UTCDateTime
 
 
+## ENUMERATIONS
+AXM = 0
+AXH = 1
+AXV = 2
+AX_MAG = 3
+AX_CBAR = 4
+
 # BasicMap class for easier map creation
 class MapFigure:
 
@@ -96,21 +103,21 @@ class MapFigure:
         **kwargs : any keyword arguments understood by matplotlib.pyplot.scatter()
         '''
 
-        self.fig.axes[0].scatter(lon, lat, **kwargs)
+        self.fig.axes[AXM].scatter(lon, lat, **kwargs)
         if len(args) > 0:
             depth = args[0]
-            self.fig.axes[1].scatter(lon, depth * -1)
-            self.fig.axes[2].scatter(depth * -1, lat)
+            self.fig.axes[AXH].scatter(lon, depth * -1)
+            self.fig.axes[AXV].scatter(depth * -1, lat)
 
         # Set axes extents. Do this elsewhere?
         radextent = vmaputils.radial_map_extent(self.origin[0], self.origin[1],
                                                 self.radial_extent)  # This needs to come right from the object
         lonextent = radextent[0:2];
         latextent = radextent[2:]  # This needs to come right form the object
-        self.fig.axes[1].set_xlim(lonextent)
-        self.fig.axes[1].set_ylim(self.depth_extent_h)
-        self.fig.axes[2].set_ylim(latextent)
-        self.fig.axes[2].set_xlim(self.depth_extent)
+        self.fig.axes[AXH].set_xlim(lonextent)
+        self.fig.axes[AXH].set_ylim(self.depth_extent_h)
+        self.fig.axes[AXV].set_ylim(latextent)
+        self.fig.axes[AXV].set_xlim(self.depth_extent)
 
     # Volcano Map Plotting routines
 
@@ -181,21 +188,21 @@ class MapFigure:
 
     # Plot volcano
     def plot_volcano(self, *args, **kwargs):
-        self.fig.axes[0] = vmaputils.plot_volcano(self.fig.axes[0], *args, **kwargs)
+        self.fig.axes[AXM] = vmaputils.plot_volcano(self.fig.axes[0], *args, **kwargs)
 
     # Plot hypocenter
     def plot_hypo(self, lat, lon, *args, transform=ccrs.Geodetic(), marker='o', color='black', markersize=8, alpha=0.95,
                   **kwargs):
         """*args is supposed to be an optional length 1 to provide the depth"""
 
-        self.fig.axes[0].plot(lon, lat, transform=transform, marker=marker, color=color, markersize=markersize,
+        self.fig.axes[AXM].plot(lon, lat, transform=transform, marker=marker, color=color, markersize=markersize,
                               alpha=alpha, **kwargs)
 
         if len(args) > 0:
             depth = args[0]
-            self.fig.axes[1].plot(lon, depth * -1, marker=marker, color=color, markersize=markersize, alpha=alpha,
+            self.fig.axes[AXH].plot(lon, depth * -1, marker=marker, color=color, markersize=markersize, alpha=alpha,
                                   **kwargs)
-            self.fig.axes[2].plot(depth * -1, lat, marker=marker, color=color, markersize=markersize, alpha=alpha,
+            self.fig.axes[AXV].plot(depth * -1, lat, marker=marker, color=color, markersize=markersize, alpha=alpha,
                                   **kwargs)
 
         # Set axes extents. Do this elsewhere?
@@ -203,10 +210,10 @@ class MapFigure:
                                                 self.radial_extent)  # This needs to come right from the object
         lonextent = radextent[0:2]
         latextent = radextent[2:]  # This needs to come right form the object
-        self.fig.axes[1].set_xlim(lonextent)
-        self.fig.axes[1].set_ylim(self.depth_extent_h)
-        self.fig.axes[2].set_ylim(latextent)
-        self.fig.axes[2].set_xlim(self.depth_extent)
+        self.fig.axes[AXH].set_xlim(lonextent)
+        self.fig.axes[AXH].set_ylim(self.depth_extent_h)
+        self.fig.axes[AXV].set_ylim(latextent)
+        self.fig.axes[AXV].set_xlim(self.depth_extent)
 
         # self.fig.axes[1].plot(lon, depth*-1, marker=marker, color=color, markersize=markersize, alpha=alpha)  # horizontal cross-section
         # self.fig.axes[2].plot(depth*-1, lat, marker=marker, color=color, markersize=markersize, alpha=alpha)  # vertical cross-section
@@ -216,7 +223,7 @@ class MapFigure:
         print('!!! This function relies on stub setting of cross-section extents')
 
         # Plot to Map (handles hypo and error bars)
-        self.fig.axes[0] = vmaputils.plot_catalog(self.fig.axes[0], catalog)
+        self.fig.axes[AXM] = vmaputils.plot_catalog(self.fig.axes[0], catalog)
         # Plot to XSection (handles hypo and errors)
         self.fig = vmaputils.plot_catalog2xs(self.fig, catalog)
 
@@ -225,10 +232,10 @@ class MapFigure:
                                                 self.radial_extent)  # This needs to come right from the object
         lonextent = radextent[0:2]
         latextent = radextent[2:]  # This needs to come right from the object
-        self.fig.axes[1].set_xlim(lonextent)
-        self.fig.axes[1].set_ylim(self.depth_extent_h)
-        self.fig.axes[2].set_ylim(latextent)
-        self.fig.axes[2].set_xlim(self.depth_extent)
+        self.fig.axes[AXH].set_xlim(lonextent)
+        self.fig.axes[AXH].set_ylim(self.depth_extent_h)
+        self.fig.axes[AXV].set_ylim(latextent)
+        self.fig.axes[AXV].set_xlim(self.depth_extent)
 
     def scatter_catalog(self, catalog, cmap='viridis_r', transform=ccrs.Geodetic(), alpha=0.5, **kwargs):
         print('!!! scatter_catalog() In development')
@@ -236,8 +243,8 @@ class MapFigure:
         import matplotlib as mpl
         import matplotlib.dates as mdates
 
-        self.fig.axes[3].set_visible(True)
-        self.fig.axes[4].set_visible(True)  # Turn the axis ON
+        self.fig.axes[AX_MAG].set_visible(True)
+        self.fig.axes[AX_CBAR].set_visible(True)  # Turn the axis ON
 
         # set up scatter colorbar
         # cmap = mpl.cm.viridis_r  # hard-coded
@@ -282,10 +289,10 @@ class MapFigure:
             scale_s = scatter_scale * scale_mag ** 2  # markersize**2 for scale box; alternatively, ms=scatter_scale (and use ms in the scatter() function)
 
         # Plot to axes
-        self.fig.axes[0].scatter(lon, lat, s=s, c=time,
+        self.fig.axes[AXM].scatter(lon, lat, s=s, c=time,
                                  norm=norm, cmap=cmap, transform=transform, alpha=alpha, **kwargs)
-        self.fig.axes[1].scatter(lon, depth, s=s, c=time, norm=norm, cmap=cmap, alpha=alpha, **kwargs)  # Horizontal XSection
-        self.fig.axes[2].scatter(depth, lat, s=s, c=time, norm=norm, cmap=cmap, alpha=alpha, **kwargs)  # Vertical XSection
+        self.fig.axes[AXH].scatter(lon, depth, s=s, c=time, norm=norm, cmap=cmap, alpha=alpha, **kwargs)  # Horizontal XSection
+        self.fig.axes[AXV].scatter(depth, lat, s=s, c=time, norm=norm, cmap=cmap, alpha=alpha, **kwargs)  # Vertical XSection
 
 
         # MAGNITUDE SCALE (define positiong and limits)
@@ -298,30 +305,30 @@ class MapFigure:
             ylim = (scale_mag[1] * 10 - 15, scale_mag[-1] * 10 + 15)
 
         # Add scale box to figure
-        self.fig.axes[3].scatter(mag_scale_xpos, y=mag_scale_ypos, s=scale_s, color='none',
+        self.fig.axes[AX_MAG].scatter(mag_scale_xpos, y=mag_scale_ypos, s=scale_s, color='none',
                                  edgecolor='k')  # Plot scatter makers to scale axis
 
         # Change settings on scale box axes
-        self.fig.axes[3].set_ylim(ylim[0], ylim[1])  # Works best with exponential version
-        self.fig.axes[3].set_xlim(-0.03, 0.05)  # arbitrarily determined
-        self.fig.axes[3].set_xticks([])  # remove xticks
-        self.fig.axes[3].set_yticks(mag_scale_ypos)  # set yticks at height for each circle
-        self.fig.axes[3].set_yticklabels(
+        self.fig.axes[AX_MAG].set_ylim(ylim[0], ylim[1])  # Works best with exponential version
+        self.fig.axes[AX_MAG].set_xlim(-0.03, 0.05)  # arbitrarily determined
+        self.fig.axes[AX_MAG].set_xticks([])  # remove xticks
+        self.fig.axes[AX_MAG].set_yticks(mag_scale_ypos)  # set yticks at height for each circle
+        self.fig.axes[AX_MAG].set_yticklabels(
             ['M{}'.format(m - mso) for m in scale_mag])  # give them a label in the format M3, for example
-        self.fig.axes[3].yaxis.tick_right()  # put yticklabels on the right
-        self.fig.axes[3].tick_params(axis="y", direction="in", pad=-30, right=False)  # put labels on inside and remove ticks
-        [self.fig.axes[3].spines[pos].set_visible(False) for pos in ["top", "bottom", "left", "right"]]  # remove axis frames
-        self.fig.axes[3].patch.set_alpha(0.0)  # set axis background to transparent
+        self.fig.axes[AX_MAG].yaxis.tick_right()  # put yticklabels on the right
+        self.fig.axes[AX_MAG].tick_params(axis="y", direction="in", pad=-30, right=False)  # put labels on inside and remove ticks
+        [self.fig.axes[AX_MAG].spines[pos].set_visible(False) for pos in ["top", "bottom", "left", "right"]]  # remove axis frames
+        self.fig.axes[AX_MAG].patch.set_alpha(0.0)  # set axis background to transparent
 
         # Set axes extents. Do this elsewhere?
         radextent = vmaputils.radial_map_extent(self.origin[0], self.origin[1],
                                                 self.radial_extent)  # This needs to come right from the object
         lonextent = radextent[0:2]
         latextent = radextent[2:]  # This needs to come right from the object
-        self.fig.axes[1].set_xlim(lonextent)
-        self.fig.axes[1].set_ylim(self.depth_extent_h)
-        self.fig.axes[2].set_ylim(latextent)
-        self.fig.axes[2].set_xlim(self.depth_extent)
+        self.fig.axes[AXH].set_xlim(lonextent)
+        self.fig.axes[AXH].set_ylim(self.depth_extent_h)
+        self.fig.axes[AXV].set_ylim(latextent)
+        self.fig.axes[AXV].set_xlim(self.depth_extent)
 
     # Plot Stations
     def plot_station(self):
@@ -329,7 +336,7 @@ class MapFigure:
 
     # Plot Inventory
     def plot_inventory(self, inventory):
-        self.fig.axes[0] = vmaputils.plot_station_inventory(self.fig.axes[0], inventory)
+        self.fig.axes[AXM] = vmaputils.plot_station_inventory(self.fig.axes[0], inventory)
 
     # ADD CROSS-SECTIONAL PROFILES
 
@@ -349,11 +356,11 @@ class MapFigure:
         # PLOT ELEVATION PROFILE
         base_reg = depth * -1
         if axis == 'h':
-            self.fig.axes[1].plot(d, elev, color=color, linewidth=linewidth)
-            self.fig.axex[1].fill_between(d, elev, base_reg, color=color, alpha=0.1)
+            self.fig.axes[AXH].plot(d, elev, color=color, linewidth=linewidth)
+            self.fig.axex[AXH].fill_between(d, elev, base_reg, color=color, alpha=0.1)
         if axis == 'v':
-            self.fig.axes[2].plot(elev, d, color=color, linewidth=linewidth)
-            self.fig.axes[2].fill_between(elev, d, base_reg, color=color, alpha=0.1)
+            self.fig.axes[AXV].plot(elev, d, color=color, linewidth=linewidth)
+            self.fig.axes[AXV].fill_between(elev, d, base_reg, color=color, alpha=0.1)
 
     # Adds EW profile (horizontal); NS profile (vertical)
     def add_default_profile(self, n=100, depth=50, color='black', linewidth=1, drawmapline=False):
