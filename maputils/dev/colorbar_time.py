@@ -5,6 +5,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from matplotlib import dates as mdates
 from obspy import UTCDateTime
 
 
@@ -18,8 +19,8 @@ def main():
     # definitions for the axes (% of figure size)
     bottom, left = 0.10, 0.10
     top, right = 0.1, 0.1
-    mwidth, mheight, xsheight = 0.55, 0.55, 0.2
-    cbar_height = 0.02
+    mwidth, mheight, xsheight = 0.55, 0.55, 0.2  # This is modified
+    cbar_height = 0.02  # <-- THIS IS NEW!!!!!!!
     spacing = 0.005
 
     map_pos = [left, bottom + cbar_height + xsheight + spacing, mwidth, mheight]
@@ -47,13 +48,22 @@ def main():
     """
 
 
-    cbar_type = 'discrete'
+    cbar_type = 'continuous_t'
 
     if cbar_type == 'continuous':
         cmap = mpl.cm.viridis_r
         norm = mpl.colors.Normalize(vmin=0, vmax=100)
         fig.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap),
-                     cax=cbar_ax, orientation='horizontal', label='Time')
+                     cax=cbar_ax, orientation='horizontal', label='N')
+    if cbar_type == 'continuous_t':
+        cmap = mpl.cm.viridis_r
+        norm = mpl.colors.Normalize(vmin=UTCDateTime('1988/03/17').matplotlib_date,
+                                    vmax=UTCDateTime('2022/01/05').matplotlib_date)
+        cb = fig.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap),
+                    cax=cbar_ax, orientation='horizontal', label='Time')
+        loc = mdates.AutoDateLocator()  # from matplotlib import dates as mdates
+        cb.ax.xaxis.set_major_locator(loc)
+        cb.ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(loc))
     elif cbar_type == 'discrete':
         cmap = mpl.cm.magma_r
         bounds = [0, 5, 10, 15, 20, 25, 30]
