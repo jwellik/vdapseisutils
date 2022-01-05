@@ -187,6 +187,7 @@ def plot_catalog(axm, catalog, transform=ccrs.Geodetic(), plot_errors=True, verb
 
     if verbose: print('Printing {} event(s) from Catalog object.'.format(len(catalog)))
     for event in catalog:
+        print('- Printing catalog event...')
         lat = event.origins[-1].latitude
         lon = event.origins[-1].longitude
         depth = event.origins[-1].depth
