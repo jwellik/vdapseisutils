@@ -100,6 +100,22 @@ def read_victoria_csv(file):
     return cat
 
 
+def catalog2basics(cat):
+    # Get info out of Events object
+    time = []
+    lat = []
+    lon = []
+    depth = []
+    mag = []
+    for event in cat:
+        lat.append(event.origins[-1].latitude)
+        lon.append(event.origins[-1].longitude)
+        depth.append(event.origins[-1].depth)  # meters
+        mag.append(event.magnitudes[-1].mag if event.magnitudes[-1].mag is not None else -1)  # -1 is the default
+        time.append(event.origins[-1].time.matplotlib_date)
+
+    return time, lat, lon, depth, mag
+
 if __name__ == '__main__':
     example()
     print()
