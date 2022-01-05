@@ -257,18 +257,9 @@ class MapFigure:
         cb.ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(loc))
 
         # Get info out of Events object
-        lat = []
-        lon = []
-        depth = []
-        mag = []
-        time = []
-        for event in catalog:
-            lat.append(event.origins[-1].latitude)
-            lon.append(event.origins[-1].longitude)
-            depth.append(event.origins[-1].depth / 1000 * -1)  # km
-            mag.append(event.magnitudes[-1].mag if event.magnitudes[-1].mag is not None else -1)  # -1 is the default
-            if type(mag[-1]) is None: print('Mag is None!!!')
-            time.append(event.origins[-1].time.matplotlib_date)
+        from vdapseisutils.eventutils.catalogutils import catalog2basics
+        time, lat, lon, depth, mag = catalog2basics(catalog)
+        depth = list(np.array(depth)/1000*-1)  # meters to km
 
         # Set up the magnitude scale parameters
         mso = 0 if min(mag) >= 0 else np.floor(np.min(mag)) * -1  # magnitude offset scale to avoid negatives
