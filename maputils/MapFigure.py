@@ -36,6 +36,7 @@ class MapFigure:
                  map_color=True,
                  figsize=(12, 12),
                  title='Volcano Map',  # -> str
+                 subtext='',
                  ):
 
         # Configurable features
@@ -49,11 +50,12 @@ class MapFigure:
         self.map_color = map_color
         self.figsize = figsize
         self.title = title
+        self.subtext = subtext
 
         self.fig = _create_wingplot(self.origin[0], self.origin[1], radial_extent_km=self.radial_extent,
                                     zoom=self.zoom, map_type=self.map_type, map_color=self.map_color,
                                     depth_extent=depth_extent,
-                                    figsize=self.figsize, title=self.title)
+                                    figsize=self.figsize, title=self.title, subtext=self.subtext)
 
     # I/O
 
@@ -247,7 +249,6 @@ class MapFigure:
         self.fig.axes[AX_CBAR].set_visible(True)  # Turn the axis ON
 
         # set up scatter colorbar
-        # cmap = mpl.cm.viridis_r  # hard-coded
         norm = mpl.colors.Normalize(vmin=catalog[0].origins[-1].time.matplotlib_date,
                                     vmax=catalog[-1].origins[-1].time.matplotlib_date)
         cb = self.fig.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap),
@@ -282,8 +283,10 @@ class MapFigure:
         # Plot to axes
         self.fig.axes[AXM].scatter(lon, lat, s=s, c=time,
                                  norm=norm, cmap=cmap, transform=transform, alpha=alpha, **kwargs)
-        self.fig.axes[AXH].scatter(lon, depth, s=s, c=time, norm=norm, cmap=cmap, alpha=alpha, **kwargs)  # Horizontal XSection
-        self.fig.axes[AXV].scatter(depth, lat, s=s, c=time, norm=norm, cmap=cmap, alpha=alpha, **kwargs)  # Vertical XSection
+        self.fig.axes[AXH].scatter(lon, depth, s=s, c=time,  # Horizontal XSection
+                                   norm=norm, cmap=cmap, alpha=alpha, **kwargs)
+        self.fig.axes[AXV].scatter(depth, lat, s=s, c=time,  # Vertical XSection
+                                   norm=norm, cmap=cmap, alpha=alpha, **kwargs)
 
 
         # MAGNITUDE SCALE (define positiong and limits)
@@ -316,10 +319,14 @@ class MapFigure:
                                                 self.radial_extent)  # This needs to come right from the object
         lonextent = radextent[0:2]
         latextent = radextent[2:]  # This needs to come right from the object
+
+        # Why is all this stuff happening here?
         self.fig.axes[AXH].set_xlim(lonextent)
         self.fig.axes[AXH].set_ylim(self.depth_extent_h)
         self.fig.axes[AXV].set_ylim(latextent)
         self.fig.axes[AXV].set_xlim(self.depth_extent)
+        self.fig.axes[AXH].set_yticks([0,-5,-10,-15])
+        self.fig.axes[AXV].set_xticks(self.fig.axes[AXH].get_yticks())  # Depth tick locations same for both x-sections
 
     # Plot Stations
     def plot_station(self):
@@ -370,7 +377,8 @@ class MapFigure:
 def _create_wingplot(lat, lon, radial_extent_km=50.,
                      map_type='terrain-background', map_color=True, zoom=9,
                      depth_extent=(7.0, -50.),
-                     title='Volcano Map', figsize=(12, 12)) -> object:
+                     title='Volcano Map', subtext='',
+                     figsize=(12, 12)) -> object:
     import matplotlib.pyplot as plt
 
     import cartopy.crs as ccrs
@@ -403,7 +411,8 @@ def _create_wingplot(lat, lon, radial_extent_km=50.,
     vxs_pos = [left + mwidth + spacing, bottom + cbar_height*2 + xsheight + spacing, xsheight, mheight]
     mag_scale_pos = [left + mwidth + spacing, bottom + cbar_height*2, xsheight, xsheight]
     cbar_pos = [left, bottom, mwidth + spacing + xsheight, cbar_height]
-    title_pos = [0.5, 0.95]
+    title_pos = [0.5, 0.965]
+    subtext_pos = [0.5, 0.93]
 
     # start with a square Figure
     fig = plt.figure(figsize=figsize)
@@ -419,6 +428,8 @@ def _create_wingplot(lat, lon, radial_extent_km=50.,
 
     # Title as custom text
     fig.text(title_pos[0], title_pos[1], title, fontsize=14,
+             verticalalignment='center', horizontalalignment='center')
+    fig.text(subtext_pos[0], subtext_pos[1], subtext, fontsize=10,
              verticalalignment='center', horizontalalignment='center')
 
     # Can this be handled better?
