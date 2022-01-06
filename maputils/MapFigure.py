@@ -18,6 +18,7 @@ from obspy import UTCDateTime
 
 
 ## ENUMERATIONS
+# Axes contained by Figure
 AXM = 0
 AXH = 1
 AXV = 2
