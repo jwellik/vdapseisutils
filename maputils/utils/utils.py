@@ -42,10 +42,8 @@ def geodesic_point_buffer(lat, lon, km):
     return b
 
 
-def radial_map_extent(lat, lon, km):
-    '''Returns the lat and lon map extent based on a radial distance from a point'''
-    '''returns [minlon, maxlon, minlat, max
-    lat]'''
+def radial_extent2map_extent(lat, lon, km):
+    """Returns [minlon, maxlon, minlat, maxlat]"""
     rlatlon = geodesic_point_buffer(lat, lon, km)
     map_extent = [min(rlatlon[:, 1]), max(rlatlon[:, 1]), min(rlatlon[:, 0]), max(rlatlon[:, 0])]
     return map_extent
@@ -53,7 +51,7 @@ def radial_map_extent(lat, lon, km):
 
 def set_radial_map_extent(ax, lat, lon, km, crs=None):
     '''Sets the extent of the map based on radius from given point'''
-    ax.set_extent(radial_map_extent(lat, lon, km), crs=crs)
+    ax.set_extent(radial_extent2map_extent(lat, lon, km), crs=crs)
     return ax
 
 
