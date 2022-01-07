@@ -363,7 +363,7 @@ class MapFigure:
             self.fig.axes[AXV].fill_between(elev, d, base_reg, color=color, alpha=0.1)
 
     # Adds EW profile (horizontal); NS profile (vertical)
-    def add_default_profile(self, n=100, color='black', linewidth=1, drawmapline=False):
+    def add_default_profile(self, n=100, color='black', linewidth=0.75, drawmapline=False):
 
         # 1) Determine lat/lon for horiztonal P1, P2
         # 2) Determine lat/lon for vertical P1/P2
