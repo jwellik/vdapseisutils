@@ -8,7 +8,7 @@
 import numpy as np
 
 import vdapseisutils.maputils.utils.utils as vmaputils
-from vdapseisutils.maputils.utils import elev_profile
+from vdapseisutils.maputils.utils import elev_profile, elev_profile
 
 import cartopy.crs as ccrs
 import cartopy.io.img_tiles as cimgt
@@ -43,7 +43,7 @@ class MapFigure:
         # Configurable features
         self.origin = origin
         self.radial_extent = radial_extent
-        # self.map_extent = radial_extent_to_map_extent()
+        self.map_extent = vmaputils.radial_extent2map_extent(origin[0], origin[1], radial_extent)
         self.depth_extent = depth_extent
         self.depth_extent_h = (depth_extent[1], depth_extent[0])  # inverted depth_extent used for horizontal x-section
         self.zoom = zoom
@@ -57,6 +57,7 @@ class MapFigure:
                                     zoom=self.zoom, map_type=self.map_type, map_color=self.map_color,
                                     depth_extent=depth_extent,
                                     figsize=self.figsize, title=self.title, subtext=self.subtext)
+        self.add_default_profile()
 
     # I/O
 
@@ -113,8 +114,8 @@ class MapFigure:
             self.fig.axes[AXV].scatter(depth * -1, lat)
 
         # Set axes extents. Do this elsewhere?
-        radextent = vmaputils.radial_map_extent(self.origin[0], self.origin[1],
-                                                self.radial_extent)  # This needs to come right from the object
+        radextent = vmaputils.radial_extent2map_extent(self.origin[0], self.origin[1],
+                                                       self.radial_extent)  # This needs to come right from the object
         lonextent = radextent[0:2];
         latextent = radextent[2:]  # This needs to come right form the object
         self.fig.axes[AXH].set_xlim(lonextent)
@@ -209,8 +210,8 @@ class MapFigure:
                                   **kwargs)
 
         # Set axes extents. Do this elsewhere?
-        radextent = vmaputils.radial_map_extent(self.origin[0], self.origin[1],
-                                                self.radial_extent)  # This needs to come right from the object
+        radextent = vmaputils.radial_extent2map_extent(self.origin[0], self.origin[1],
+                                                       self.radial_extent)  # This needs to come right from the object
         lonextent = radextent[0:2]
         latextent = radextent[2:]  # This needs to come right form the object
         self.fig.axes[AXH].set_xlim(lonextent)
@@ -231,8 +232,8 @@ class MapFigure:
         self.fig = vmaputils.plot_catalog2xs(self.fig, catalog)
 
         # Set axes extents. Do this elsewhere?
-        radextent = vmaputils.radial_map_extent(self.origin[0], self.origin[1],
-                                                self.radial_extent)  # This needs to come right from the object
+        radextent = vmaputils.radial_extent2map_extent(self.origin[0], self.origin[1],
+                                                       self.radial_extent)  # This needs to come right from the object
         lonextent = radextent[0:2]
         latextent = radextent[2:]  # This needs to come right from the object
         self.fig.axes[AXH].set_xlim(lonextent)
@@ -316,8 +317,8 @@ class MapFigure:
         self.fig.axes[AX_MAG].patch.set_alpha(0.0)  # set axis background to transparent
 
         # Set axes extents. Do this elsewhere?
-        radextent = vmaputils.radial_map_extent(self.origin[0], self.origin[1],
-                                                self.radial_extent)  # This needs to come right from the object
+        radextent = vmaputils.radial_extent2map_extent(self.origin[0], self.origin[1],
+                                                       self.radial_extent)  # This needs to come right from the object
         lonextent = radextent[0:2]
         latextent = radextent[2:]  # This needs to come right from the object
 
@@ -362,11 +363,33 @@ class MapFigure:
             self.fig.axes[AXV].fill_between(elev, d, base_reg, color=color, alpha=0.1)
 
     # Adds EW profile (horizontal); NS profile (vertical)
-    def add_default_profile(self, n=100, depth=50, color='black', linewidth=1, drawmapline=False):
-        # Determine lat/lon for horiztonal P1, P2
-        # Determine lat/lon for vertical P1/P2
-        # Download profile for h/v
-        # Plot profile for h/v
+    def add_default_profile(self, n=100, color='black', linewidth=1, drawmapline=False):
+
+        # 1) Determine lat/lon for horiztonal P1, P2
+        # 2) Determine lat/lon for vertical P1/P2
+        # 3) Download profile for h/v
+        # 4) Plot profile for h/v
+
+        # Determine (lat, lon) for XC points
+        # A1 lat is midway between minlat/maxlat; B2 lon is midway between minlon/maxlon
+        A1 = ((self.map_extent[2] + self.map_extent[3]) / 2, self.map_extent[0])
+        A2 = ((self.map_extent[2] + self.map_extent[3]) / 2, self.map_extent[1])
+        B1 = (self.map_extent[2], (self.map_extent[0] + self.map_extent[1]) / 2)
+        B2 = (self.map_extent[3], (self.map_extent[0] + self.map_extent[1]) / 2)
+
+        # Download & plot elevation data for A-A'
+        lat, lon, d, elev = elev_profile.download_profile2(A1, A2, n=n)  # elevation returned in meters
+        elev = np.array(elev) / 1000  # convert to km
+        self.fig.axes[AXH].plot(lon, elev, color=color, linewidth=linewidth)
+        self.fig.axes[AXH].spines['top'].set_visible(False)
+
+        # Download & plot elevation data for B-B'
+        lat, lon, d, elev = elev_profile.download_profile2(B1, B2, n=n)  # elevation returned in meters
+        elev = np.array(elev) / 1000  # convert to km
+        self.fig.axes[AXV].plot(elev, lat, color=color, linewidth=linewidth)
+        self.fig.axes[AXV].spines['left'].set_visible(False)
+
+
         pass
 
     def add_profile(self, *args, **kwargs):
@@ -418,8 +441,6 @@ def _create_wingplot(lat, lon, radial_extent_km=50.,
     # start with a square Figure
     fig = plt.figure(figsize=figsize)
     axm = fig.add_axes(map_pos, projection=tiles.crs)
-    # axh = fig.add_axes(hxs_pos, sharex=axm)
-    # axv = fig.add_axes(vxs_pos, sharey=axm)
     axh = fig.add_axes(hxs_pos)
     axv = fig.add_axes(vxs_pos)
     mag_ax = fig.add_axes(mag_scale_pos)
@@ -434,7 +455,8 @@ def _create_wingplot(lat, lon, radial_extent_km=50.,
              verticalalignment='center', horizontalalignment='center')
 
     # Can this be handled better?
-    extent = vdapseisutils.maputils.utils.utils.radial_map_extent(lat, lon, radial_extent_km)
+    # Shouldn't this just be a part of the object
+    extent = vdapseisutils.maputils.utils.utils.radial_extent2map_extent(lat, lon, radial_extent_km)
     axm.set_extent(extent)
 
     if map_color == True:
