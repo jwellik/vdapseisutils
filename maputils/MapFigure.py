@@ -1,7 +1,6 @@
 '''TO DO
 
 [ ] Limit earthquake catalog to map extent or xsection extent
-[ ] We could enumerate the FIGURE AXES SO THERE IS NO CONFUSION
 
 '''
 
@@ -57,7 +56,7 @@ class MapFigure:
                                     zoom=self.zoom, map_type=self.map_type, map_color=self.map_color,
                                     depth_extent=depth_extent,
                                     figsize=self.figsize, title=self.title, subtext=self.subtext)
-        self.add_default_profile()
+        self.add_default_profile()  # adds E-W, N-S elevation profiles
 
     # I/O
 
