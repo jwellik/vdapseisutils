@@ -242,7 +242,7 @@ class MapFigure:
         self.fig.axes[AXV].set_xlim(self.depth_extent)
 
     def scatter_catalog(self, catalog, cmap='viridis_r', transform=ccrs.Geodetic(), alpha=0.5, **kwargs):
-        print('!!! scatter_catalog() In development')
+        print("!!! scatter_catalog() In development. Still needs to be cleaned up :-)")
 
         import matplotlib as mpl
         import matplotlib.dates as mdates
