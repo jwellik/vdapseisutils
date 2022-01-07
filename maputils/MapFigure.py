@@ -381,16 +381,21 @@ class MapFigure:
         lat, lon, d, elev = elev_profile.download_profile2(A1, A2, n=n)  # elevation returned in meters
         elev = np.array(elev) / 1000  # convert to km
         self.fig.axes[AXH].plot(lon, elev, color=color, linewidth=linewidth)
+        # custom spine bounds for a nice clean look
         self.fig.axes[AXH].spines['top'].set_visible(False)
+        self.fig.axes[AXH].spines.left.set_bounds((self.depth_extent[1], elev[0]))  # depth_extent[1] is the top elev
+        self.fig.axes[AXH].spines.right.set_bounds((self.depth_extent[1], elev[-1]))
+
 
         # Download & plot elevation data for B-B'
         lat, lon, d, elev = elev_profile.download_profile2(B1, B2, n=n)  # elevation returned in meters
         elev = np.array(elev) / 1000  # convert to km
         self.fig.axes[AXV].plot(elev, lat, color=color, linewidth=linewidth)
+        # custom spine bounds for a nice clean look
         self.fig.axes[AXV].spines['left'].set_visible(False)
+        self.fig.axes[AXV].spines.bottom.set_bounds((self.depth_extent[1], elev[0]))  # depth_extent[1] is the top elev
+        self.fig.axes[AXV].spines.top.set_bounds((self.depth_extent[1], elev[-1]))
 
-
-        pass
 
     def add_profile(self, *args, **kwargs):
         # If *args: add_profile_p1p2
