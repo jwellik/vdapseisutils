@@ -54,6 +54,29 @@ def set_radial_map_extent(ax, lat, lon, km, crs=None):
     ax.set_extent(radial_extent2map_extent(lat, lon, km), crs=crs)
     return ax
 
+def sight_point_geopy(origin, bearing, km):
+    """Returns the (lat,lon) of point N km away along a given bearing"""
+    # https://stackoverflow.com/questions/24427828/calculate-point-based-on-distance-and-direction
+    import geopy.distance
+
+    # Define starting point.
+    start = geopy.Point(origin[0], origin[1])
+
+    # Define a general distance object, initialized with a distance of 1 km.
+    d = geopy.distance.VincentyDistance(kilometers=km)
+
+    # Use the `destination` method with a bearing of 0 degrees (which is north)
+    # in order to go from point `start` 1 km to north.
+    return d.destination(point=start, bearing=bearing)
+
+def sight_point_pyproj(origin, bearing, km, ellipse='WGS84'):
+    """Returns the (lat,lon) of point N km away along a given bearing"""
+    # https://gis.stackexchange.com/questions/174761/create-a-new-point-from-a-reference-point-degree-and-distance
+    import pyproj
+
+    endLon, endLat, backAzimuth = (pyproj.Geod(ellps=ellipse).fwd(origin[1], origin[0], bearing, km))
+    point = (endLat, endLon)
+    return point
 
 ########################################################################################################################
 ### MAP FEATURES
