@@ -10,10 +10,10 @@ import vdapseisutils.maputils.utils.utils as vmaputils
 from vdapseisutils.maputils.utils import elev_profile, elev_profile
 
 import cartopy.crs as ccrs
-import cartopy.io.img_tiles as cimgt
-import cartopy.feature as cfeature
-
-from obspy import UTCDateTime
+# import cartopy.io.img_tiles as cimgt
+# import cartopy.feature as cfeature
+#
+# from obspy import UTCDateTime
 
 
 ## ENUMERATIONS
