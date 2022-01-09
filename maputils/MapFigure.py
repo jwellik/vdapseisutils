@@ -433,7 +433,7 @@ def _create_wingplot(lat, lon, radial_extent_km=50.,
     cbar_height = 0.02
     spacing = 0.005
 
-    # define axes positions
+    # define axes positions (map + 1,1)
     map_pos = [left, bottom + cbar_height*2 + xsheight + spacing, mwidth, mheight]
     hxs_pos = [left, bottom + cbar_height*2, mwidth, xsheight]
     vxs_pos = [left + mwidth + spacing, bottom + cbar_height*2 + xsheight + spacing, xsheight, mheight]
@@ -441,6 +441,16 @@ def _create_wingplot(lat, lon, radial_extent_km=50.,
     cbar_pos = [left, bottom, mwidth + spacing + xsheight, cbar_height]
     title_pos = [0.5, 0.965]
     subtext_pos = [0.5, 0.93]
+
+    # # define axes positions (map + 0,2)
+    # # REMEMBER TO MAKE XS2_DEPTH_EXTENT *NOT* REVERSED
+    # map_pos = [left, bottom + cbar_height*2, mwidth, mheight]
+    # xs1_pos = [left + spacing, bottom + cbar_height*2 + mheight - xsheight, mwidth, xsheight]  # top xsection (A-A')
+    # xs2_pos = [left + spacing + spacing, bottom + cbar_height*2, mwidth, xsheight]  # bottom xsection (B-B')
+    # # mag_scale_pos = [left + mwidth + spacing, bottom + cbar_height*2, xsheight, xsheight]  # WHAT TO DO HERE? MAKE HORIZONTAL.
+    # cbar_pos = [left, bottom, mwidth + spacing + mwidth, cbar_height]
+    # title_pos = [0.5, 0.965]
+    # subtext_pos = [0.5, 0.93]
 
     # start with a square Figure
     fig = plt.figure(figsize=figsize)
