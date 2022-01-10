@@ -165,6 +165,11 @@ def catalog2heatmap(catalog, grid_size):
     pass
 
 
+# More Heatmap references for future development:
+# https://james-brennan.github.io/posts/fast_gridding_geopandas/
+# https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.griddata.html
+# https://stackoverflow.com/questions/62778939/python-fastest-way-to-map-continuous-coordinates-to-discrete-grid
+
 # def plot_heatmap(ax, catalog, grid_size, colormap='RdPu', ncmap=15):
 def plot_heatmap(ax, catalog, grid_size, colormap='plasma', ncmap=15):
     heatmap = eqhypo2heatmap(catalog, grid_size)
