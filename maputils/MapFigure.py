@@ -43,8 +43,8 @@ class MapFigure:
         self.origin = origin
         self.radial_extent = radial_extent
         self.map_extent = vmaputils.radial_extent2map_extent(origin[0], origin[1], radial_extent)
-        self.depth_extent = depth_extent
-        self.depth_extent_h = (depth_extent[1], depth_extent[0])  # inverted depth_extent used for horizontal x-section
+        self.depth_extent_v = (depth_extent[1], depth_extent[0])  # inverted depth_extent_v used for horizontal x-section
+        self.depth_extent_h = depth_extent
         self.zoom = zoom
         self.map_type = map_type
         self.map_color = map_color
@@ -65,7 +65,7 @@ class MapFigure:
         print('::: {} (MapFigure) :::'.format(self.title))
         print('      origin        : {}'.format(self.origin))
         print('      radial_exetnt : {} km'.format(self.radial_extent))
-        print('      depth_exetnt  : {}:{} km'.format(self.depth_extent[0], self.depth_extent[1]))
+        print('      depth_exetnt  : {}:{} km'.format(self.depth_extent_v[0], self.depth_extent_v[1]))
         print('')
 
     # [Unimplemented] Save .png and .svg versions of the image. Handles oddities for publication quality images.
@@ -89,8 +89,9 @@ class MapFigure:
     def set_origin(self):
         pass
 
+    # This is not used yet.
     def set_depth_extent(self, depth_extent):
-        self.depth_extent = depth_extent
+        self.depth_extent_v = depth_extent
         self.depth_extent_v = (depth_extent[1], depth_extent[0])
 
     # not-necessary?
@@ -120,7 +121,7 @@ class MapFigure:
         self.fig.axes[AXH].set_xlim(lonextent)
         self.fig.axes[AXH].set_ylim(self.depth_extent_h)
         self.fig.axes[AXV].set_ylim(latextent)
-        self.fig.axes[AXV].set_xlim(self.depth_extent)
+        self.fig.axes[AXV].set_xlim(self.depth_extent_v)
 
     # Volcano Map Plotting routines
 
@@ -216,7 +217,7 @@ class MapFigure:
         self.fig.axes[AXH].set_xlim(lonextent)
         self.fig.axes[AXH].set_ylim(self.depth_extent_h)
         self.fig.axes[AXV].set_ylim(latextent)
-        self.fig.axes[AXV].set_xlim(self.depth_extent)
+        self.fig.axes[AXV].set_xlim(self.depth_extent_v)
 
         # self.fig.axes[1].plot(lon, depth*-1, marker=marker, color=color, markersize=markersize, alpha=alpha)  # horizontal cross-section
         # self.fig.axes[2].plot(depth*-1, lat, marker=marker, color=color, markersize=markersize, alpha=alpha)  # vertical cross-section
@@ -238,7 +239,7 @@ class MapFigure:
         self.fig.axes[AXH].set_xlim(lonextent)
         self.fig.axes[AXH].set_ylim(self.depth_extent_h)
         self.fig.axes[AXV].set_ylim(latextent)
-        self.fig.axes[AXV].set_xlim(self.depth_extent)
+        self.fig.axes[AXV].set_xlim(self.depth_extent_v)
 
     def scatter_catalog(self, catalog, cmap='viridis_r', transform=ccrs.Geodetic(), alpha=0.5, **kwargs):
         print("!!! scatter_catalog() In development. Still needs to be cleaned up :-)")
@@ -325,7 +326,7 @@ class MapFigure:
         self.fig.axes[AXH].set_xlim(lonextent)
         self.fig.axes[AXH].set_ylim(self.depth_extent_h)
         self.fig.axes[AXV].set_ylim(latextent)
-        self.fig.axes[AXV].set_xlim(self.depth_extent)
+        self.fig.axes[AXV].set_xlim(self.depth_extent_v)
         self.fig.axes[AXH].set_yticks([0,-5,-10,-15])
         self.fig.axes[AXV].set_xticks(self.fig.axes[AXH].get_yticks())  # Depth tick locations same for both x-sections
 
@@ -382,8 +383,8 @@ class MapFigure:
         self.fig.axes[AXH].plot(lon, elev, color=color, linewidth=linewidth)
         # custom spine bounds for a nice clean look
         self.fig.axes[AXH].spines['top'].set_visible(False)
-        self.fig.axes[AXH].spines.left.set_bounds((self.depth_extent[1], elev[0]))  # depth_extent[1] is the top elev
-        self.fig.axes[AXH].spines.right.set_bounds((self.depth_extent[1], elev[-1]))
+        self.fig.axes[AXH].spines.left.set_bounds((self.depth_extent_v[1], elev[0]))  # depth_extent_v[1] is the top elev
+        self.fig.axes[AXH].spines.right.set_bounds((self.depth_extent_v[1], elev[-1]))
 
 
         # Download & plot elevation data for B-B'
@@ -392,8 +393,8 @@ class MapFigure:
         self.fig.axes[AXV].plot(elev, lat, color=color, linewidth=linewidth)
         # custom spine bounds for a nice clean look
         self.fig.axes[AXV].spines['left'].set_visible(False)
-        self.fig.axes[AXV].spines.bottom.set_bounds((self.depth_extent[1], elev[0]))  # depth_extent[1] is the top elev
-        self.fig.axes[AXV].spines.top.set_bounds((self.depth_extent[1], elev[-1]))
+        self.fig.axes[AXV].spines.bottom.set_bounds((self.depth_extent_v[1], elev[0]))  # depth_extent_v[1] is the top elev
+        self.fig.axes[AXV].spines.top.set_bounds((self.depth_extent_v[1], elev[-1]))
 
 
     def add_profile(self, *args, **kwargs):
@@ -451,6 +452,7 @@ def _create_wingplot(lat, lon, radial_extent_km=50.,
     # cbar_pos = [left, bottom, mwidth + spacing + mwidth, cbar_height]
     # title_pos = [0.5, 0.965]
     # subtext_pos = [0.5, 0.93]
+    # self.depth_extent_v = self.depth_extent_h  # calling 'self' wont work here
 
     # start with a square Figure
     fig = plt.figure(figsize=figsize)
