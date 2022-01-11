@@ -407,7 +407,7 @@ def _create_wingplot(lat, lon, radial_extent_km=50.,
                      map_type='terrain-background', map_color=True, zoom=9,
                      depth_extent=(7.0, -50.),
                      title='Volcano Map', subtext='',
-                     figsize=(12, 12)) -> object:
+                     figsize=(8, 12)) -> object:
     import matplotlib.pyplot as plt
 
     import cartopy.crs as ccrs
@@ -428,37 +428,38 @@ def _create_wingplot(lat, lon, radial_extent_km=50.,
         tiles = cimgt.Stamen(map_type, desired_tile_form="L")
 
     # definitions for the axes (% of figure size)
-    bottom, left = 0.08, 0.10
+    bottom, left = 0.08, 0.08
     top, right = 0.1, 0.1
-    mwidth, mheight, xsheight = 0.55, 0.55, 0.2
+    mwidth, mheight = 0.55, 0.55
+    xswidth, xsheight = 0.3, 0.25
     cbar_height = 0.02
     spacing = 0.005
 
-    # define axes positions (map + 1,1)
-    map_pos = [left, bottom + cbar_height*2 + xsheight + spacing, mwidth, mheight]
-    hxs_pos = [left, bottom + cbar_height*2, mwidth, xsheight]
-    vxs_pos = [left + mwidth + spacing, bottom + cbar_height*2 + xsheight + spacing, xsheight, mheight]
-    mag_scale_pos = [left + mwidth + spacing, bottom + cbar_height*2, xsheight, xsheight]
-    cbar_pos = [left, bottom, mwidth + spacing + xsheight, cbar_height]
-    title_pos = [0.5, 0.965]
-    subtext_pos = [0.5, 0.93]
-
-    # # define axes positions (map + 0,2)
-    # # REMEMBER TO MAKE XS2_DEPTH_EXTENT *NOT* REVERSED
-    # map_pos = [left, bottom + cbar_height*2, mwidth, mheight]
-    # xs1_pos = [left + spacing, bottom + cbar_height*2 + mheight - xsheight, mwidth, xsheight]  # top xsection (A-A')
-    # xs2_pos = [left + spacing + spacing, bottom + cbar_height*2, mwidth, xsheight]  # bottom xsection (B-B')
-    # # mag_scale_pos = [left + mwidth + spacing, bottom + cbar_height*2, xsheight, xsheight]  # WHAT TO DO HERE? MAKE HORIZONTAL.
-    # cbar_pos = [left, bottom, mwidth + spacing + mwidth, cbar_height]
+    # # define axes positions (map + 1,1)
+    # map_pos = [left, bottom + cbar_height*2 + xsheight + spacing, mwidth, mheight]
+    # hxs_pos = [left, bottom + cbar_height*2, mwidth, xsheight]
+    # vxs_pos = [left + mwidth + spacing, bottom + cbar_height*2 + xsheight + spacing, xsheight, mheight]
+    # mag_scale_pos = [left + mwidth + spacing, bottom + cbar_height*2, xsheight, xsheight]
+    # cbar_pos = [left, bottom, mwidth + spacing + xsheight, cbar_height]
     # title_pos = [0.5, 0.965]
     # subtext_pos = [0.5, 0.93]
+
+    # define axes positions (map + 0,2)
+    # REMEMBER TO MAKE XS2_DEPTH_EXTENT *NOT* REVERSED
+    map_pos = [left, bottom + cbar_height*2 + spacing, mwidth, mheight]
+    xs1_pos = [left + mwidth + spacing, bottom + cbar_height*2 + spacing + mwidth - xsheight, mwidth, xsheight]  # top xsection (A-A')
+    xs2_pos = [left + mwidth + spacing, bottom + cbar_height*2, mwidth, xsheight]  # bottom xsection (B-B')
+    mag_scale_pos = [left + mwidth + spacing, bottom + cbar_height*2, xsheight, xsheight]  # WHAT TO DO HERE? MAKE HORIZONTAL.
+    cbar_pos = [left, bottom + 0.5, mwidth + spacing + mwidth, cbar_height]
+    title_pos = [0.5, 0.965]
+    subtext_pos = [0.5, 0.93]
     # self.depth_extent_v = self.depth_extent_h  # calling 'self' wont work here
 
     # start with a square Figure
     fig = plt.figure(figsize=figsize)
     axm = fig.add_axes(map_pos, projection=tiles.crs)
-    axh = fig.add_axes(hxs_pos)
-    axv = fig.add_axes(vxs_pos)
+    axh = fig.add_axes(xs1_pos)
+    axv = fig.add_axes(xs2_pos)
     mag_ax = fig.add_axes(mag_scale_pos)
     cbar_ax = fig.add_axes(cbar_pos)
     mag_ax.set_visible(False)
