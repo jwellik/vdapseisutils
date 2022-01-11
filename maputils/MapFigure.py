@@ -30,7 +30,7 @@ class MapFigure:
     def __init__(self,
                  origin=(-77.53, 167.17),  # -> tuple    # (lat,lon) Defaults to Mount Erebus
                  radial_extent=50,  # -> float    #km
-                 depth_extent=(4.0, -50),  # -> float # km (top_altitude, bottom_altitude)
+                 depth_extent=(4.0, -50),  # -> float # km (bottom_depth, top_altitude)
                  zoom=12,
                  map_type='terrain-background',
                  map_color=True,
@@ -43,7 +43,7 @@ class MapFigure:
         self.origin = origin
         self.radial_extent = radial_extent
         self.map_extent = vmaputils.radial_extent2map_extent(origin[0], origin[1], radial_extent)
-        self.depth_extent_v = (depth_extent[1], depth_extent[0])  # inverted depth_extent_v used for horizontal x-section
+        self.depth_extent_v = (depth_extent[1], depth_extent[0])  # inverted depth_extent_v used for vertical x-section
         self.depth_extent_h = depth_extent
         self.zoom = zoom
         self.map_type = map_type
