@@ -30,7 +30,7 @@ class MapFigure:
     def __init__(self,
                  origin=(-77.53, 167.17),  # -> tuple    # (lat,lon) Defaults to Mount Erebus
                  radial_extent=50,  # -> float    #km
-                 depth_extent=(4.0, -50),  # -> float # km (bottom_depth, top_altitude)
+                 depth_extent=(-50., 4.),  # -> float # km (bottom_depth, top_altitude)
                  zoom=12,
                  map_type='terrain-background',
                  map_color=True,
@@ -54,7 +54,7 @@ class MapFigure:
 
         self.fig = _create_wingplot(self.origin[0], self.origin[1], radial_extent_km=self.radial_extent,
                                     zoom=self.zoom, map_type=self.map_type, map_color=self.map_color,
-                                    depth_extent=depth_extent,
+                                    depth_extent=self.depth_extent_h,
                                     figsize=self.figsize, title=self.title, subtext=self.subtext)
         self.add_default_profile()  # adds E-W, N-S elevation profiles
 
@@ -405,7 +405,7 @@ class MapFigure:
 
 def _create_wingplot(lat, lon, radial_extent_km=50.,
                      map_type='terrain-background', map_color=True, zoom=9,
-                     depth_extent=(7.0, -50.),
+                     depth_extent=(-50, 7),
                      title='Volcano Map', subtext='',
                      figsize=(12, 12)) -> object:
     import matplotlib.pyplot as plt
