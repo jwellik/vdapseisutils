@@ -78,6 +78,10 @@ def sight_point_pyproj(origin, bearing, km, ellipse='WGS84'):
     point = (endLat, endLon)
     return point
 
+def sight_point(origin, bearing, km):
+    # Uses preferred sight_point method
+    return pass
+
 ########################################################################################################################
 ### MAP FEATURES
 ########################################################################################################################
