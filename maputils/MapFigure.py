@@ -7,7 +7,7 @@
 import numpy as np
 
 import vdapseisutils.maputils.utils.utils as vmaputils
-from vdapseisutils.maputils.utils import elev_profile, elev_profile
+from vdapseisutils.maputils.utils import elev_profile
 
 import cartopy.crs as ccrs
 # import cartopy.io.img_tiles as cimgt
