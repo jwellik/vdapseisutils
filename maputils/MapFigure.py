@@ -364,6 +364,9 @@ class MapFigure:
 
     # Adds EW profile (horizontal); NS profile (vertical)
     def add_default_profile(self, n=100, color='black', linewidth=0.75, drawmapline=False):
+        import matplotlib.patheffects as pe
+
+        # linewidth 0.75 is the default width for axes spines
 
         # 1) Determine lat/lon for horiztonal P1, P2
         # 2) Determine lat/lon for vertical P1/P2
@@ -396,6 +399,28 @@ class MapFigure:
         self.fig.axes[AXV].spines.bottom.set_bounds((self.depth_extent_v[1], elev[0]))  # depth_extent_v[1] is the top elev
         self.fig.axes[AXV].spines.top.set_bounds((self.depth_extent_v[1], elev[-1]))
 
+
+        # Add XSection lines to map
+        self.fig.axes[AXM].plot(A1[1], A1[0], 'ok', transform=ccrs.Geodetic())  # don't hardcode the transform?
+        self.fig.axes[AXM].plot(A2[1], A2[0], 'ok', transform=ccrs.Geodetic())
+        self.fig.axes[AXM].plot([A1[1], A2[1]], [A1[0], A2[0]], 'k', transform=ccrs.Geodetic(), linewidth=0.5)  # don't hardcode the transform?
+        self.fig.axes[AXM].text(A1[1], A1[0], "A", transform=ccrs.Geodetic(),
+                                verticalalignment='bottom', horizontalalignment='center',
+                                path_effects=[pe.withStroke(linewidth=2, foreground="white")])
+        self.fig.axes[AXM].text(A2[1], A2[0], "A'", transform=ccrs.Geodetic(),
+                                verticalalignment='bottom', horizontalalignment='center',
+                                path_effects=[pe.withStroke(linewidth=2, foreground="white")])
+
+        # Add XSection lines to map
+        self.fig.axes[AXM].plot(B1[1], B1[0], 'ok', transform=ccrs.Geodetic())  # don't hardcode the transform?
+        self.fig.axes[AXM].plot(B2[1], B2[0], 'ok', transform=ccrs.Geodetic())
+        self.fig.axes[AXM].plot([B1[1], B2[1]], [B1[0], B2[0]], 'k', transform=ccrs.Geodetic(), linewidth=0.5)  # don't hardcode the transform?
+        self.fig.axes[AXM].text(B1[1], B1[0], "B", transform=ccrs.Geodetic(),
+                                verticalalignment='bottom', horizontalalignment='center',
+                                path_effects=[pe.withStroke(linewidth=2, foreground="white")])
+        self.fig.axes[AXM].text(B2[1], B2[0], "B'", transform=ccrs.Geodetic(),
+                                verticalalignment='bottom', horizontalalignment='center',
+                                path_effects=[pe.withStroke(linewidth=2, foreground="white")])
 
     def add_profile(self, *args, **kwargs):
         # If *args: add_profile_p1p2
