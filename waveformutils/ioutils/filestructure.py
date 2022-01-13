@@ -32,7 +32,9 @@ def write2sds( st, basedir='./',
                 reclen=4096,                     # miniseed byte record-length
              ):
     """
-    WRITE2SDS Write to file in accordance w SDS file structure
+    WRITE2SDS Writes Traces to file in accordance w given filestructure
+
+    Default filestructure creates a SDS archive. All necessary folders will be created.
     
     filestructure : str : Syntax for filestructure. Options are:
         Default: 'BASEDIR/YEAR/NET/STA/CHAN.TYPE/NET.STA.LOC.CHAN.TYPE.YEAR.JDAY.EXTENSION'
