@@ -381,8 +381,9 @@ class MapFigure:
         B2 = (self.map_extent[3], (self.map_extent[0] + self.map_extent[1]) / 2)
 
         # Download & plot elevation data for A-A'
-        lat, lon, d, elev = elev_profile.download_profile2(A1, A2, n=n)  # elevation returned in meters
-        elev = np.array(elev) / 1000  # convert to km
+        elev_data = elev_profile.download_profile(A1, A2, n=n)  # elevation returned in meters
+        lon = elev_data['lon']
+        elev = np.array(elev_data['elev']) / 1000  # convert to km
         self.fig.axes[AXH].plot(lon, elev, color=color, linewidth=linewidth)
         # custom spine bounds for a nice clean look
         self.fig.axes[AXH].spines['top'].set_visible(False)
@@ -391,8 +392,10 @@ class MapFigure:
 
 
         # Download & plot elevation data for B-B'
-        lat, lon, d, elev = elev_profile.download_profile2(B1, B2, n=n)  # elevation returned in meters
-        elev = np.array(elev) / 1000  # convert to km
+        # lat, lon, d, elev = elev_profile.download_profile2(B1, B2, n=n)  # elevation returned in meters
+        elev_data = elev_profile.download_profile2(B1, B2, n=n)  # elevation returned in meters
+        lat = elev_data['lat']
+        elev = np.array(elev_data['elev']) / 1000  # convert to km
         self.fig.axes[AXV].plot(elev, lat, color=color, linewidth=linewidth)
         # custom spine bounds for a nice clean look
         self.fig.axes[AXV].spines['left'].set_visible(False)
@@ -507,27 +510,15 @@ def _create_wingplot(lat, lon, radial_extent_km=50.,
 
     # Map gridlines
     glv = axm.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, linewidth=1, color='gray', alpha=0.5)
-    glv.xlabels_top = True
-    glv.xlabels_bottom = False
-    glv.ylabels_left = True
-    glv.ylabels_right = False
+    glv.top_labels = True
+    glv.bottom_labels = False
+    glv.left_labels = True
+    glv.right_labels = False
     glv.xlines = True
-    # gl.xlocator = mticker.FixedLocator([-180, -45, 0, 45, 180])
-    # gl.xformatter = LONGITUDE_FORMATTER
-    # gl.yformatter = LATITUDE_FORMATTER
     glv.xlabel_style = {'size': 8, 'color': 'gray'}
     glv.ylabel_style = {'size': 8, 'color': 'gray'}
-    # gl.xlabel_style = {'color': 'red', 'weight': 'bold'}
 
     # Horizontal xsection gridlines
-    # GeoAxes
-    # glv = axh.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, linewidth=1, color='gray', alpha=0.5)
-    # glv.xlabels_top = False
-    # glv.xlabels_bottom = False
-    # glv.ylabels_left = True
-    # glv.ylabels_right = False
-    # glv.xlines = True
-    # glv.ylabel_style = {'size': 8, 'color': 'gray'}
     # Cartesian Axes
     axh.tick_params(axis='both', labelsize=8, labelcolor='grey',
                     left=True, labelleft=True,
