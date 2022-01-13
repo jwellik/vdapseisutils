@@ -44,11 +44,11 @@ class DataSource:
             self.filepattern = filepattern
             self.filelist_all = ds_input
             self.filelist = ds_input
-            self.name = "List of files: [{} ... {}]".format(self.filelist[0], self.filelist[-1])
+            self.name = "(List of files) [{} ... {}]".format(self.filelist[0], self.filelist[-1])
 
         # Filestructure DataSource (path directory)
         elif os.path.isdir(ds_input):
-        # if arginput.lower() in ['file', 'files', 'filelist', 'filestructure', 'directory']:
+            # if arginput.lower() in ['file', 'files', 'filelist', 'filestructure', 'directory']:
             print("DataSource is a filestructure.")
             self.ds_type = 'filestructure'
             self.searchdir = ds_input  # top level directory for filestructure
@@ -59,13 +59,15 @@ class DataSource:
 
         # Client DataSource
         else:
-        # elif ds_input.lower() in ['fdsn', 'earthworm', 'ew', 'wws', 'seedlink', 'slink']:
+            # elif ds_input.lower() in ['fdsn', 'earthworm', 'ew', 'wws', 'seedlink', 'slink']:
             print("DataSource is an ObsPy Client")
             self.ds_type = 'client'
             self.client_type = None
             self.timeout = timeout
             self.name = None  # This is set later, when the client is created
-            self.client = self.create_client(ds_input)
+            self.client = None  # This is set later, when the client is created
+            self.create_client(ds_input)  # creates self.client & self.name
+            print(self.client)
 
         print('DataSource: {}'.format(self.name))
 
@@ -119,7 +121,6 @@ class DataSource:
             self.ds_type = '--'
             self.name = '--'
 
-
     def getWaveforms(self, nslc_list, tstart, tend, create_empty_trace=False, verbose=False):
 
         from vdapseisutils.waveformutils.datasource.fileutils import get_filelist, get_waveforms_from_file_sublist
@@ -134,13 +135,13 @@ class DataSource:
                 self.filelist = get_filelist(nslc_list, tstart, tend, filepattern=self.filepattern)
 
             st = get_waveforms_from_file_sublist(self.filelist_sub,
-                                                      nslc_list, tstart, tend, create_empty_trace=create_empty_trace,
-                                                      verbose=verbose)
+                                                 nslc_list, tstart, tend, create_empty_trace=create_empty_trace,
+                                                 verbose=verbose)
 
         elif self.ds_type.lower() == 'client'.lower():
 
-            st = get_waveforms_from_client(nslc_list, tstart, tend, create_empty_trace=create_empty_trace,
-                                                verbose=verbose)
+            st = get_waveforms_from_client(self.client, nslc_list, tstart, tend, create_empty_trace=create_empty_trace,
+                                           verbose=verbose)
 
         return st
 
