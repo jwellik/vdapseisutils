@@ -1,4 +1,8 @@
-def download_profile(p1, p2, n=100, verbose=False):
+def download_profile(*args, **kwargs):
+    return download_profile_open_elevation(*args, **kwargs)
+
+
+def download_profile_open_elevation(p1, p2, n=100, verbose=False):
     """
     ELEVATION PROFILE APP GENERATOR
     ideagora geomatics-2018
@@ -152,7 +156,7 @@ def plot(d_list_rev, elev_list, depth=0, color='black', linewidth=1):
     # distance = d_list_rev[-1]
 
     # PLOT ELEVATION PROFILE
-    base_reg = depth*-1
+    base_reg = depth * -1
     fig = plt.figure(figsize=(10, 4))
     ax = fig
     ax.plot(d_list_rev, elev_list, color=color, linewidth=linewidth)
