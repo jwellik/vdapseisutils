@@ -3,6 +3,7 @@
 [ ] Limit earthquake catalog to map extent or xsection extent
 
 '''
+from urllib.error import HTTPError
 
 import numpy as np
 
@@ -10,6 +11,7 @@ import vdapseisutils.maputils.utils.utils as vmaputils
 from vdapseisutils.maputils.utils import elev_profile
 
 import cartopy.crs as ccrs
+
 # import cartopy.io.img_tiles as cimgt
 # import cartopy.feature as cfeature
 #
@@ -23,6 +25,7 @@ AXH = 1
 AXV = 2
 AX_MAG = 3
 AX_CBAR = 4
+
 
 # BasicMap class for easier map creation
 class MapFigure:
@@ -200,14 +203,14 @@ class MapFigure:
         """*args is supposed to be an optional length 1 to provide the depth"""
 
         self.fig.axes[AXM].plot(lon, lat, transform=transform, marker=marker, color=color, markersize=markersize,
-                              alpha=alpha, **kwargs)
+                                alpha=alpha, **kwargs)
 
         if len(args) > 0:
             depth = args[0]
             self.fig.axes[AXH].plot(lon, depth * -1, marker=marker, color=color, markersize=markersize, alpha=alpha,
-                                  **kwargs)
+                                    **kwargs)
             self.fig.axes[AXV].plot(depth * -1, lat, marker=marker, color=color, markersize=markersize, alpha=alpha,
-                                  **kwargs)
+                                    **kwargs)
 
         # Set axes extents. Do this elsewhere?
         radextent = vmaputils.radial_extent2map_extent(self.origin[0], self.origin[1],
@@ -262,7 +265,7 @@ class MapFigure:
         # Get info out of Events object
         from vdapseisutils.eventutils.catalogutils import catalog2basics
         time, lat, lon, depth, mag = catalog2basics(catalog)
-        depth = list(np.array(depth)/1000*-1)  # meters to km
+        depth = list(np.array(depth) / 1000 * -1)  # meters to km
 
         # Set up the magnitude scale parameters
         mso = 0 if min(mag) >= 0 else np.floor(np.min(mag)) * -1  # magnitude offset scale to avoid negatives
@@ -284,12 +287,11 @@ class MapFigure:
 
         # Plot to axes
         self.fig.axes[AXM].scatter(lon, lat, s=s, c=time,
-                                 norm=norm, cmap=cmap, transform=transform, alpha=alpha, **kwargs)
+                                   norm=norm, cmap=cmap, transform=transform, alpha=alpha, **kwargs)
         self.fig.axes[AXH].scatter(lon, depth, s=s, c=time,  # Horizontal XSection
                                    norm=norm, cmap=cmap, alpha=alpha, **kwargs)
         self.fig.axes[AXV].scatter(depth, lat, s=s, c=time,  # Vertical XSection
                                    norm=norm, cmap=cmap, alpha=alpha, **kwargs)
-
 
         # MAGNITUDE SCALE (define positiong and limits)
         mag_scale_xpos = np.array([0] * len(scale_mag))  # xpos of mag scale circles is 0, make the array
@@ -302,7 +304,7 @@ class MapFigure:
 
         # Add scale box to figure
         self.fig.axes[AX_MAG].scatter(mag_scale_xpos, y=mag_scale_ypos, s=scale_s, color='none',
-                                 edgecolor='k')  # Plot scatter makers to scale axis
+                                      edgecolor='k')  # Plot scatter makers to scale axis
 
         # Change settings on scale box axes
         self.fig.axes[AX_MAG].set_ylim(ylim[0], ylim[1])  # Works best with exponential version
@@ -312,8 +314,10 @@ class MapFigure:
         self.fig.axes[AX_MAG].set_yticklabels(
             ['M{}'.format(m - mso) for m in scale_mag])  # give them a label in the format M3, for example
         self.fig.axes[AX_MAG].yaxis.tick_right()  # put yticklabels on the right
-        self.fig.axes[AX_MAG].tick_params(axis="y", direction="in", pad=-30, right=False)  # put labels on inside and remove ticks
-        [self.fig.axes[AX_MAG].spines[pos].set_visible(False) for pos in ["top", "bottom", "left", "right"]]  # remove axis frames
+        self.fig.axes[AX_MAG].tick_params(axis="y", direction="in", pad=-30,
+                                          right=False)  # put labels on inside and remove ticks
+        [self.fig.axes[AX_MAG].spines[pos].set_visible(False) for pos in
+         ["top", "bottom", "left", "right"]]  # remove axis frames
         self.fig.axes[AX_MAG].patch.set_alpha(0.0)  # set axis background to transparent
 
         # Set axes extents. Do this elsewhere?
@@ -327,7 +331,7 @@ class MapFigure:
         self.fig.axes[AXH].set_ylim(self.depth_extent_h)
         self.fig.axes[AXV].set_ylim(latextent)
         self.fig.axes[AXV].set_xlim(self.depth_extent_v)
-        self.fig.axes[AXH].set_yticks([0,-5,-10,-15])
+        self.fig.axes[AXH].set_yticks([0, -5, -10, -15])
         self.fig.axes[AXV].set_xticks(self.fig.axes[AXH].get_yticks())  # Depth tick locations same for both x-sections
 
     # Plot Stations
@@ -380,33 +384,39 @@ class MapFigure:
         B1 = (self.map_extent[2], (self.map_extent[0] + self.map_extent[1]) / 2)
         B2 = (self.map_extent[3], (self.map_extent[0] + self.map_extent[1]) / 2)
 
-        # Download & plot elevation data for A-A'
-        elev_data = elev_profile.download_profile(A1, A2, n=n)  # elevation returned in meters
-        lon = elev_data['lon']
-        elev = np.array(elev_data['elev']) / 1000  # convert to km
-        self.fig.axes[AXH].plot(lon, elev, color=color, linewidth=linewidth)
-        # custom spine bounds for a nice clean look
-        self.fig.axes[AXH].spines['top'].set_visible(False)
-        self.fig.axes[AXH].spines.left.set_bounds((self.depth_extent_v[1], elev[0]))  # depth_extent_v[1] is the top elev
-        self.fig.axes[AXH].spines.right.set_bounds((self.depth_extent_v[1], elev[-1]))
+        # This try/except statement should come in the download_profile module itself.
+        try:
+            # Download & plot elevation data for A-A'
+            elev_data = elev_profile.download_profile(A1, A2, n=n)  # elevation returned in meters
+            lon = elev_data['lon']
+            elev = np.array(elev_data['elev']) / 1000  # convert to km
+            self.fig.axes[AXH].plot(lon, elev, color=color, linewidth=linewidth)
+            # custom spine bounds for a nice clean look
+            self.fig.axes[AXH].spines['top'].set_visible(False)
+            self.fig.axes[AXH].spines.left.set_bounds(
+                (self.depth_extent_v[1], elev[0]))  # depth_extent_v[1] is the top elev
+            self.fig.axes[AXH].spines.right.set_bounds((self.depth_extent_v[1], elev[-1]))
 
-
-        # Download & plot elevation data for B-B'
-        # lat, lon, d, elev = elev_profile.download_profile2(B1, B2, n=n)  # elevation returned in meters
-        elev_data = elev_profile.download_profile2(B1, B2, n=n)  # elevation returned in meters
-        lat = elev_data['lat']
-        elev = np.array(elev_data['elev']) / 1000  # convert to km
-        self.fig.axes[AXV].plot(elev, lat, color=color, linewidth=linewidth)
-        # custom spine bounds for a nice clean look
-        self.fig.axes[AXV].spines['left'].set_visible(False)
-        self.fig.axes[AXV].spines.bottom.set_bounds((self.depth_extent_v[1], elev[0]))  # depth_extent_v[1] is the top elev
-        self.fig.axes[AXV].spines.top.set_bounds((self.depth_extent_v[1], elev[-1]))
-
+            # Download & plot elevation data for B-B'
+            # lat, lon, d, elev = elev_profile.download_profile2(B1, B2, n=n)  # elevation returned in meters
+            elev_data = elev_profile.download_profile(B1, B2, n=n)  # elevation returned in meters
+            lat = elev_data['lat']
+            elev = np.array(elev_data['elev']) / 1000  # convert to km
+            self.fig.axes[AXV].plot(elev, lat, color=color, linewidth=linewidth)
+            # custom spine bounds for a nice clean look
+            self.fig.axes[AXV].spines['left'].set_visible(False)
+            self.fig.axes[AXV].spines.bottom.set_bounds(
+                (self.depth_extent_v[1], elev[0]))  # depth_extent_v[1] is the top elev
+            self.fig.axes[AXV].spines.top.set_bounds((self.depth_extent_v[1], elev[-1]))
+        except HTTPError:
+            print("Elevation data could not be downloaded. Moving on...")
+            pass
 
         # Add XSection lines to map
         self.fig.axes[AXM].plot(A1[1], A1[0], 'ok', transform=ccrs.Geodetic())  # don't hardcode the transform?
         self.fig.axes[AXM].plot(A2[1], A2[0], 'ok', transform=ccrs.Geodetic())
-        self.fig.axes[AXM].plot([A1[1], A2[1]], [A1[0], A2[0]], 'k', transform=ccrs.Geodetic(), linewidth=0.5)  # don't hardcode the transform?
+        self.fig.axes[AXM].plot([A1[1], A2[1]], [A1[0], A2[0]], 'k', transform=ccrs.Geodetic(),
+                                linewidth=0.5)  # don't hardcode the transform?
         self.fig.axes[AXM].text(A1[1], A1[0], "A", transform=ccrs.Geodetic(),
                                 verticalalignment='bottom', horizontalalignment='center',
                                 path_effects=[pe.withStroke(linewidth=2, foreground="white")])
@@ -417,7 +427,8 @@ class MapFigure:
         # Add XSection lines to map
         self.fig.axes[AXM].plot(B1[1], B1[0], 'ok', transform=ccrs.Geodetic())  # don't hardcode the transform?
         self.fig.axes[AXM].plot(B2[1], B2[0], 'ok', transform=ccrs.Geodetic())
-        self.fig.axes[AXM].plot([B1[1], B2[1]], [B1[0], B2[0]], 'k', transform=ccrs.Geodetic(), linewidth=0.5)  # don't hardcode the transform?
+        self.fig.axes[AXM].plot([B1[1], B2[1]], [B1[0], B2[0]], 'k', transform=ccrs.Geodetic(),
+                                linewidth=0.5)  # don't hardcode the transform?
         self.fig.axes[AXM].text(B1[1], B1[0], "B", transform=ccrs.Geodetic(),
                                 verticalalignment='bottom', horizontalalignment='center',
                                 path_effects=[pe.withStroke(linewidth=2, foreground="white")])
@@ -463,10 +474,10 @@ def _create_wingplot(lat, lon, radial_extent_km=50.,
     spacing = 0.005
 
     # define axes positions (map + 1,1)
-    map_pos = [left, bottom + cbar_height*2 + xsheight + spacing, mwidth, mheight]
-    hxs_pos = [left, bottom + cbar_height*2, mwidth, xsheight]
-    vxs_pos = [left + mwidth + spacing, bottom + cbar_height*2 + xsheight + spacing, xsheight, mheight]
-    mag_scale_pos = [left + mwidth + spacing, bottom + cbar_height*2, xsheight, xsheight]
+    map_pos = [left, bottom + cbar_height * 2 + xsheight + spacing, mwidth, mheight]
+    hxs_pos = [left, bottom + cbar_height * 2, mwidth, xsheight]
+    vxs_pos = [left + mwidth + spacing, bottom + cbar_height * 2 + xsheight + spacing, xsheight, mheight]
+    mag_scale_pos = [left + mwidth + spacing, bottom + cbar_height * 2, xsheight, xsheight]
     cbar_pos = [left, bottom, mwidth + spacing + xsheight, cbar_height]
     title_pos = [0.5, 0.965]
     subtext_pos = [0.5, 0.93]
