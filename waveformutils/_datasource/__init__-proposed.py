@@ -74,8 +74,7 @@ class DataSource:
         
         
 
-    def create_client():
-              
+    def create_client(self):
 
           # DataSource is an FDSN server >>> createFDSNClient()
           if self.ds_type.lower() in ['fdsn']:
@@ -87,7 +86,7 @@ class DataSource:
           # DataSource is some other type of server
           else:
 
-              server, port = ds_string.split(':');
+              server, port = self.ds_string.split(':');
               port = int(port)
 
               if self.ds_type.lower() in ['earthworm', 'ew', 'wws']:
@@ -117,7 +116,6 @@ class DataSource:
                   self.ds_type     = '--'
                   self.name =        '--'
 
-        print('DataSource: {}'.format(self.name))
 
     
 
@@ -135,7 +133,7 @@ class DataSource:
              
         else:
         
-             self.filelist = self.get_filelist(self, args)
+             self.filelist = self.get_filelist(self, args,,,
              return self.filelist
 
         
@@ -152,7 +150,7 @@ class DataSource:
         
                
             if self.filelist is None:
-                  self.filelist = self.get_filelist(nslc_list, tstart, tend)
+                  self.filelist = self.get_filelist(nslc_list, tstart, tend, )
 
             st = self.get_waveforms_from_files(nslc_list, tstart, tend, create_empty_trace=create_empty_trace,
                                                verbose=verbose)
@@ -196,7 +194,7 @@ ds = DataSource('files', '/Users/sysop/DATA/sds/', filepattern='*.mseed')
 > filelist    = parse_filelist_for_nslc_time(filelist, nslc, t1, t2)
 
 
-ds.getWaveforms( nslc, t1, t2 )
+ds.getWaveforms(nslc, t1, t2 )
 
 list_of_files = ds.getFileList( nslc, t1, t2 )
 > [filelist_all = get_filelist_all( searchdir, filepattern ) ] DONE WHEN DATASOURCE IS INITIALIZED!
@@ -205,15 +203,15 @@ list_of_files = ds.getFileList( nslc, t1, t2 )
 
 OR
 
-list_of_files = ds.getFileList( nslc, t1, t2 )
+list_of_files = ds.getFileList(nslc, t1, t2 )
 > filelist_all  = get_filelist_all( searchdir, filepattern )
 > list_of_files = parse_filelist_for_nslc_time( filelist_all, nslc, t1, t2 )
 
 OR
 
-list_of_files = ds.getFileList( nslc, t1, t2, filepattern )
-> filelist_all  = get_filelist_all( searchdir, filepattern)
-> list_of_files = parsefilelist_for_nslc_time( filelist_all, nslc, t2, t2 )
+list_of_files = ds.getFileList(nslc, t1, t2, filepattern )
+> filelist_all  = get_filelist_all(searchdir, filepattern)
+> list_of_files = parsefilelist_for_nslc_time(filelist_all, nslc, t2, t2 )
 
 
 """
