@@ -1,5 +1,6 @@
-import numpy as np
-import obspy
+import os
+
+from vdapseisutils.waveformutils.datasource.fileutils import get_all_files, get_filelist
 
 
 class DataSource:
@@ -14,89 +15,110 @@ class DataSource:
                                    Earthworm --> 'earthworm', 'ew', 'wws'
                                    SeedLink  --> 'seedlink', 'slink'
                                    NEIC      --> 'neic'
-        ds_string     : str : Path to files or string representation of ObsPy client
+        ds_input     : str : Path to files or string representation of ObsPy client
 
     EXAMPLES:
     # Many strings are approved if you want to use files
-    >>> DataSource('file', '/path/to/top/directory', filepattern='*.mseed')
-    >>> DataSource('files', '/path/to/top/directory', filepattern='*.mseed')
-    >>> DataSource('filelist', '/path/to/top/directory', filepattern='*.mseed')
-    >>> DataSource('filestructure', '/path/to/top/directory', filepattern='*.mseed')
-    >>> DataSource('directory', '/path/to/top/directory', filepattern='*.mseed')
+    >>> DataSource('/path/to/top/directory')
+    >>> DataSource(['/path/to/file1', '/path/to/file2']
 
     # Various ObsPy client strings are supported
     # Server & Port are formatted as 'server:port'
-    >>> DataSource('FDSN', 'IRIS')
-    >>> DataSource('ew', '127.0.0.1:16022') # 'server:port'
-    >>> DataSource('neic', '127.0.0.1:16022')
+    >>> DataSource('IRIS')  # FDSN severs are automaticlly recognized
+    >>> DataSource('fdsnws://IRIS')
+    >>> DataSource('127.0.0.1:16022') # Winston and Earthworm waveservers are automatically recognized
+    >>> DataSource('waveserver://127.0.0.1:16022') # 'server:port'
+    >>> DataSource('neic://127.0.0.1:16022')
 
     """
 
-    def __init__(self, ds_type, ds_string,
+    def __init__(self, ds_input,
                  filepattern='*',  # Only used for Filestructure DataSource
                  timeout=60):  # Only used for Client DataSource
 
-        # Filestructure DataSource
-        if ds_type.lower() in ['file', 'files', 'filelist', 'filestructure', 'directory']:
+        # FileList DataSource (List of files)
+        if type(ds_input) is list:
+            print("DataSource is a list of files.")
+            self.ds_type = 'filelist'
+            self.searchdir = None
+            self.filepattern = filepattern
+            self.filelist_all = ds_input
+            self.filelist = ds_input
+            self.name = "List of files: [{} ... {}]".format(self.filelist[0], self.filelist[-1])
+
+        # Filestructure DataSource (path directory)
+        elif os.path.isdir(ds_input):
+        # if arginput.lower() in ['file', 'files', 'filelist', 'filestructure', 'directory']:
+            print("DataSource is a filestructure.")
             self.ds_type = 'filestructure'
-            self.searchdir = ds_string  # top level directory for filestructure
+            self.searchdir = ds_input  # top level directory for filestructure
             self.filepattern = filepattern  # regexp filepattern
-            self.filelist_all = None  # Filelist
-            self.filelist = None  # Filelist matching time and nslc
+            self.filelist_all = get_all_files(ds_input, filepattern=self.filepattern)
+            self.filelist = get_all_files(ds_input, filepattern=self.filepattern)
             self.name = '{} {}'.format(self.searchdir, self.filepattern)  # For printing purposes
 
         # Client DataSource
-        elif self.ds_type.lower() in ['fdsn', 'earthworm', 'ew', 'wws', 'seedlink', 'slink']:
+        else:
+        # elif ds_input.lower() in ['fdsn', 'earthworm', 'ew', 'wws', 'seedlink', 'slink']:
+            print("DataSource is an ObsPy Client")
             self.ds_type = 'client'
-            self.client_type = ds_type
+            self.client_type = None
             self.timeout = timeout
-            self.client = self.create_client()
             self.name = None  # This is set later, when the client is created
+            self.client = self.create_client(ds_input)
 
         print('DataSource: {}'.format(self.name))
 
-    def create_client(self):
+    def create_client(self, client_str):
         """Creates ObsPy Client based on the client type provided"""
 
-        # DataSource is an FDSN server
-        if self.ds_type.lower() in ['fdsn']:
+        # 1) Determine client type
+        # 2) Make Client
 
+        # Backward compatibility -- Assign server type is not provided
+        if '://' not in client_str:
+            if '.' not in client_str:  # e.g., DataSource('IRIS')
+                client_str = 'fdsnws://' + client_str
+            else:  # e.g., DataSource("vdap.org:1600")
+                client_str = 'waveserver://' + client_str
+
+        # New server syntax (more options and server and port on same variable)
+        if 'fdsnws://' in client_str:
             from obspy.clients.fdsn import Client
-            self.name = 'FDSN Client {}'.format(self.ds_string)
-            self.datasource = Client(self.ds_string)
+            server = client_str.split('fdsnws://', 1)[1]
+            self.name = 'FDSN Client {}'.format(client_str)
+            self.client = Client(server)
 
-        # DataSource is some other type of server
+        elif 'waveserver://' in client_str:
+            from obspy.clients.earthworm import Client
+            serverport = client_str.split('waveserver://', 1)[1]
+            server, port = serverport.split(':')
+            port = int(port)
+            self.name = 'Waveserver Client {}:{}'.format(server, port)
+            self.client = Client(server, port)
+
+        elif 'seedlink://' in client_str:
+            from obspy.clients.seedlink import Client
+            serverport = client_str.split('seedlink://', 1)[1]
+            server, port = serverport.split(':')
+            self.name = 'SeedLink Client {}:{}'.format(server, port)
+            self.client = Client(server, port, timeout=self.timeout)
+
+        elif 'neic://' in client_str:
+            from obspy.clients.neic import Client
+            serverport = client_str.split('neic://', 1)[1]
+            server, port = serverport.split(':')
+            self.name = 'NEIC Client {}:{}'.format(server, port)
+            self.client = Client(server, port)
+
         else:
 
-            server, port = self.ds_string.split(':');
-            port = int(port)
+            print('>>> Client not supported')
+            self.client = None
+            self.client_type = '--'
+            self.ds_type = '--'
+            self.name = '--'
 
-            if self.ds_type.lower() in ['earthworm', 'ew', 'wws']:
-
-                from obspy.clients.earthworm import Client
-                self.name = 'EW Client {}:{}'.format(server, port)
-                self.client = Client(server, port)
-
-            elif self.ds_type.lower() in ['seedlink', 'slink']:
-
-                from obspy.clients.seedlink import Client
-                self.name = 'SeedLink Client {}:{}'.format(server, port)
-                self.client = Client(server, port, timeout=self.timeout)
-
-
-            elif self.ds_type.lower() in ['neic']:
-
-                from obspy.clients.neic import Client
-                self.name = 'NEIC Client {}:{}'.format(server, port)
-                self.client = Client(server, port)
-
-            else:
-
-                print('>>> Client not supported')
-                self.client = None
-                self.client_type = '--'
-                self.ds_type = '--'
-                self.name = '--'
 
     def getWaveforms(self, nslc_list, tstart, tend, create_empty_trace=False, verbose=False):
 
