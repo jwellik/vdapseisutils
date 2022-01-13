@@ -8,7 +8,7 @@ class CrossSection:
                  n=100,
                  length='longitude',
                  depth_extent=(-50., 4.),  # -> float # km (bottom_depth, top_altitude)
-                 figsize=(8, 4),
+                 figsize=(8, 4),  # width height
                  title="Cross Section A-A'",  # -> str
                  orientation='horizontal',
                  linewidth=0.75,
@@ -16,14 +16,18 @@ class CrossSection:
                  ):
 
         self.points = [A1, A2]
-        self.lat, self.lon, self.d, self.elev = elev_profile.download_profile2(self.points[0], self.points[1], n=n)  # elevation returned in meters
-        self.elev = np.array(self.elev) / 1000  # convert to km
         self.length = length
         self.orientation = orientation
         self.depth_extent = depth_extent
 
+        # Download the data
+        self.lat, self.lon, self.d, self.elev = elev_profile.download_profile2(self.points[0], self.points[1], n=n)  # elevation returned in meters
+        self.elev = np.array(self.elev) / 1000  # convert to km
+
+        # Prepare the figure
         self.fig = plt.figure(figsize=figsize)
 
+        # Define the length units
         if self.length == 'lon' or self.length == 'longitude':
             dist = self.lon
         elif self.length == 'lat' or self.length == 'latitude':
@@ -31,7 +35,7 @@ class CrossSection:
         elif self.length == 'distance' or self.length == 'kilometers':
             dist = self.d
 
-
+        # Plot the data and configure axes
         if self.orientation == 'horizontal':
             plt.plot(dist, self.elev, color=color, linewidth=linewidth)
             self.fig.axes[0].spines['top'].set_visible(False)  # custom spine bounds for a nice clean look
@@ -46,6 +50,6 @@ class CrossSection:
             self.fig.axes[0].spines.top.set_bounds((self.depth_extent[0], self.elev[-1]))
             self.fig.axes[0].set_ylim((dist[0], dist[-1]))
             self.fig.axes[0].set_xlim([self.depth_extent[1], self.depth_extent[0]])
-            # move yticklabels to the right
+            self.fig.axes[0].yaxis.tick_right()
 
         plt.draw()
