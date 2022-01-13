@@ -37,7 +37,8 @@ class MapFigure:
                  zoom=12,
                  map_type='terrain-background',
                  map_color=True,
-                 figsize=(12, 12),
+                 figsize=(6, 6),
+                 dpi=300,
                  title='Volcano Map',  # -> str
                  subtext='',
                  ):
@@ -52,13 +53,15 @@ class MapFigure:
         self.map_type = map_type
         self.map_color = map_color
         self.figsize = figsize
+        self.dpi = dpi
         self.title = title
         self.subtext = subtext
 
         self.fig = _create_wingplot(self.origin[0], self.origin[1], radial_extent_km=self.radial_extent,
                                     zoom=self.zoom, map_type=self.map_type, map_color=self.map_color,
                                     depth_extent=self.depth_extent_h,
-                                    figsize=self.figsize, title=self.title, subtext=self.subtext)
+                                    figsize=self.figsize, dpi=self.dpi,
+                                    title=self.title, subtext=self.subtext)
         self.add_default_profile()  # adds E-W, N-S elevation profiles
 
     # I/O
@@ -446,7 +449,7 @@ def _create_wingplot(lat, lon, radial_extent_km=50.,
                      map_type='terrain-background', map_color=True, zoom=9,
                      depth_extent=(-50, 7),
                      title='Volcano Map', subtext='',
-                     figsize=(12, 12)) -> object:
+                     figsize=(12, 12), dpi=300) -> object:
     import matplotlib.pyplot as plt
 
     import cartopy.crs as ccrs
