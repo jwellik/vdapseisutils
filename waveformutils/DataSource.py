@@ -145,6 +145,10 @@ class DataSource:
 
         return st
 
+    def archive(self):
+        print(">>> Currently not yet implemented!")
+        pass
+
     # TO DO
     # [ ] Functionalize createFileList & createClient ??
     # [ ] Assume FDSN or EW or filelist, as appropriate if only one argument given???
