@@ -7,11 +7,12 @@ def get_filelist(self, nslc_list, tstart, tend, filepattern='*', output=None):
 
     If 'output' is specified, it will overwrite the filesublist to the specified file
     '''
+    print("DEPRECATION WARNING. Use vdapseisutils.waveformutils.datasource.fileutils.get_filelist() instead.")
+
 
     from obspy import UTCDateTime
     from vdapseisutils.waveformutils.nslcutils import getNSLCstr
     import glob, os, itertools
-
 
     print('>>> vdapseisutils.waveformutils.datasource._get_waveforms.get_filelist()')
 
@@ -21,16 +22,16 @@ def get_filelist(self, nslc_list, tstart, tend, filepattern='*', output=None):
     # Create file sublist (only files w relevant nslc & time)
     # Determine which subset of files to load based on start and end times and
     # station name; we'll fully deal with stations below
-    
+
     # print(self.datasource)
-    
+
     # # Generate list of files (all files under top directory)
     flist = list(itertools.chain.from_iterable(glob.iglob(os.path.join(
         root, filepattern)) for root, dirs, files in os.walk(self.datasource)))
-    
+
     flist = self.datasource
     flist_sub = []
-   #  print(flist)
+    #  print(flist)
     for f in flist:
         # Load header only
         stmp = obspy.read(f, headonly=True)
@@ -60,6 +61,7 @@ def get_waveforms_from_files(self, nslc_list, tstart, tend,
     from obspy import UTCDateTime, Stream, Trace
     from waveformutils.nslcutils import getNSLCstr
     from waveformutils.streamutils import sortStreamByNSLClist
+    print("DEPRECATION WARNING. Use vdapseisutils.waveformutils.datasource.fileutils....() instead.")
 
     print('>>> waveforms.datasource[__init__].get_waveforms_from_files()')
 
@@ -133,6 +135,7 @@ def get_waveforms_from_client(
         create_empty_trace=False,
         verbose=False
 ):
+    print("DEPRECATION WARNING. Use vdapseisutils.waveformutils.datasource.fileutils....() instead.")
     print('>>> waveformutils.datasource[__init__].get_waveforms_from_client()')
 
     from obspy import UTCDateTime, Stream
@@ -231,6 +234,7 @@ def get_waveforms_from_client(
 
 
 def createEmptyTrace(nslc, t1, t2, sampling_rate=100):
+    print("DEPRECATION WARNING. Use vdapseisutils.waveformutils.streamutils.createEmptyTrace() instead.")
     from obspy import Trace
     from waveformutils.nslcutils import str2nslc
 
