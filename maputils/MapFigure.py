@@ -272,7 +272,7 @@ class MapFigure:
 
         # Set up the magnitude scale parameters
         mso = 0 if min(mag) >= 0 else np.floor(np.min(mag)) * -1  # magnitude offset scale to avoid negatives
-        mag += mso  # adjusted Magnitude value for plotting purposes
+        mag = np.array(mag) + mso  # adjusted Magnitude value for plotting purposes
         scale_mag = np.array([1, 2, 3, 4, 5]) + mso  # Array of values for the scale box
 
         # Define size for each marker
