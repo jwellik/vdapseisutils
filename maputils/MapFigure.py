@@ -396,7 +396,7 @@ class MapFigure:
             elev_data_B = elev_profile.download_profile(B1, B2, n=n)  # elevation returned in meters
 
             # Plot data and format axis for A-A'
-            lon = elev_data_B['lon']
+            lon = elev_data_A['lon']
             elev = np.array(elev_data_A['elev']) / 1000  # convert to km
             self.fig.axes[AXH].plot(lon, elev, color=color, linewidth=linewidth)
             # custom spine bounds for a nice clean look
@@ -416,7 +416,7 @@ class MapFigure:
             self.fig.axes[AXV].spines.top.set_bounds((self.depth_extent_v[1], elev[-1]))
 
         except HTTPError:
-            print("Elevation data could not be downloaded for A-A'. Moving on...")
+            print("There was a problem downloading or displaying elevation data. Moving on...")
 
 
 
