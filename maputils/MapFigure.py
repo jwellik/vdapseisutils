@@ -387,33 +387,34 @@ class MapFigure:
         B1 = (self.map_extent[2], (self.map_extent[0] + self.map_extent[1]) / 2)
         B2 = (self.map_extent[3], (self.map_extent[0] + self.map_extent[1]) / 2)
 
+        # Download the elevation data
         # This try/except statement should come in the download_profile module itself.
         try:
             # Download & plot elevation data for A-A'
-            elev_data = elev_profile.download_profile(A1, A2, n=n)  # elevation returned in meters
-            lon = elev_data['lon']
-            elev = np.array(elev_data['elev']) / 1000  # convert to km
-            self.fig.axes[AXH].plot(lon, elev, color=color, linewidth=linewidth)
-            # custom spine bounds for a nice clean look
-            self.fig.axes[AXH].spines['top'].set_visible(False)
-            self.fig.axes[AXH].spines.left.set_bounds(
-                (self.depth_extent_v[1], elev[0]))  # depth_extent_v[1] is the top elev
-            self.fig.axes[AXH].spines.right.set_bounds((self.depth_extent_v[1], elev[-1]))
-
-            # Download & plot elevation data for B-B'
-            # lat, lon, d, elev = elev_profile.download_profile2(B1, B2, n=n)  # elevation returned in meters
-            elev_data = elev_profile.download_profile(B1, B2, n=n)  # elevation returned in meters
-            lat = elev_data['lat']
-            elev = np.array(elev_data['elev']) / 1000  # convert to km
-            self.fig.axes[AXV].plot(elev, lat, color=color, linewidth=linewidth)
-            # custom spine bounds for a nice clean look
-            self.fig.axes[AXV].spines['left'].set_visible(False)
-            self.fig.axes[AXV].spines.bottom.set_bounds(
-                (self.depth_extent_v[1], elev[0]))  # depth_extent_v[1] is the top elev
-            self.fig.axes[AXV].spines.top.set_bounds((self.depth_extent_v[1], elev[-1]))
+            elev_data_A = elev_profile.download_profile(A1, A2, n=n)  # elevation returned in meters
+            elev_data_B = elev_profile.download_profile(B1, B2, n=n)  # elevation returned in meters
         except HTTPError:
             print("Elevation data could not be downloaded. Moving on...")
-            pass
+
+        # Plot data and format axis for A-A'
+        lon = elev_data_B['lon']
+        elev = np.array(elev_data_A['elev']) / 1000  # convert to km
+        self.fig.axes[AXH].plot(lon, elev, color=color, linewidth=linewidth)
+        # custom spine bounds for a nice clean look
+        self.fig.axes[AXH].spines['top'].set_visible(False)
+        self.fig.axes[AXH].spines.left.set_bounds(
+            (self.depth_extent_v[1], elev[0]))  # depth_extent_v[1] is the top elev
+        self.fig.axes[AXH].spines.right.set_bounds((self.depth_extent_v[1], elev[-1]))
+
+        # Plot data and format axis for B-B'
+        lat = elev_data_B['lat']
+        elev = np.array(elev_data_B['elev']) / 1000  # convert to km
+        self.fig.axes[AXV].plot(elev, lat, color=color, linewidth=linewidth)
+        # custom spine bounds for a nice clean look
+        self.fig.axes[AXV].spines['left'].set_visible(False)
+        self.fig.axes[AXV].spines.bottom.set_bounds(
+            (self.depth_extent_v[1], elev[0]))  # depth_extent_v[1] is the top elev
+        self.fig.axes[AXV].spines.top.set_bounds((self.depth_extent_v[1], elev[-1]))
 
         # Add XSection lines to map
         self.fig.axes[AXM].plot(A1[1], A1[0], 'ok', transform=ccrs.Geodetic())  # don't hardcode the transform?
