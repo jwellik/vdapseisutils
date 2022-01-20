@@ -392,9 +392,13 @@ class MapFigure:
         try:
             # Download & plot elevation data for A-A'
             elev_data_A = elev_profile.download_profile(A1, A2, n=n)  # elevation returned in meters
+        except HTTPError:
+            print("Elevation data could not be downloaded for A-A'. Moving on...")
+        try:
+            # Download & plot elevation data for A-A'
             elev_data_B = elev_profile.download_profile(B1, B2, n=n)  # elevation returned in meters
         except HTTPError:
-            print("Elevation data could not be downloaded. Moving on...")
+            print("Elevation data could not be downloaded for B-B'. Moving on...")
 
         # Plot data and format axis for A-A'
         lon = elev_data_B['lon']
