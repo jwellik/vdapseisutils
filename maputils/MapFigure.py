@@ -392,33 +392,35 @@ class MapFigure:
         try:
             # Download & plot elevation data for A-A'
             elev_data_A = elev_profile.download_profile(A1, A2, n=n)  # elevation returned in meters
-        except HTTPError:
-            print("Elevation data could not be downloaded for A-A'. Moving on...")
-        try:
             # Download & plot elevation data for A-A'
             elev_data_B = elev_profile.download_profile(B1, B2, n=n)  # elevation returned in meters
+
+            # Plot data and format axis for A-A'
+            lon = elev_data_B['lon']
+            elev = np.array(elev_data_A['elev']) / 1000  # convert to km
+            self.fig.axes[AXH].plot(lon, elev, color=color, linewidth=linewidth)
+            # custom spine bounds for a nice clean look
+            self.fig.axes[AXH].spines['top'].set_visible(False)
+            self.fig.axes[AXH].spines.left.set_bounds(
+                (self.depth_extent_v[1], elev[0]))  # depth_extent_v[1] is the top elev
+            self.fig.axes[AXH].spines.right.set_bounds((self.depth_extent_v[1], elev[-1]))
+
+            # Plot data and format axis for B-B'
+            lat = elev_data_B['lat']
+            elev = np.array(elev_data_B['elev']) / 1000  # convert to km
+            self.fig.axes[AXV].plot(elev, lat, color=color, linewidth=linewidth)
+            # custom spine bounds for a nice clean look
+            self.fig.axes[AXV].spines['left'].set_visible(False)
+            self.fig.axes[AXV].spines.bottom.set_bounds(
+                (self.depth_extent_v[1], elev[0]))  # depth_extent_v[1] is the top elev
+            self.fig.axes[AXV].spines.top.set_bounds((self.depth_extent_v[1], elev[-1]))
+
         except HTTPError:
-            print("Elevation data could not be downloaded for B-B'. Moving on...")
+            print("Elevation data could not be downloaded for A-A'. Moving on...")
 
-        # Plot data and format axis for A-A'
-        lon = elev_data_B['lon']
-        elev = np.array(elev_data_A['elev']) / 1000  # convert to km
-        self.fig.axes[AXH].plot(lon, elev, color=color, linewidth=linewidth)
-        # custom spine bounds for a nice clean look
-        self.fig.axes[AXH].spines['top'].set_visible(False)
-        self.fig.axes[AXH].spines.left.set_bounds(
-            (self.depth_extent_v[1], elev[0]))  # depth_extent_v[1] is the top elev
-        self.fig.axes[AXH].spines.right.set_bounds((self.depth_extent_v[1], elev[-1]))
 
-        # Plot data and format axis for B-B'
-        lat = elev_data_B['lat']
-        elev = np.array(elev_data_B['elev']) / 1000  # convert to km
-        self.fig.axes[AXV].plot(elev, lat, color=color, linewidth=linewidth)
-        # custom spine bounds for a nice clean look
-        self.fig.axes[AXV].spines['left'].set_visible(False)
-        self.fig.axes[AXV].spines.bottom.set_bounds(
-            (self.depth_extent_v[1], elev[0]))  # depth_extent_v[1] is the top elev
-        self.fig.axes[AXV].spines.top.set_bounds((self.depth_extent_v[1], elev[-1]))
+
+
 
         # Add XSection lines to map
         self.fig.axes[AXM].plot(A1[1], A1[0], 'ok', transform=ccrs.Geodetic())  # don't hardcode the transform?
