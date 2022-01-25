@@ -50,7 +50,7 @@ def radial_extent2map_extent(lat, lon, km):
 
 
 def radial_extent2bounds_bltr(lat, lon, km):
-    """Returns [minlat, minlon, maxlat, maxlon] or "[bottom, left, top, right]"""
+    """Returns [minlat, minlon, maxlat, maxlon] or [bottom, left, top, right]"""
     rlatlon = geodesic_point_buffer(lat, lon, km)
     map_extent = [min(rlatlon[:, 0]), max(rlatlon[:, 1]), max(rlatlon[:, 0]), max(rlatlon[:, 1])]
     return map_extent
