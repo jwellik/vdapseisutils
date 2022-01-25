@@ -1,6 +1,7 @@
 '''TO DO
 
 [ ] Limit earthquake catalog to map extent or xsection extent
+[ ] retrieve_elevation()  # used for map and elevation profile
 
 '''
 from urllib.error import HTTPError
