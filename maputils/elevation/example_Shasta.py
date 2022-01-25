@@ -1,6 +1,8 @@
 # https://www.earthdatascience.org/tutorials/visualize-digital-elevation-model-contours-matplotlib/
 # Get data from NASA SRTM data
 
+TMP_FOLDER = "/Users/jwellik/Downloads"
+
 def main():
     import os
     from osgeo import gdal
@@ -10,9 +12,12 @@ def main():
     import elevation
 
     # $ eio clip -o Shasta-30m-DEM.tif --bounds -122.6 41.15 -121.9 41.6
-    os.system('eio clip -o Shasta-30m-DEM.tif --bounds -122.6 41.15 -121.9 41.6')
+    # os.system('eio clip -o Shasta-30m-DEM.tif --bounds -122.6 41.15 -121.9 41.6')  # bottom, left, top, right
+    elevation.clip(bounds=(-122.6, 41.15, -121.9, 41.6), output=os.path.join(TMP_FOLDER, "tmp-30m-DEM.tif"))
+    elevation.clean()
 
-    filename = "Shasta-30m-DEM.tif"
+    # filename = "Shasta-30m-DEM.tif"
+    filename = os.path.join(TMP_FOLDER, "tmp-30m-DEM.tif")
     gdal_data = gdal.Open(filename)
     gdal_band = gdal_data.GetRasterBand(1)
     nodataval = gdal_band.GetNoDataValue()
