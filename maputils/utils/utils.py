@@ -49,10 +49,18 @@ def radial_extent2map_extent(lat, lon, km):
     return map_extent
 
 
+def radial_extent2bounds_bltr(lat, lon, km):
+    """Returns [minlat, minlon, maxlat, maxlon] or "[bottom, left, top, right]"""
+    rlatlon = geodesic_point_buffer(lat, lon, km)
+    map_extent = [min(rlatlon[:, 0]), max(rlatlon[:, 1]), max(rlatlon[:, 0]), max(rlatlon[:, 1])]
+    return map_extent
+
+
 def set_radial_map_extent(ax, lat, lon, km, crs=None):
     '''Sets the extent of the map based on radius from given point'''
     ax.set_extent(radial_extent2map_extent(lat, lon, km), crs=crs)
     return ax
+
 
 def sight_point_geopy(origin, bearing, km):
     """Returns the (lat,lon) of point N km away along a given bearing"""
