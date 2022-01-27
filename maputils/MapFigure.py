@@ -71,8 +71,8 @@ class MapFigure:
     def info(self):
         print('::: {} (MapFigure) :::'.format(self.title))
         print('      origin        : {}'.format(self.origin))
-        print('      radial_exetnt : {} km'.format(self.radial_extent))
-        print('      depth_exetnt  : {}:{} km'.format(self.depth_extent_v[0], self.depth_extent_v[1]))
+        print('      radial_extent : {} km'.format(self.radial_extent))
+        print('      depth_extent  : {} km'.format(tuple(self.depth_extent_h)))
         print('')
 
     # [Unimplemented] Save .png and .svg versions of the image. Handles oddities for publication quality images.
