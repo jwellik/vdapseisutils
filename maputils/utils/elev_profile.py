@@ -99,6 +99,12 @@ def download_profile_open_elevation(p1, p2, n=100, verbose=False):
     return dict({'lat': lat_list, 'lon': lon_list, 'd': d_list_rev, 'elev': elev_list})
 
 
+def download_profile_alt():
+    # https://gis.stackexchange.com/questions/29632/getting-elevation-at-lat-long-from-raster-using-python
+    # https://developers.google.com/maps/documentation/elevation/start#maps_http_elevation_locations-py
+    pass
+
+
 def write(km, elev, file='elevation.csv'):
     import csv
 

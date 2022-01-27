@@ -1,6 +1,7 @@
 '''TO DO
 
 [ ] Limit earthquake catalog to map extent or xsection extent
+[ ] retrieve_elevation()  # used for map and elevation profile
 
 '''
 from urllib.error import HTTPError
@@ -70,8 +71,8 @@ class MapFigure:
     def info(self):
         print('::: {} (MapFigure) :::'.format(self.title))
         print('      origin        : {}'.format(self.origin))
-        print('      radial_exetnt : {} km'.format(self.radial_extent))
-        print('      depth_exetnt  : {}:{} km'.format(self.depth_extent_v[0], self.depth_extent_v[1]))
+        print('      radial_extent : {} km'.format(self.radial_extent))
+        print('      depth_extent  : {} km'.format(tuple(self.depth_extent_h)))
         print('')
 
     # [Unimplemented] Save .png and .svg versions of the image. Handles oddities for publication quality images.
@@ -272,7 +273,7 @@ class MapFigure:
 
         # Set up the magnitude scale parameters
         mso = 0 if min(mag) >= 0 else np.floor(np.min(mag)) * -1  # magnitude offset scale to avoid negatives
-        mag += mso  # adjusted Magnitude value for plotting purposes
+        mag = np.array(mag) + mso  # adjusted Magnitude value for plotting purposes
         scale_mag = np.array([1, 2, 3, 4, 5]) + mso  # Array of values for the scale box
 
         # Define size for each marker
@@ -387,12 +388,17 @@ class MapFigure:
         B1 = (self.map_extent[2], (self.map_extent[0] + self.map_extent[1]) / 2)
         B2 = (self.map_extent[3], (self.map_extent[0] + self.map_extent[1]) / 2)
 
+        # Download the elevation data
         # This try/except statement should come in the download_profile module itself.
         try:
             # Download & plot elevation data for A-A'
-            elev_data = elev_profile.download_profile(A1, A2, n=n)  # elevation returned in meters
-            lon = elev_data['lon']
-            elev = np.array(elev_data['elev']) / 1000  # convert to km
+            elev_data_A = elev_profile.download_profile(A1, A2, n=n)  # elevation returned in meters
+            # Download & plot elevation data for A-A'
+            elev_data_B = elev_profile.download_profile(B1, B2, n=n)  # elevation returned in meters
+
+            # Plot data and format axis for A-A'
+            lon = elev_data_A['lon']
+            elev = np.array(elev_data_A['elev']) / 1000  # convert to km
             self.fig.axes[AXH].plot(lon, elev, color=color, linewidth=linewidth)
             # custom spine bounds for a nice clean look
             self.fig.axes[AXH].spines['top'].set_visible(False)
@@ -400,20 +406,22 @@ class MapFigure:
                 (self.depth_extent_v[1], elev[0]))  # depth_extent_v[1] is the top elev
             self.fig.axes[AXH].spines.right.set_bounds((self.depth_extent_v[1], elev[-1]))
 
-            # Download & plot elevation data for B-B'
-            # lat, lon, d, elev = elev_profile.download_profile2(B1, B2, n=n)  # elevation returned in meters
-            elev_data = elev_profile.download_profile(B1, B2, n=n)  # elevation returned in meters
-            lat = elev_data['lat']
-            elev = np.array(elev_data['elev']) / 1000  # convert to km
+            # Plot data and format axis for B-B'
+            lat = elev_data_B['lat']
+            elev = np.array(elev_data_B['elev']) / 1000  # convert to km
             self.fig.axes[AXV].plot(elev, lat, color=color, linewidth=linewidth)
             # custom spine bounds for a nice clean look
             self.fig.axes[AXV].spines['left'].set_visible(False)
             self.fig.axes[AXV].spines.bottom.set_bounds(
                 (self.depth_extent_v[1], elev[0]))  # depth_extent_v[1] is the top elev
             self.fig.axes[AXV].spines.top.set_bounds((self.depth_extent_v[1], elev[-1]))
+
         except HTTPError:
-            print("Elevation data could not be downloaded. Moving on...")
-            pass
+            print("There was a problem downloading or displaying elevation data. Moving on...")
+
+
+
+
 
         # Add XSection lines to map
         self.fig.axes[AXM].plot(A1[1], A1[0], 'ok', transform=ccrs.Geodetic())  # don't hardcode the transform?

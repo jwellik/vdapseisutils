@@ -1,6 +1,6 @@
-def str2nslc( station_code, order='nslc', sep='.', newsep='.' ):
+def str2nslc(station_code, order='nslc', sep='.', newsep='.' ):
     "Convert any NSLC/SCNL/SCN str to its components"
-        
+
     if order=='nslc':
         n = 0; s=1; l=2; c=3
 
@@ -8,7 +8,7 @@ def str2nslc( station_code, order='nslc', sep='.', newsep='.' ):
         s = 0; c=1; n=2; l=3
 
     elif order=='scn':
-        sta+sep
+        station_code+sep
         s = 0; c=1; n=2; l=3
 
     network  = station_code.split(sep)[n]
@@ -76,3 +76,19 @@ def build_str( network, station, location, channel, order='nslc', sep='.' ):
         print('Order {} not understood'.format(order))
     
     return syntax.format(network, station, location, channel, sep)
+
+
+def str2bulk(nslc_list, t1, t2):
+    """Formats a list of NSLC strings and t1, t2 into a proper request for ObsPy's get_waveforms_bulk"""
+    from obspy import UTCDateTime
+
+    t1 = UTCDateTime(t1)
+    t2 = UTCDateTime(t2)
+
+    bulk = []
+    for nslc in nslc_list:
+        n, s, l, c = str2nslc(nslc)
+        bulk.append((n, s, l, c, t1, t2))
+
+    return bulk
+
