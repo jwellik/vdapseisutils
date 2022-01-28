@@ -1,4 +1,4 @@
-# vdapseisutils.waveformutils.datasource.filestructure.py
+# vdapseisutils.waveformutils.datasource.filestructure_v1.py
 
 
 def get_filelist_all(searchdir, filepattern='*'):
