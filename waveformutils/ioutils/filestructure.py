@@ -1,26 +1,21 @@
 # Various filestructure/filename formats
 
-# soon to be deprecated
-sds_standard = 'BASEDIR/YEAR/NET/STA/CHAN.TYPE/NET.STA.LOC.CHAN.TYPE.YEAR.JDAY.EXTENSION'
-sds_standard_ext = 'BASEDIR/YEAR/NET/STA/CHAN.TYPE/NET.STA.LOC.CHAN.TYPE.YEARMONTHDATE-HOURMINUTESECOND.EXTENSION'
-sds_single = 'BASEDIR/NET.STA.LOC.CHAN.TYPE.YEAR.JDAY.EXTENSION'
-sds_single_ext = 'BASEDIR/NET.STA.LOC.CHAN.TYPE.YEARMONTHDATE-HOURMINUTESECOND.EXTENSION'
-swarm = 'BASEDIR/YEARMONTHDATEHOURMINUTESECOND/STA_CHAN_NET_LOC.EXTENSION'
-swarm_ext = 'BASEDIR/YEAR/NET/STA/CHAN.TYPE/STA_CHAN_NET_LOC-YEARMONTHDATE-HOURMINUTESECOND.EXTENSION'
-swarm_single_ext = 'BASEDIR/STA_CHAN_NET_LOC-YEARMONTHDATE-HOURMINUTESECOND.EXTENSION'
-
 # Filestructure and Filename Standards
-sds_filestructure = 'YEAR/NET/STA/CHAN.TYPE/'
-sds_filename = 'NET.STA.LOC.CHAN.TYPE.YEAR.JDAY.EXTENSION'
+
+# SeisComP Data Structure (standard format)
+sds_filestructure = "{YEAR}/{NET}/{STA}/{CHAN}.{TYPE}/"
+sds_filename = "{NET}.{STA}.{LOC}.{CHAN}.{TYPE}.{YEAR:04}.{JDAY:03}.{FORMAT}"
 sds_standard = sds_filestructure + sds_filename
 
-swarm_filestructure = 'YEARMONTHDATEHOURMINUTESECOND/'
-swarm_filename = 'STA_CHAN_NET_LOC.EXTENSION'
+# Swarm (standard format)
+swarm_filestructure = "{YEAR:04}{MONTH:02}{DATE:02}{HOUR:02}{MINUTE:02}{SECOND:02}/"
+swarm_filename = "{STA}_{CHAN}_{NET}_{LOC}.{FORMAT}"
 swarm_standard = swarm_filestructure + swarm_filename
 
-sds_starttime = 'NET.STA.LOC.CHAN.TYPE.YEARMONTHDATE-HOURMINUTESECOND.EXTENSION'
-swarm_starttime = 'STA_CHAN_NET_LOC-YEARMONTHDATE-HOURMINUTESECOND.EXTENSION'
-nslc_starttime = 'NET.STA.LOC.CHAN-YEARMONTHDATE-HOURMINUTESECOND.EXTENSION'
+# Custom
+sds_starttime = "{NET}.{STA}.{LOC}.{CHAN}.{TYPE}.{YEAR:04}{MONTH:02}{DATE:02}-{HOUR:02}{MINUTE:02}{SECOND:02}.{FORMAT}"
+swarm_starttime = "{STA}_{CHAN}_{NET}_{LOC}-{YEAR:04}{MONTH:02}{DATE:02}-{HOUR:02}{MINUTE:02}{SECOND:02}.{FORMAT}"
+nslc_starttime = "{NET}.{STA}.{LOC}.{CHAN}-{YEAR:04}{MONTH:02}{DATE:02}-{HOUR:02}{MINUTE:02}{SECOND:02}.{FORMAT}"
 
 
 def write2sds(st, basedir='./',
@@ -37,20 +32,20 @@ def write2sds(st, basedir='./',
     filestructure : str : Syntax for filestructure. Options are:
         Default: 'BASEDIR/YEAR/NET/STA/CHAN.TYPE/NET.STA.LOC.CHAN.TYPE.YEAR.JDAY.EXTENSION'
         Options:
-        BASEDIR        #%BASEDIR
-        NET            #%NN
-        STA            #%SSSS
-        LOC            #%LL
-        CHAN           #%CC
-        TYPE           #%T
-        YEAR           #%YYYY
-        JDAY           #%JDAY
-        DATE           #%DD
-        HOUR           #%HH
-        MINUTE         #%MM
-        SECOND         #%SS
-        #MISCROSEC     #%FFFF
-        EXTENSION      #%EXT
+        BASEDIR
+        NET
+        STA
+        LOC
+        CHAN
+        TYPE
+        YEAR
+        JDAY
+        DATE
+        HOUR
+        MINUTE
+        SECOND
+        #MISCROSEC
+        EXTENSION
 
     :return
         output_files : list of full filepaths for output miniseed files
@@ -59,7 +54,7 @@ def write2sds(st, basedir='./',
     import os
     from pathlib import Path
 
-    filestructure = 'BASEDIR/' + filestructure  # Add BASEDIR to path
+    filestructure = os.path.join('{BASEDIR}', filestructure)  # Add BASEDIR to path
     output_files = []  # list of final output files
 
     for tr in st:
@@ -89,28 +84,30 @@ def write2sds(st, basedir='./',
         # Replace filestructure syntax with variables
 
         fullpath = filestructure  # Initialize syntax for this file
-        fullpath = fullpath.replace('BASEDIR', basedir)
 
-        fullpath = fullpath.replace('NET', network)
-        fullpath = fullpath.replace('STA', station)
-        fullpath = fullpath.replace('LOC', location)
-        fullpath = fullpath.replace('CHAN', channel)
-        fullpath = fullpath.replace('TYPE', datatype)
+        fullpath = fullpath.format(
+            BASEDIR=basedir,
+            NET=network,
+            STA=station,
+            LOC=location,
+            CHAN=channel,
+            TYPE=datatype,
 
-        fullpath = fullpath.replace('YEAR', year)
-        fullpath = fullpath.replace('MONTH', month)
-        fullpath = fullpath.replace('DATE', date)  # Day of month
-        fullpath = fullpath.replace('JDAY', jday)  # Julian Day of Year
+            YEAR=year,
+            MONTH=month,
+            DATE=date,
+            JDAY=jday,
 
-        fullpath = fullpath.replace('HOUR', hour)
-        fullpath = fullpath.replace('MINUTE', minute)
-        fullpath = fullpath.replace('SECOND', second)
+            HOUR=hour,
+            MINUTE=minute,
+            SECOND=second,
 
-        fullpath = fullpath.replace('EXTENSION', fileformat)
+            FORMAT=fileformat,
+        )
 
         # Assert proper filestructure path and that create directories
         fullpath = os.path.normcase(os.path.normpath(fullpath))  # Normalize case of filepath; assert proper syntax
-        fullpath = os.path.abspath(fullpath)  # Create absolte path if relative path given
+        fullpath = os.path.abspath(fullpath)  # Create absolute path if relative path given
         directories, filename = os.path.split(fullpath)  # Split into directories, filename
         Path(directories).mkdir(parents=True, exist_ok=True)  # Create all directories necessary
 
@@ -122,11 +119,12 @@ def write2sds(st, basedir='./',
     return output_files
 
 
+# Not using this locally yet
 def make_directories(fullpath):
     import os
     from pathlib import Path
 
     fullpath = os.path.normcase(os.path.normpath(fullpath))  # Normalize case of filepath; assert proper syntax
-    fullpath = os.path.abspath(fullpath)  # Create absolte path if relative path given
+    fullpath = os.path.abspath(fullpath)  # Create absolute path if relative path given
     directories, filename = os.path.split(fullpath)  # Split into path filename
     Path(directories).mkdir(parents=True, exist_ok=True)  # Create all directories necessary
