@@ -2,9 +2,9 @@ from obspy import UTCDateTime
 from obspy.core.event import Catalog, Event, Origin, Magnitude
 from obspy.geodetics import FlinnEngdahl
 
-example_file = './data/Copahue_events_from_reavs.csv'
-
 import pandas as pd
+
+example_file = './data/Copahue_events_from_reavs.csv'
 
 
 def example():
@@ -58,7 +58,7 @@ def read_victoria_csv(file):
                      )
     df['time'] = df['date_HH:MM']
     df = df.drop(columns=['date_HH:MM'])
-    df['depth'] = df['depth(km)']*1000
+    df['depth'] = df['depth(km)'] * 1000
     df = df.drop(columns=['depth(km)'])
     df['mag'] = df['ML']
     df = df.drop(columns=['ML'])
@@ -100,7 +100,44 @@ def read_victoria_csv(file):
     return cat
 
 
-def catalog2basics(cat):
+def catalog2basics(cat, depth_unit="km", time_format="UTCDateTime", verbose=False, filename=False, **to_csv_kwargs):
+    """Returns time(UTCDateTime), lat, lon, depth(kilometers), and mag from ObsPy Catalog object
+
+    - 'time' is returned as a UTCDateTime object
+    - 'time_format' can be specified as 'UTCDateTime', 'matplotlib', or 'datetime'
+
+    - 'depth' is returned as 'km' even though ObsPy Catalog default is 'm'
+    - 'depth_unit' can be specified as 'km' or 'm'
+    - depths below sea level are positive
+
+    Print to a txt file by specificing filename=<targetfile.txt>
+    Manipulate the text file by specifying any keyword arguments understood by Pandas DataFrame to_csv()
+    - default: index=False  # index column is not included in the txt file
+    The dictionary is still returned
+    e.g., >>> catalog2basics(catalog, filename="./catalog.txt", sep="\t")
+    """
+
+    # Adjust for depth_unit
+    if depth_unit == "m":
+        dconvert = 1
+    elif depth_unit == "km":
+        dconvert = 1000
+    else:
+        if verbose: print("'depth_unit' not understood. Default value 'km' is used.")
+        dconvert = 1000
+
+    # Adjust for time_format
+    def convert_time_format(utcdatetime):
+        if time_format == "UTCDateTime":
+            return utcdatetime
+        elif time_format == "matplotlib":
+            return utcdatetime.matplotlib_date
+        elif time_format == "datetime":
+            return utcdatetime.datetime
+        else:
+            print("'time_type' not understood. Default value 'UTCDateTime' is used.")
+            return utcdatetime
+
     # Get info out of Events object
     time = []
     lat = []
@@ -110,13 +147,30 @@ def catalog2basics(cat):
     for event in cat:
         lat.append(event.origins[-1].latitude)
         lon.append(event.origins[-1].longitude)
-        depth.append(event.origins[-1].depth)  # meters
+        depth.append(event.origins[-1].depth / dconvert)  # meters (by default)
         mag.append(event.magnitudes[-1].mag if event.magnitudes[-1].mag is not None else -1)  # -1 is the default
-        time.append(event.origins[-1].time.matplotlib_date)
+        time.append(convert_time_format(event.origins[-1].time))
 
-    return time, lat, lon, depth, mag
+    data = dict({"time": time, "lat": lat, "lon": lon, "depth": depth, "mag": mag})
+
+    if filename:
+        pd.DataFrame(data).to_csv(filename, index=False, **to_csv_kwargs)
+        if verbose: print("Catalog printed : {}".format(filename))
+
+    return data
+
 
 if __name__ == '__main__':
     example()
     print()
     read_victoria_csv(example_file)
+
+
+
+"""
+TO DO:
+catalog2basic
+[ ] Add optional magnitude type column
+[ ] Add optional filename output
+[ ] Should contents of data = catalog2basics(...) be arrays instead of lists?
+"""

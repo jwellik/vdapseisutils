@@ -268,12 +268,13 @@ class MapFigure:
 
         # Get info out of Events object
         from vdapseisutils.eventutils.catalogutils import catalog2basics
-        time, lat, lon, depth, mag = catalog2basics(catalog)
-        depth = list(np.array(depth) / 1000 * -1)  # meters to km
+        # returns time(UTCDateTime), lat, lon, depth(km, positive below sea level), mag
+        catdata = catalog2basics(catalog, time_format="matplotlib")
+        catdata["depth"] = list(np.array(catdata["depth"]) * -1)  # below sea level values are negative for plotting purposes
 
         # Set up the magnitude scale parameters
-        mso = 0 if min(mag) >= 0 else np.floor(np.min(mag)) * -1  # magnitude offset scale to avoid negatives
-        mag = np.array(mag) + mso  # adjusted Magnitude value for plotting purposes
+        mso = 0 if min(catdata["mag"]) >= 0 else np.floor(np.min(catdata["mag"])) * -1  # magnitude offset scale to avoid negatives
+        catdata["mag"] = np.array(catdata["mag"]) + mso  # adjusted Magnitude value for plotting purposes
         scale_mag = np.array([1, 2, 3, 4, 5]) + mso  # Array of values for the scale box
 
         # Define size for each marker
@@ -281,24 +282,24 @@ class MapFigure:
         # #  -Exponential
         if scale_type == 'exponential':
             scatter_scale = 2  # converts magnitude to scatter plot size (try many numbers across orders of magnitude)
-            s = scatter_scale ** mag  # markersize**2 for the map
+            s = scatter_scale ** catdata["mag"]  # markersize**2 for the map
             scale_s = scatter_scale ** scale_mag  # markersize**2 for scale box; alternatively, ms=scatter_scale (and use ms in the scatter() function)
         #  -Linear
         elif scale_type == 'linear':
             scatter_scale = 1  # converts magnitude to scatter plot size (try many numbers across orders of magnitude)
-            s = scatter_scale * mag ** 2  # markersize**2 for the map
+            s = scatter_scale * catdata["mag"] ** 2  # markersize**2 for the map
             scale_s = scatter_scale * scale_mag ** 2  # markersize**2 for scale box; alternatively, ms=scatter_scale (and use ms in the scatter() function)
 
         # Plot to axes
-        self.fig.axes[AXM].scatter(lon, lat, s=s, c=time,
+        self.fig.axes[AXM].scatter(catdata["lon"], catdata["lat"], s=s, c=catdata["time"],
                                    norm=norm, cmap=cmap, transform=transform, alpha=alpha, **kwargs)
-        self.fig.axes[AXH].scatter(lon, depth, s=s, c=time,  # Horizontal XSection
+        self.fig.axes[AXH].scatter(catdata["lon"], catdata["depth"], s=s, c=catdata["time"],  # Horizontal XSection
                                    norm=norm, cmap=cmap, alpha=alpha, **kwargs)
-        self.fig.axes[AXV].scatter(depth, lat, s=s, c=time,  # Vertical XSection
+        self.fig.axes[AXV].scatter(catdata["depth"], catdata["lat"], s=s, c=catdata["time"],  # Vertical XSection
                                    norm=norm, cmap=cmap, alpha=alpha, **kwargs)
 
         # MAGNITUDE SCALE (define positiong and limits)
-        mag_scale_xpos = np.array([0] * len(scale_mag))  # xpos of mag scale circles is 0, make the array
+        mag_scale_xpos = np.array([0] * len(scale_mag))  # xpos of catadatamag scale circles is 0, make the array
         if scale_type == 'exponential':
             mag_scale_ypos = scale_mag ** 2  # largest on top, smallest on bottom, 1 order of magnitude apart looks nice
             ylim = (0, (scale_mag[-1] + 2) ** 2)
@@ -391,33 +392,40 @@ class MapFigure:
         # Download the elevation data
         # This try/except statement should come in the download_profile module itself.
         try:
-            # Download & plot elevation data for A-A'
-            elev_data_A = elev_profile.download_profile(A1, A2, n=n)  # elevation returned in meters
-            # Download & plot elevation data for A-A'
-            elev_data_B = elev_profile.download_profile(B1, B2, n=n)  # elevation returned in meters
 
-            # Plot data and format axis for A-A'
-            lon = elev_data_A['lon']
-            elev = np.array(elev_data_A['elev']) / 1000  # convert to km
-            self.fig.axes[AXH].plot(lon, elev, color=color, linewidth=linewidth)
-            # custom spine bounds for a nice clean look
-            self.fig.axes[AXH].spines['top'].set_visible(False)
-            self.fig.axes[AXH].spines.left.set_bounds(
-                (self.depth_extent_v[1], elev[0]))  # depth_extent_v[1] is the top elev
-            self.fig.axes[AXH].spines.right.set_bounds((self.depth_extent_v[1], elev[-1]))
+            try:
+                # Download & plot elevation data for A-A'
+                elev_data_A = elev_profile.download_profile(A1, A2, n=n)  # elevation returned in meters
+                # Download & plot elevation data for A-A'
+                elev_data_B = elev_profile.download_profile(B1, B2, n=n)  # elevation returned in meters
+                plot_profiles = True
+            except HTTPError:
+                print("There was a problem downloading elevation data. Moving on...")
+                plot_profiles = False
 
-            # Plot data and format axis for B-B'
-            lat = elev_data_B['lat']
-            elev = np.array(elev_data_B['elev']) / 1000  # convert to km
-            self.fig.axes[AXV].plot(elev, lat, color=color, linewidth=linewidth)
-            # custom spine bounds for a nice clean look
-            self.fig.axes[AXV].spines['left'].set_visible(False)
-            self.fig.axes[AXV].spines.bottom.set_bounds(
-                (self.depth_extent_v[1], elev[0]))  # depth_extent_v[1] is the top elev
-            self.fig.axes[AXV].spines.top.set_bounds((self.depth_extent_v[1], elev[-1]))
+            if plot_profiles:
+                # Plot data and format axis for A-A'
+                lon = elev_data_A['lon']
+                elev = np.array(elev_data_A['elev']) / 1000  # convert to km
+                self.fig.axes[AXH].plot(lon, elev, color=color, linewidth=linewidth)
+                # custom spine bounds for a nice clean look
+                self.fig.axes[AXH].spines['top'].set_visible(False)
+                self.fig.axes[AXH].spines.left.set_bounds(
+                    (self.depth_extent_v[1], elev[0]))  # depth_extent_v[1] is the top elev
+                self.fig.axes[AXH].spines.right.set_bounds((self.depth_extent_v[1], elev[-1]))
 
-        except HTTPError:
-            print("There was a problem downloading or displaying elevation data. Moving on...")
+                # Plot data and format axis for B-B'
+                lat = elev_data_B['lat']
+                elev = np.array(elev_data_B['elev']) / 1000  # convert to km
+                self.fig.axes[AXV].plot(elev, lat, color=color, linewidth=linewidth)
+                # custom spine bounds for a nice clean look
+                self.fig.axes[AXV].spines['left'].set_visible(False)
+                self.fig.axes[AXV].spines.bottom.set_bounds(
+                    (self.depth_extent_v[1], elev[0]))  # depth_extent_v[1] is the top elev
+                self.fig.axes[AXV].spines.top.set_bounds((self.depth_extent_v[1], elev[-1]))
+
+        except ValueError:
+            print("There was a problem making the topographic profiles. Moving on...")
 
 
 
