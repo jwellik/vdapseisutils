@@ -121,7 +121,7 @@ class DataSource:
             self.ds_type = '--'
             self.name = '--'
 
-    def getWaveforms(self, nslc_list, tstart, tend, create_empty_trace=False, fill_value=None, sverbose=False):
+    def getWaveforms(self, nslc_list, tstart, tend, create_empty_trace=False, fill_value=None, verbose=False):
 
         from vdapseisutils.waveformutils.datasource.fileutils import get_filelist, get_waveforms_from_file_sublist
         from vdapseisutils.waveformutils.datasource.clientutils import get_waveforms_from_client
