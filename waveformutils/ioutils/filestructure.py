@@ -37,6 +37,7 @@ def write2sds(st, basedir='./',
         STA
         LOC
         CHAN
+        ID    : equivalent to "NET.STA.LOC.CHA"
         TYPE
         YEAR
         JDAY
@@ -67,19 +68,29 @@ def write2sds(st, basedir='./',
         location = tr.stats.location
         channel = tr.stats.channel
 
+        id = tr.idS
+
         # Assert datatype 'D'
         datatype = 'D'
 
         # Parse time information from Stream as zero-padded string
-        year = '{:04d}'.format(tr.stats.starttime.year)  # Create zero-padded strings
-        jday = '{:03d}'.format(tr.stats.starttime.julday)
-        month = '{:02d}'.format(tr.stats.starttime.month)
-        date = '{:02d}'.format(tr.stats.starttime.day)
-        hour = '{:02d}'.format(tr.stats.starttime.hour)
-        minute = '{:02d}'.format(tr.stats.starttime.minute)
-        second = '{:02d}'.format(tr.stats.starttime.second)
+        # year = '{:04d}'.format(tr.stats.starttime.year)  # Create zero-padded strings
+        # jday = '{:03d}'.format(tr.stats.starttime.julday)
+        # month = '{:02d}'.format(tr.stats.starttime.month)
+        # date = '{:02d}'.format(tr.stats.starttime.day)
+        # hour = '{:02d}'.format(tr.stats.starttime.hour)
+        # minute = '{:02d}'.format(tr.stats.starttime.minute)
+        # second = '{:02d}'.format(tr.stats.starttime.second)
 
-        #################################################################
+        year = tr.stats.starttime.year  # Create zero-padded strings
+        jday = tr.stats.starttime.julday
+        month = tr.stats.starttime.month
+        date = tr.stats.starttime.day
+        hour = tr.stats.starttime.hour
+        minute = tr.stats.starttime.minute
+        second = tr.stats.starttime.second
+
+        ################################################################
         # Create filename
         # Replace filestructure syntax with variables
 
@@ -91,6 +102,7 @@ def write2sds(st, basedir='./',
             STA=station,
             LOC=location,
             CHAN=channel,
+            ID=id,
             TYPE=datatype,
 
             YEAR=year,
@@ -113,7 +125,7 @@ def write2sds(st, basedir='./',
 
         #################################################################
         # Write file!
-        tr.write(fullpath, reclen=reclen)
+        tr.write(fullpath, reclen=reclen, format=fileformat)
         output_files.append(fullpath)
 
     return output_files
