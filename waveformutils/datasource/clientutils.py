@@ -1,22 +1,18 @@
 def get_waveforms_from_client(client, nslc_list, t1, t2,
-                              filelength=86400,
-                              max_download=3600,
-                              clean=False,
+                              max_download=86400,
                               fill_value=None,
-                              filterargs=[],
-                              taperargs=[],
                               create_empty_trace=False,
                               verbose=False
                               ):
     from obspy import UTCDateTime, Stream
 
-    from vdapseisutils.waveformutils.nslcutils import str2nslc, setNSLC
-    from vdapseisutils.waveformutils.streamutils import removeWinstonGaps, sortStreamByNSLClist, createEmptyTrace
+    from vdapseisutils.waveformutils.nslcutils import str2nslc
+    from vdapseisutils.waveformutils.streamutils import sortStreamByNSLClist, createEmptyTrace
     from vdapseisutils.waveformutils import timeutils
 
     # Assert tstart, tend as UTCDateTime
     t1 = UTCDateTime(t1)
-    t2 = UTCDateTime(t2)
+    t2 = UTCDateTime(t2) - 1 / 1000  # Avoids extra data sample being downloaded
 
     # Assert proper NSLC lists
     if type(nslc_list) is str: nslc_list = [nslc_list]  # Assert NSLC as list
@@ -35,9 +31,8 @@ def get_waveforms_from_client(client, nslc_list, t1, t2,
         dtstarts, dtends = timeutils.createTimeChunks(t1, t2, nsec=max_download, verbose=False)
         for dt1, dt2 in zip(dtstarts, dtends):
 
-            stmp2 = Stream()
-
-            if verbose: print('  - Downloading   : {} to {}'.format(dt1, dt2))
+            if verbose:
+                print('  - Downloading   : {} to {}'.format(dt1, dt2))
 
             try:
                 #                 print('  - Getting waveform')
