@@ -44,10 +44,28 @@ def tanklines(nslc_list, tankdir, inst_id="INST_UNKOWN", mod_id="MOD_ADSEND_A", 
     for line in WAVE_SERVERV:
         print(line)
     print()
-    print("::: Add these lines to wave_serverV.d")
+    print("::: Add these lines to tankplayer.d")
     for line in TANKPLAYER:
         print(line)
     print()
 
 
+def csv2ewsta():
+    print("[IN DEVELOPMENT] Prints CSV lines into formatted lines for pick_ew.sta")
 
+    line_fmt = "{space:4}{onoff:1}{space:3}{seq:<5}{sta:<6}{cha:<4}{net:<3}{loc:<3}3  40  3  20  500  0 0.854  3.  .4  .015 5.  .9961  1200.  409.59  .8  1.5  50000. 23689428".format(space=" ",
+                 onoff=1, seq=500, sta="PV6A", cha="BHZ", net="AV", loc="--")
+
+    print()
+    print("#  --------------------------------------------------------------------------------------")
+    print("#                 MinBigZC    RawDataFilt    LtaFilt         DeadSta          PreEvent")
+    print("#  Station/  MinSmallZC   MaxMint        StaFilt       RmavFilt           AltCoda")
+    print("#  Comp/Net  Itr1   MinPeakSize   CharFuncFilt  EventThresh          CodaTerm         Erefs")
+    print("#  --------------------------------------------------------------------------------------")
+    print(line_fmt)
+    print("")
+
+
+def nslc2ewstacsv():
+    print("[IN DEVELOPMENT] Creates a pick_ew.sta file (in csv format) populated w desired NSLCs and pre-populated w other default values\nRun csv2ewsta() to create pick_ew.sta")
+    print()
