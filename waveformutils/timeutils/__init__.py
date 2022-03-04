@@ -1,3 +1,4 @@
+import pandas as pd
 from obspy import UTCDateTime
 
 def info():
@@ -42,10 +43,10 @@ def createTimeChunks(tstart, tend, nsec, verbose=False):
         
     Examples:
 
-    >>> createTimeChunks( '2017/03/17', '2017/03/17 03:00:00', 3600)
-    ... >>> New chunk : 2017/03/17 00:00:00 - 2017/03/17 01:00:00
-    ... >>> New chunk : 2017/03/17 01:00:00 - 2017/03/17 02:00:00
-    ... >>> New chunk : 2017/03/17 02:00:00 - 2017/03/17 03:00:00
+    #>>> createTimeChunks( '2017/03/17', '2017/03/17 03:00:00', 3600)
+    #... >>> New chunk : 2017/03/17 00:00:00 - 2017/03/17 01:00:00
+    #... >>> New chunk : 2017/03/17 01:00:00 - 2017/03/17 02:00:00
+    #... >>> New chunk : 2017/03/17 02:00:00 - 2017/03/17 03:00:00
 
     
     """
@@ -71,3 +72,34 @@ def createTimeChunks(tstart, tend, nsec, verbose=False):
         ends.append(tend)
             
     return starts, ends
+
+
+def date_range(start, stop, freq="1D", dtype="UTCDateTime"):
+    """Creates an array of datetimes of the desired type
+    Relies on Pandas date_range() to do the real work
+    'freq' can be specified as anything understood by date_range or as an integer of days
+    https://pandas.pydata.org/docs/user_guide/timeseries.html#timeseries-offset-aliases
+    """
+
+    # This might be helpful:
+    # https://stackoverflow.com/questions/12137277/how-can-i-make-a-python-numpy-arange-of-datetimev
+
+    dr_tmp = pd.date_range(start, stop, freq=freq)
+
+    dr = []
+    if dtype == "UTCDateTime":
+        func = [dr.append(UTCDateTime(d)) for d in dr]
+    if dtype == "pdTimestamp":  # Pandas Timestamp
+        pass
+    if dtype == "matplotlib":  # Matplotlib date
+        pass
+    if dtype == "datetime":  # Python datetime object
+        pass
+    if dtype == "timestamp":  # returns UTC timestamp in seconds
+        pass
+
+    return []
+
+
+def date_period():
+    pass
