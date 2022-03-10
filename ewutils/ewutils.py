@@ -70,8 +70,17 @@ def nslc2ewstacsv():
     print("[IN DEVELOPMENT] Creates a pick_ew.sta file (in csv format) populated w desired NSLCs and pre-populated w other default values\nRun csv2ewsta() to create pick_ew.sta")
     print()
 
-def nslc2subnet(nslc_list, subnetid=1, nstatrig=None):
-    # Subnet 010  4  BRSP.BHZ.CC.-- HIYU.BHZ.CC.-- LSON.BHZ.CC.-- PALM.BHZ.CC.-- SHRK.BHZ.CC.-- TIMB.BHZ.CC.-- YOCR.BHZ.CC.-- AUG.EHZ.UW.--
+def nslc2subnet(nslc_list, subnetid=1, nstatrig=None, verbose=True):
+    """NSLC2SUBNET Format list of NSLCs into Subnet line for carsubtrig.d
+    subnetid is three-digit, zero-padded ID number
+    nstatrig is number of stations required to produce a trigger
+     if not specified, it will default to a little more than half the number of stations
+     no special formatting
+
+    Example line:
+    Subnet 010  4  BRSP.BHZ.CC.-- HIYU.BHZ.CC.-- LSON.BHZ.CC.-- PALM.BHZ.CC.-- SHRK.BHZ.CC.-- TIMB.BHZ.CC.-- YOCR.BHZ.CC.-- AUG.EHZ.UW.--
+    """
+
 
     import numpy as np
 
@@ -79,26 +88,32 @@ def nslc2subnet(nslc_list, subnetid=1, nstatrig=None):
     if nstatrig is None:
         nstatrig = int(np.ceil(len(nslc_list)/2))
 
-    subnet_str = "Subnet {subnetid:03d}  {nstatrig}  "
+    subnet_str = "Subnet {subnetid:03d}  {nstatrig}  "  # Hone the spaces, but exact number probably doesn't matter
     
     scnl_list = []
     for nslc in nslc_list:
         n, s, l, c = nslc.split(".")
         scnl = " {}.{}.{}.{}".format(s,c,n,l)
         subnet_str += scnl
-    
-    print(subnet_str.format(subnetid=subnetid, nstatrig=nstatrig))
+
+    subnet_str = subnet_str.format(subnetid=subnetid, nstatrig=nstatrig)
+    if verbose:
+        print("::: Add these lines to carlsubtrig.d")
+        print(subnet_str)
+    return subnet_str
 
 
-def subnet2nslc(subnet_str):
-    # TODO: This isn't working yet
-    
-    subnet_list = subnet_str.split(" ")
+
+def subnet2nslc(subnet_str, verbose=True):
+    """SUBNET2NSLC Converts Subnet line of SCNLs from carstatrig.d into NSLC list"""
+
+    subnet_list = " ".join(subnet_str.split()).split(" ")  # remove all (and extra) whitespaces
     nslc_list = []
     for scnl in subnet_list[3:]:
         s, c, n, l = scnl.split(".")
-        nslc = "{}.{}.{}.{}".format(n,s,l,c)
+        nslc = "{}.{}.{}.{}".format(n, s, l, c)
         nslc_list.append(nslc)  
 
-    print(nslc_list)
+    if verbose:
+        print(nslc_list)
     return nslc_list
