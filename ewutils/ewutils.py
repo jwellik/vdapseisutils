@@ -69,3 +69,36 @@ def csv2ewsta():
 def nslc2ewstacsv():
     print("[IN DEVELOPMENT] Creates a pick_ew.sta file (in csv format) populated w desired NSLCs and pre-populated w other default values\nRun csv2ewsta() to create pick_ew.sta")
     print()
+
+def nslc2subnet(nslc_list, subnetid=1, nstatrig=None):
+    # Subnet 010  4  BRSP.BHZ.CC.-- HIYU.BHZ.CC.-- LSON.BHZ.CC.-- PALM.BHZ.CC.-- SHRK.BHZ.CC.-- TIMB.BHZ.CC.-- YOCR.BHZ.CC.-- AUG.EHZ.UW.--
+
+    import numpy as np
+
+    # if nstatrig is None, define it as a little more than half the number of stations
+    if nstatrig is None:
+        nstatrig = int(np.ceil(len(nslc_list)/2))
+
+    subnet_str = "Subnet {subnetid:03d}  {nstatrig}  "
+    
+    scnl_list = []
+    for nslc in nslc_list:
+        n, s, l, c = nslc.split(".")
+        scnl = " {}.{}.{}.{}".format(s,c,n,l)
+        subnet_str += scnl
+    
+    print(subnet_str.format(subnetid=subnetid, nstatrig=nstatrig))
+
+
+def subnet2nslc(subnet_str):
+    # TODO: This isn't working yet
+    
+    subnet_list = subnet_str.split(" ")
+    nslc_list = []
+    for scnl in subnet_list[3:]:
+        s, c, n, l = scnl.split(".")
+        nslc = "{}.{}.{}.{}".format(n,s,l,c)
+        nslc_list.append(nslc)  
+
+    print(nslc_list)
+    return nslc_list
