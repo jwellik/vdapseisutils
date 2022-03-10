@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from obspy import UTCDateTime
 
@@ -87,18 +88,20 @@ def date_range(start, stop, freq="1D", dtype="UTCDateTime"):
     dr_tmp = pd.date_range(start, stop, freq=freq)
 
     dr = []
-    if dtype == "UTCDateTime":
-        func = [dr.append(UTCDateTime(d)) for d in dr]
-    if dtype == "pdTimestamp":  # Pandas Timestamp
-        pass
-    if dtype == "matplotlib":  # Matplotlib date
-        pass
-    if dtype == "datetime":  # Python datetime object
-        pass
-    if dtype == "timestamp":  # returns UTC timestamp in seconds
-        pass
+    if dtype.lower() == "UTCDateTime".lower():
+        [dr.append(UTCDateTime(d)) for d in dr_tmp]
+    if dtype.lower() == "pdTimestamp".lower():  # Pandas Timestamp
+        [dr.append(pd.Timestamp(UTCDateTime(d))) for d in dr_tmp]
+    if dtype.lower() == "matplotlib".lower():  # Matplotlib date
+        [dr.append(UTCDateTime(d).matplotlib_date) for d in dr_tmp]
+    if dtype.lower() == "datetime".lower():  # Python Datetime object
+        [dr.append(UTCDateTime(d).datetime) for d in dr_tmp]
+    if dtype.lower() == "timestamp".lower():  # returns UTC timestamp in seconds
+        [dr.append(UTCDateTime(d).timestamp) for d in dr_tmp]
+    if dtype.lower() == "datetime64".lower():  # returns UTC timestamp in seconds
+        [dr.append(np.datetime64(UTCDateTime(d))) for d in dr_tmp]
 
-    return []
+    return dr
 
 
 def date_period():
