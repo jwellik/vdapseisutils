@@ -34,7 +34,7 @@ def tanklines(nslc_list, tankdir, inst_id="INST_UNKOWN", mod_id="MOD_ADSEND_A", 
             sta=sta, cha=cha, net=net, loc=loc, reclen=reclen, inst_id=inst_id, mod_id=mod_id, tankdir=tankdir)
         WAVE_SERVERV.append(wave_serverV)
 
-        # Create line for tank_player.d
+        # Create line for tankplayer.d
         tankplayer = "WaveFile        {tankdir}/{sta}_{cha}_{net}_{loc}.tnk".format(
             sta=sta, cha=cha, net=net, loc=loc, tankdir=tankdir)
         TANKPLAYER.append(tankplayer)
@@ -69,6 +69,7 @@ def csv2ewsta():
 def nslc2ewstacsv():
     print("[IN DEVELOPMENT] Creates a pick_ew.sta file (in csv format) populated w desired NSLCs and pre-populated w other default values\nRun csv2ewsta() to create pick_ew.sta")
     print()
+
 
 def nslc2subnet(nslc_list, subnetid=1, nstatrig=None, verbose=True):
     """NSLC2SUBNET Format list of NSLCs into Subnet line for carsubtrig.d
