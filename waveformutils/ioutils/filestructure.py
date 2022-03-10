@@ -68,7 +68,7 @@ def write2sds(st, basedir='./',
         location = tr.stats.location
         channel = tr.stats.channel
 
-        id = tr.idS
+        id = tr.id
 
         # Assert datatype 'D'
         datatype = 'D'
