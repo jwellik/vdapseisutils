@@ -18,6 +18,11 @@ def replaceGapValue(st, gap_value=np.nan, fill_value=0 ):
 
            
 def sortStreamByNSLClist(st_in, nslc_list):
+    """SORTSTREAMBYNSLCLIST
+    This method inherently removes Traces not in the list
+    NSLCs not present in Stream can be created as empty, if desired
+    """
+    # TODO: Replace with code from PROJECTS/STALTA_tuner/sortNSLC_test.py
 
     import numpy as np
     from obspy import Stream, Trace

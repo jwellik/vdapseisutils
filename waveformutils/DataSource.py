@@ -54,7 +54,7 @@ class DataSource:
             self.searchdir = ds_input  # top level directory for filestructure
             self.filepattern = filepattern  # regexp filepattern
             self.filelist_all = get_all_files(ds_input, filepattern=self.filepattern)
-            self.filelist = get_all_files(ds_input, filepattern=self.filepattern)
+            self.filelist = None  # TODO: Create function reducefilelist(filelist, nslc_list=None, t1=None, t2=None, filepattern="*")
             self.name = '{} {}'.format(self.searchdir, self.filepattern)  # For printing purposes
 
         # Client DataSource
@@ -132,9 +132,9 @@ class DataSource:
         if self.ds_type.lower() == 'filestructure'.lower():
 
             if self.filelist is None:
-                self.filelist = get_filelist(nslc_list, tstart, tend, filepattern=self.filepattern)
+                self.filelist = get_filelist(self.searchdir, nslc_list, tstart, tend, filepattern=self.filepattern)
 
-            st = get_waveforms_from_file_sublist(self.filelist_sub,
+            st = get_waveforms_from_file_sublist(self.filelist,
                                                  nslc_list, tstart, tend, create_empty_trace=create_empty_trace,
                                                  verbose=verbose)
 

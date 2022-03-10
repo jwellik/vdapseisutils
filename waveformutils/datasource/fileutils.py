@@ -1,10 +1,21 @@
 def get_all_files(searchdir, filepattern='*'):
     """GET_FILELIST_ALL Returns all files under searchdir that match filepattern"""
-    import glob, os, itertools
 
-    # # Generate list of files (all files under top directory)
+    # This method might be faster, but doesn't inherently remove subdirectories
+    import glob, os, itertools
+    # Generate list of files (all files under top directory)
     flist = list(itertools.chain.from_iterable(glob.iglob(os.path.join(
         root, filepattern)) for root, dirs, files in os.walk(searchdir)))
+
+    ## Might be slow, but only returns files with the desired filepattern
+    #import os
+    #flist = []
+    #for root, dirs, files in os.walk(searchdir, topdown=False):
+    #    for name in files:
+    #        full_filename = os.path.join(root, name)
+    #        if filepattern in full_filename:
+    #            print(full_filename)
+    #            flist.append(full_filename)
 
     return flist
 
@@ -62,6 +73,8 @@ def get_waveforms_from_file_sublist(flist_sub, nslc_list, t1, t2, filepattern='*
     #         stmp = stmp.merge(method=1, fill_value=0)
 
     stmp = stmp.merge(method=1, fill_value=fill_value)
+    print("::: GET_WAVEFORMS_FROM_FILE_SUBLIST ::: ")
+    print(stmp)
 
     #     # Only grab stations/channels that we want and in order - Modelled after Alicia's code in REDPy
     #     # But this already happens?
