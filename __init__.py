@@ -4,9 +4,9 @@ def varinfo(var):
 
     vname = 'varname'
     vtype = type(var)
-    if vtype is 'list':
+    if vtype == 'list':
         vshape = shape(var)
-    if vtype is 'ndarray':
+    if vtype == 'ndarray':
         vshape = var.shape()
     else:
         vshape = '?'
