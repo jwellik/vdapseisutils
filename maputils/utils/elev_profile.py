@@ -1,5 +1,111 @@
 def download_profile(*args, **kwargs):
-    return download_profile_open_elevation(*args, **kwargs)
+    return download_profile_opentopo(*args, **kwargs)
+
+
+def download_profile_opentopo(p1, p2, n=100,
+                              hosturl="https://api.opentopodata.org/v1/",
+                              dataset="mapzen",
+                              verbose=False):
+    """Downloads elevaton data from https://www.opentopodata.org/
+    e.g., https://api.opentopodata.org/v1/mapzen?locations=56.35,123.90
+
+    P1 : (lat, lon) pair
+    P2 : (lat, lon) pair
+    n  : int : number of points for the elevation profile
+    """
+
+    import os
+
+    import urllib.request
+    import json
+    import math
+
+    api_url = os.path.join(hosturl, dataset + "?locations={locstr}")
+
+    if verbose:
+        print("Downloading data from OpenTopoData...")
+        print(" Host       : {}".format(hosturl))
+        print(" Dataset    : {}".format(dataset))
+
+    # START-END POINT
+    # P1
+    # P2
+
+    # NUMBER OF POINTS
+    s = n - 1  # I don't know why, but setting this to 100 returns 101
+    interval_lat = (p2[0] - p1[0]) / s  # interval for latitude
+    interval_lon = (p2[1] - p1[1]) / s  # interval for longitude
+
+    # SET A NEW VARIABLE FOR START POINT
+    lat0 = p1[0]
+    lon0 = p1[1]
+
+    # LATITUDE AND LONGITUDE LIST
+    lat_list = [lat0]
+    lon_list = [lon0]
+
+    # GENERATING POINTS
+    for i in range(s):
+        lat_step = lat0 + interval_lat
+        lon_step = lon0 + interval_lon
+        lon0 = lon_step
+        lat0 = lat_step
+        lat_list.append(lat_step)
+        lon_list.append(lon_step)
+
+    # HAVERSINE FUNCTION
+    def haversine(lat1, lon1, lat2, lon2):
+        lat1_rad = math.radians(lat1)
+        lat2_rad = math.radians(lat2)
+        lon1_rad = math.radians(lon1)
+        lon2_rad = math.radians(lon2)
+        delta_lat = lat2_rad - lat1_rad
+        delta_lon = lon2_rad - lon1_rad
+        a = math.sqrt(
+            (math.sin(delta_lat / 2)) ** 2 + math.cos(lat1_rad) * math.cos(lat2_rad) * (math.sin(delta_lon / 2)) ** 2)
+        d = 2 * 6371000 * math.asin(a)
+        return d
+
+    # DISTANCE CALCULATION
+    d_list = []
+    for j in range(len(lat_list)):
+        lat_p = lat_list[j]
+        lon_p = lon_list[j]
+        dp = haversine(lat0, lon0, lat_p, lon_p) / 1000  # km
+        d_list.append(dp)
+    d_list_rev = d_list[::-1]  # reverse list
+
+
+    # CONSTRUCT LOCATIONS STRING
+    locations_str = ""
+    for j in range(len(lat_list)):
+        locations_str += "{lat},{lon}|".format(lat=lat_list[j], lon=lon_list[j])
+
+    # SEND REQUEST
+    request_url = api_url.format(locstr=locations_str)
+    if verbose:
+        print(" RequestURL : {}".format(request_url))
+
+
+    response = urllib.request.Request(request_url)
+    fp = urllib.request.urlopen(response)
+
+    # RESPONSE PROCESSING
+    res_byte = fp.read()
+    res_str = res_byte.decode("utf8")
+    js_str = json.loads(res_str)
+    # print (js_mystr)
+    fp.close()
+
+    # GETTING ELEVATION
+    elev_list = []
+    for m in range(len(js_str["results"])):
+        elev_list.append(js_str['results'][m]['elevation'])
+
+    if verbose:
+        print('Done')
+
+    return dict({'lat': lat_list, 'lon': lon_list, 'd': d_list_rev, 'elev': elev_list})
 
 
 def download_profile_open_elevation(p1, p2, n=100, verbose=False):
@@ -22,7 +128,8 @@ def download_profile_open_elevation(p1, p2, n=100, verbose=False):
     # P1
     # P2
 
-    if verbose: print('Downloading elevation data from "https://api.open-elevation.com/api/v1/lookup"')
+    if verbose:
+        print('Downloading elevation data from "https://api.open-elevation.com/api/v1/lookup"')
 
     # NUMBER OF POINTS
     s = n
@@ -152,7 +259,7 @@ def plot_original(d_list_rev, elev_list):
     plt.show()
 
 
-def plot(d_list_rev, elev_list, depth=0, color='black', linewidth=1):
+def plot(d_list_rev, elev_list, depth=0, color='black', linewidth = 1):
     import matplotlib.pyplot as plt
 
     # BASIC STAT INFORMATION
@@ -163,8 +270,9 @@ def plot(d_list_rev, elev_list, depth=0, color='black', linewidth=1):
 
     # PLOT ELEVATION PROFILE
     base_reg = depth * -1
-    fig = plt.figure(figsize=(10, 4))
-    ax = fig
+    # fig = plt.figure(figsize=(10, 4))
+    fig, ax = plt.subplots()
+    fig.set_size_inches(10, 4, forward=True)
     ax.plot(d_list_rev, elev_list, color=color, linewidth=linewidth)
     # plt.plot([0, distance], [min_elev, min_elev], '--g', label='min: ' + str(min_elev) + ' m')
     # plt.plot([0, distance], [max_elev, max_elev], '--r', label='max: ' + str(max_elev) + ' m')
@@ -182,10 +290,11 @@ def plot(d_list_rev, elev_list, depth=0, color='black', linewidth=1):
 
 def test():
     import matplotlib.pyplot as plt
-    pts, elev = download_profile((-8.2359, 115.5995), (-8.4145, 115.4465))
-    fig, ax = plot(pts, elev, depth=50000)
+    data = download_profile((-8.169148, 115.283046), (-8.579110, 115.819991))  # Includes bathymetry
+    # data = download_profile((-8.2359, 115.5995), (-8.4145, 115.4465))
+    fig, ax = plot(data["d"], data["elev"], depth=0)
     print(ax)
-    ax.plot(15.95, 2806, marker='o', markersize=8, markerfacecolor='r', color='k')
+    ax.plot(31, 2806, marker='o', markersize=8, markerfacecolor='r', color='k')
     plt.show()
 
 
