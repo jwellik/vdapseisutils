@@ -82,7 +82,6 @@ def nslc2subnet(nslc_list, subnetid=1, nstatrig=None, verbose=True):
     Subnet 010  4  BRSP.BHZ.CC.-- HIYU.BHZ.CC.-- LSON.BHZ.CC.-- PALM.BHZ.CC.-- SHRK.BHZ.CC.-- TIMB.BHZ.CC.-- YOCR.BHZ.CC.-- AUG.EHZ.UW.--
     """
 
-
     import numpy as np
 
     # if nstatrig is None, define it as a little more than half the number of stations
@@ -104,9 +103,8 @@ def nslc2subnet(nslc_list, subnetid=1, nstatrig=None, verbose=True):
     return subnet_str
 
 
-
-def subnet2nslc(subnet_str, verbose=True):
-    """SUBNET2NSLC Converts Subnet line of SCNLs from carstatrig.d into NSLC list"""
+def subnet2nslc(subnet_str, verbose=False):
+    """SUBNET2NSLC Converts Subnet line of SCNLs from carlsubtrig.d into NSLC list"""
 
     subnet_list = " ".join(subnet_str.split()).split(" ")  # remove all (and extra) whitespaces
     nslc_list = []

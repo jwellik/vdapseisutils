@@ -17,7 +17,7 @@ def replaceGapValue(st, gap_value=np.nan, fill_value=0 ):
     return st
 
            
-def sortStreamByNSLClist(st_in, nslc_list):
+def sortStreamByNSLClist_v1(st_in, nslc_list):
     """SORTSTREAMBYNSLCLIST
     This method inherently removes Traces not in the list
     NSLCs not present in Stream can be created as empty, if desired
@@ -41,6 +41,30 @@ def sortStreamByNSLClist(st_in, nslc_list):
         st[tr] = st_in[idx]
     
     return st
+
+
+def sortStreamByNSLClist(st_in, nslc_list, verbose=False):
+    from obspy import Stream
+
+    # List of NSLCs in the Input Stream
+    NSLC_PRESENT = []
+    for tr in st_in:
+        NSLC_PRESENT.append(tr.id)
+
+    st_custom = Stream()
+    for nslc in nslc_list:
+        print(nslc)
+        try:
+            idx = NSLC_PRESENT.index(nslc)
+            print(st_in[idx])
+            st_custom += st_in[idx]
+        except:
+            if verbose:
+                print("{} not found in Stream".format(nslc))
+            # if createEmptyTrace:
+            #     pass
+
+    return st_custom
 
 
 def createEmptyTrace(nslc, t1, t2, sampling_rate=100, dtype='int32'):
