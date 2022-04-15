@@ -248,33 +248,39 @@ class MapFigure:
         self.fig.axes[AXV].set_ylim(latextent)
         self.fig.axes[AXV].set_xlim(self.depth_extent_v)
 
-    def scatter_catalog(self, catalog, cmap='viridis_r', transform=ccrs.Geodetic(), alpha=0.5, **kwargs):
+    def scatter_catalog(self, catalog, transform=ccrs.PlateCarree(),
+                        cmap='viridis_r', mrange=[1, 5], msize=[], alpha=0.5,
+                        trange=None, **kwargs):  # ccrs.Geodetic()
         print("!!! scatter_catalog() In development. Still needs to be cleaned up :-)")
 
         import matplotlib as mpl
         import matplotlib.dates as mdates
+        from obspy import UTCDateTime
 
         self.fig.axes[AX_MAG].set_visible(True)
         self.fig.axes[AX_CBAR].set_visible(True)  # Turn the axis ON
 
-        # set up scatter colorbar
-        norm = mpl.colors.Normalize(vmin=catalog[0].origins[-1].time.matplotlib_date,
-                                    vmax=catalog[-1].origins[-1].time.matplotlib_date)
+        ## SET UP COLORBAR
+        # Use trange, if specified; otherwise, use catalog min/max
+        tmin = UTCDateTime(trange[0]) if trange is not None else catalog[0].origins[-1].time
+        tmax = UTCDateTime(trange[-1]) if trange is not None else catalog[0].origins[-1].time
+        norm = mpl.colors.Normalize(vmin=tmin.matplotlib_date, vmax=tmax.matplotlib_date)
         cb = self.fig.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap),
                                cax=self.fig.axes[4], orientation='horizontal', label='Time')
         loc = mdates.AutoDateLocator()  # from matplotlib import dates as mdates
         cb.ax.xaxis.set_major_locator(loc)
         cb.ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(loc))
 
-        # Get info out of Events object
-        from vdapseisutils.eventutils.catalogutils import catalog2basics
+        ## Get info out of Events object
+        from vdapseisutils.eventutils.catalogutils import catalog2txyzm
         # returns time(UTCDateTime), lat, lon, depth(km, positive below sea level), mag
-        catdata = catalog2basics(catalog, time_format="matplotlib")
+        catdata = catalog2txyzm(catalog, time_format="matplotlib")
         catdata["depth"] = list(np.array(catdata["depth"]) * -1)  # below sea level values are negative for plotting purposes
 
-        # Set up the magnitude scale parameters
-        mso = 0 if min(catdata["mag"]) >= 0 else np.floor(np.min(catdata["mag"])) * -1  # magnitude offset scale to avoid negatives
-        catdata["mag"] = np.array(catdata["mag"]) + mso  # adjusted Magnitude value for plotting purposes
+        ## SET UP MAGNITUDE SCALE PARAMETERS
+        # Scatter sizes must not be negative, so adjust everything up if there are negative magnitudes
+        mso = 0 if min(catdata["mag"]) >= 0 else np.floor(np.min(catdata["mag"])) * -1  # magnitude scale offset to avoid negatives
+        catdata["mag"] = np.array(catdata["mag"]) + mso  # adjusted magnitude value for plotting purposes
         scale_mag = np.array([1, 2, 3, 4, 5]) + mso  # Array of values for the scale box
 
         # Define size for each marker
@@ -290,7 +296,8 @@ class MapFigure:
             s = scatter_scale * catdata["mag"] ** 2  # markersize**2 for the map
             scale_s = scatter_scale * scale_mag ** 2  # markersize**2 for scale box; alternatively, ms=scatter_scale (and use ms in the scatter() function)
 
-        # Plot to axes
+        ## Plot to axes
+        print("MAP AXES TRANSFORM: {}".format(transform))
         self.fig.axes[AXM].scatter(catdata["lon"], catdata["lat"], s=s, c=catdata["time"],
                                    norm=norm, cmap=cmap, transform=transform, alpha=alpha, **kwargs)
         self.fig.axes[AXH].scatter(catdata["lon"], catdata["depth"], s=s, c=catdata["time"],  # Horizontal XSection
@@ -298,7 +305,7 @@ class MapFigure:
         self.fig.axes[AXV].scatter(catdata["depth"], catdata["lat"], s=s, c=catdata["time"],  # Vertical XSection
                                    norm=norm, cmap=cmap, alpha=alpha, **kwargs)
 
-        # MAGNITUDE SCALE (define positiong and limits)
+        ## MAGNITUDE LEGEND BOX (define positiong and limits)
         mag_scale_xpos = np.array([0] * len(scale_mag))  # xpos of catadatamag scale circles is 0, make the array
         if scale_type == 'exponential':
             mag_scale_ypos = scale_mag ** 2  # largest on top, smallest on bottom, 1 order of magnitude apart looks nice
@@ -307,7 +314,7 @@ class MapFigure:
             mag_scale_ypos = scale_mag * 10
             ylim = (scale_mag[1] * 10 - 15, scale_mag[-1] * 10 + 15)
 
-        # Add scale box to figure
+        ## Add scale box to figure
         self.fig.axes[AX_MAG].scatter(mag_scale_xpos, y=mag_scale_ypos, s=scale_s, color='none',
                                       edgecolor='k')  # Plot scatter makers to scale axis
 
@@ -410,19 +417,20 @@ class MapFigure:
                 self.fig.axes[AXH].plot(lon, elev, color=color, linewidth=linewidth)
                 # custom spine bounds for a nice clean look
                 self.fig.axes[AXH].spines['top'].set_visible(False)
-                self.fig.axes[AXH].spines.left.set_bounds(
+                # self.fig.axes[AXH].spines.left.set_bounds(  # works w seismology38 interpreter
+                self.fig.axes[AXH].spines["left"].set_bounds(
                     (self.depth_extent_v[1], elev[0]))  # depth_extent_v[1] is the top elev
-                self.fig.axes[AXH].spines.right.set_bounds((self.depth_extent_v[1], elev[-1]))
+                self.fig.axes[AXH].spines["right"].set_bounds((self.depth_extent_v[1], elev[-1]))
 
                 # Plot data and format axis for B-B'
                 lat = elev_data_B['lat']
                 elev = np.array(elev_data_B['elev']) / 1000  # convert to km
                 self.fig.axes[AXV].plot(elev, lat, color=color, linewidth=linewidth)
                 # custom spine bounds for a nice clean look
-                self.fig.axes[AXV].spines['left'].set_visible(False)
-                self.fig.axes[AXV].spines.bottom.set_bounds(
+                self.fig.axes[AXV].spines['left'].set_visible(False)  # Works w seismology3.8 interpreter
+                self.fig.axes[AXV].spines["bottom"].set_bounds(
                     (self.depth_extent_v[1], elev[0]))  # depth_extent_v[1] is the top elev
-                self.fig.axes[AXV].spines.top.set_bounds((self.depth_extent_v[1], elev[-1]))
+                self.fig.axes[AXV].spines["top"].set_bounds((self.depth_extent_v[1], elev[-1]))
 
         except ValueError:
             print("There was a problem making the topographic profiles. Moving on...")

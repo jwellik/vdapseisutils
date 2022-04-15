@@ -362,7 +362,7 @@ def plot_stations(ax, lat, lon, marker='v', color='white', edgecolor='black', ma
     return ax
 
 
-def plot_station_inventory(ax, inventory, marker='v', color='white', edgecolor='black', markersize=10, alpha=0.95,
+def plot_station_inventory(ax, inventory, marker='v', color='white', edgecolor='black', markersize=6, alpha=0.95,
                            transform=ccrs.Geodetic()):
     import matplotlib.pyplot as plt
 
