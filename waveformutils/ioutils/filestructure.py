@@ -23,6 +23,7 @@ def write2sds(st, basedir='./',
               # filename=sds_filename,          # filename syntax
               fileformat='mseed',  # seismic data format
               reclen=4096,  # miniseed byte record-length
+              write=True,
               ):
     """
     WRITE2SDS Writes Traces to file in accordance w given filestructure
@@ -47,6 +48,8 @@ def write2sds(st, basedir='./',
         SECOND
         #MISCROSEC
         EXTENSION
+
+    write : (Default: True) Writes files to disk. If False, just returns list of filenames
 
     :return
         output_files : list of full filepaths for output miniseed files
@@ -125,7 +128,8 @@ def write2sds(st, basedir='./',
 
         #################################################################
         # Write file!
-        tr.write(fullpath, reclen=reclen, format=fileformat)
+        if write:
+            tr.write(fullpath, reclen=reclen, format=fileformat)
         output_files.append(fullpath)
 
     return output_files
@@ -140,3 +144,7 @@ def make_directories(fullpath):
     fullpath = os.path.abspath(fullpath)  # Create absolute path if relative path given
     directories, filename = os.path.split(fullpath)  # Split into path filename
     Path(directories).mkdir(parents=True, exist_ok=True)  # Create all directories necessary
+
+
+## TO DO LIST
+# TODO Instead of write=False as an argument, filenamelist = GET_FULLFILENAME(Stream()) as separate function
