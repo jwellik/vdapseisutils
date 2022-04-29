@@ -28,7 +28,7 @@ class CrossSection:
         self.depth_extent = depth_extent  # (bottom_depth, top_altitude)
 
         # Download topography data along profile
-        self.lat, self.lon, self.d, self.elev = elev_profile.download_profile2(self.points[0], self.points[1], n=n)  # elevation returned in meters
+        self.lat, self.lon, self.d, self.elev = elev_profile.download_profile(self.points[0], self.points[1], n=n)  # elevation returned in meters
         self.elev = np.array(self.elev) / 1000  # convert m to km
 
     def plot_original(self):
