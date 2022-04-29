@@ -1,7 +1,7 @@
 '''TO DO
 
-[ ] TODO Limit earthquake catalog to map extent or xsection extent
-[ ] TODO retrieve_elevation()  # used for map and elevation profile
+# [ ] TODO Limit earthquake catalog to map extent or xsection extent
+# [ ] TODO retrieve_elevation()  # used for map and elevation profile
 
 '''
 from urllib.error import HTTPError
@@ -206,15 +206,12 @@ class MapFigure:
                   **kwargs):
         """*args is supposed to be an optional length 1 to provide the depth"""
 
-        self.fig.axes[AXM].plot(lon, lat, transform=transform, marker=marker, color=color, markersize=markersize,
-                                alpha=alpha, **kwargs)
+        self.fig.axes[AXM].plot(lon, lat, color=color, **kwargs)
 
         if len(args) > 0:
             depth = args[0]
-            self.fig.axes[AXH].plot(lon, depth * -1, marker=marker, color=color, markersize=markersize, alpha=alpha,
-                                    **kwargs)
-            self.fig.axes[AXV].plot(depth * -1, lat, marker=marker, color=color, markersize=markersize, alpha=alpha,
-                                    **kwargs)
+            self.fig.axes[AXH].plot(lon, depth * -1, color=color, **kwargs)
+            self.fig.axes[AXV].plot(depth * -1, lat, color=color, **kwargs)
 
         # Set axes extents. Do this elsewhere?
         radextent = vmaputils.radial_extent2map_extent(self.origin[0], self.origin[1],
@@ -273,58 +270,49 @@ class MapFigure:
 
         ## Get info out of Events object
         from vdapseisutils.eventutils.catalogutils import catalog2txyzm
+        import pandas as pd
         # returns time(UTCDateTime), lat, lon, depth(km, positive below sea level), mag
         catdata = catalog2txyzm(catalog, time_format="matplotlib")
-        catdata["depth"] = list(np.array(catdata["depth"]) * -1)  # below sea level values are negative for plotting purposes
+        catdata = pd.DataFrame(catdata)
+        catdata["depth"] *= -1  # below sea level values are negative for plotting purposes
 
         ## SET UP MAGNITUDE SCALE PARAMETERS
-        # Scatter sizes must not be negative, so adjust everything up if there are negative magnitudes
-        mso = 0 if min(catdata["mag"]) >= 0 else np.floor(np.min(catdata["mag"])) * -1  # magnitude scale offset to avoid negatives
-        catdata["mag"] = np.array(catdata["mag"]) + mso  # adjusted magnitude value for plotting purposes
-        scale_mag = np.array([1, 2, 3, 4, 5]) + mso  # Array of values for the scale box
-
-        # Define size for each marker
-        scale_type = 'linear'
-        # #  -Exponential
-        if scale_type == 'exponential':
-            scatter_scale = 2  # converts magnitude to scatter plot size (try many numbers across orders of magnitude)
-            s = scatter_scale ** catdata["mag"]  # markersize**2 for the map
-            scale_s = scatter_scale ** scale_mag  # markersize**2 for scale box; alternatively, ms=scatter_scale (and use ms in the scatter() function)
-        #  -Linear
-        elif scale_type == 'linear':
-            scatter_scale = 1  # converts magnitude to scatter plot size (try many numbers across orders of magnitude)
-            s = scatter_scale * catdata["mag"] ** 2  # markersize**2 for the map
-            scale_s = scatter_scale * scale_mag ** 2  # markersize**2 for scale box; alternatively, ms=scatter_scale (and use ms in the scatter() function)
+        # Scale the magnitudes to marker size and scatter plot size
+        # https://matplotlib.org/stable/tutorials/introductory/customizing.html
+        # default rcParams['line.markersize'] = 6
+        # default scatter size is rcParams['line.markersize']**2
+        # markersize is equivalent to line.markersize
+        # size is equivalent to line.markersize**2 (the size of the scatter dot)
+        default_marker = 6
+        default_mag = 2
+        catdata["markersize"] = default_marker * (2 ** (catdata["mag"] - default_mag))  # equals 'default_marker' with 'default_mag'
+        # with a coefficient of 2 (above) the markersize doubles for every mag above default mag (and halves for every mag below it)
+        catdata["size"] = catdata["markersize"] ** 2  # markersize**2 for the map
 
         ## Plot to axes
         print("MAP AXES TRANSFORM: {}".format(transform))
-        self.fig.axes[AXM].scatter(catdata["lon"], catdata["lat"], s=s, c=catdata["time"],
+        self.fig.axes[AXM].scatter(catdata["lon"], catdata["lat"], s=catdata["size"], c=catdata["time"],
                                    norm=norm, cmap=cmap, transform=transform, alpha=alpha, **kwargs)
-        self.fig.axes[AXH].scatter(catdata["lon"], catdata["depth"], s=s, c=catdata["time"],  # Horizontal XSection
+        self.fig.axes[AXH].scatter(catdata["lon"], catdata["depth"], s=catdata["size"], c=catdata["time"],  # Horizontal XSection
                                    norm=norm, cmap=cmap, alpha=alpha, **kwargs)
-        self.fig.axes[AXV].scatter(catdata["depth"], catdata["lat"], s=s, c=catdata["time"],  # Vertical XSection
+        self.fig.axes[AXV].scatter(catdata["depth"], catdata["lat"], s=catdata["size"], c=catdata["time"],  # Vertical XSection
                                    norm=norm, cmap=cmap, alpha=alpha, **kwargs)
-
-        ## MAGNITUDE LEGEND BOX (define positiong and limits)
-        mag_scale_xpos = np.array([0] * len(scale_mag))  # xpos of catadatamag scale circles is 0, make the array
-        if scale_type == 'exponential':
-            mag_scale_ypos = scale_mag ** 2  # largest on top, smallest on bottom, 1 order of magnitude apart looks nice
-            ylim = (0, (scale_mag[-1] + 2) ** 2)
-        elif scale_type == 'linear':
-            mag_scale_ypos = scale_mag * 10
-            ylim = (scale_mag[1] * 10 - 15, scale_mag[-1] * 10 + 15)
 
         ## Add scale box to figure
-        self.fig.axes[AX_MAG].scatter(mag_scale_xpos, y=mag_scale_ypos, s=scale_s, color='none',
-                                      edgecolor='k')  # Plot scatter makers to scale axis
+        # Plot scatter makers to scale axis
+        scale_mag = np.array([1, 2, 3, 4, 5])
+        scale_mag_markersize = default_marker * (2. ** (scale_mag - default_mag)) ** 2
+        scale_mag_size = scale_mag_markersize**2
+        self.fig.axes[AX_MAG].scatter([0, 0, 0, 0, 0], y=scale_mag, s=scale_mag_markersize, color='none', edgecolor='k')
 
         # Change settings on scale box axes
-        self.fig.axes[AX_MAG].set_ylim(ylim[0], ylim[1])  # Works best with exponential version
+        # self.fig.axes[AX_MAG].set_ylim(ylim[0], ylim[1])  # Works best with exponential version
+        self.fig.axes[AX_MAG].set_ylim(0, 7)  # Just guessing
         self.fig.axes[AX_MAG].set_xlim(-0.03, 0.05)  # arbitrarily determined
         self.fig.axes[AX_MAG].set_xticks([])  # remove xticks
-        self.fig.axes[AX_MAG].set_yticks(mag_scale_ypos)  # set yticks at height for each circle
+        self.fig.axes[AX_MAG].set_yticks(scale_mag)  # set yticks at height for each circle
         self.fig.axes[AX_MAG].set_yticklabels(
-            ['M{}'.format(m - mso) for m in scale_mag])  # give them a label in the format M3, for example
+            ['M{}'.format(m) for m in scale_mag])  # give them a label in the format M3, for example
         self.fig.axes[AX_MAG].yaxis.tick_right()  # put yticklabels on the right
         self.fig.axes[AX_MAG].tick_params(axis="y", direction="in", pad=-30,
                                           right=False)  # put labels on inside and remove ticks
@@ -343,7 +331,7 @@ class MapFigure:
         self.fig.axes[AXH].set_ylim(self.depth_extent_h)
         self.fig.axes[AXV].set_ylim(latextent)
         self.fig.axes[AXV].set_xlim(self.depth_extent_v)
-        self.fig.axes[AXH].set_yticks([0, -5, -10, -15])
+        self.fig.axes[AXH].set_yticks([0, -5, -10, -15, -20])  # TODO Automate this
         self.fig.axes[AXV].set_xticks(self.fig.axes[AXH].get_yticks())  # Depth tick locations same for both x-sections
 
     # Plot Stations
@@ -435,15 +423,10 @@ class MapFigure:
         except ValueError:
             print("There was a problem making the topographic profiles. Moving on...")
 
-
-
-
-
         # Add XSection lines to map
-        self.fig.axes[AXM].plot(A1[1], A1[0], 'ok', transform=ccrs.Geodetic())  # don't hardcode the transform?
-        self.fig.axes[AXM].plot(A2[1], A2[0], 'ok', transform=ccrs.Geodetic())
-        self.fig.axes[AXM].plot([A1[1], A2[1]], [A1[0], A2[0]], 'k', transform=ccrs.Geodetic(),
-                                linewidth=0.5)  # don't hardcode the transform?
+        self.fig.axes[AXM].plot(A1[1], A1[0], 'ok')  # don't hardcode the transform?
+        self.fig.axes[AXM].plot(A2[1], A2[0], 'ok')
+        self.fig.axes[AXM].plot([A1[1], A2[1]], [A1[0], A2[0]], 'k', linewidth=0.5)  # don't hardcode the transform?
         self.fig.axes[AXM].text(A1[1], A1[0], "A", transform=ccrs.Geodetic(),
                                 verticalalignment='bottom', horizontalalignment='center',
                                 path_effects=[pe.withStroke(linewidth=2, foreground="white")])
@@ -452,10 +435,9 @@ class MapFigure:
                                 path_effects=[pe.withStroke(linewidth=2, foreground="white")])
 
         # Add XSection lines to map
-        self.fig.axes[AXM].plot(B1[1], B1[0], 'ok', transform=ccrs.Geodetic())  # don't hardcode the transform?
-        self.fig.axes[AXM].plot(B2[1], B2[0], 'ok', transform=ccrs.Geodetic())
-        self.fig.axes[AXM].plot([B1[1], B2[1]], [B1[0], B2[0]], 'k', transform=ccrs.Geodetic(),
-                                linewidth=0.5)  # don't hardcode the transform?
+        self.fig.axes[AXM].plot(B1[1], B1[0], 'ok')  # don't hardcode the transform?
+        self.fig.axes[AXM].plot(B2[1], B2[0], 'ok')
+        self.fig.axes[AXM].plot([B1[1], B2[1]], [B1[0], B2[0]], 'k', linewidth=0.5)  # don't hardcode the transform?
         self.fig.axes[AXM].text(B1[1], B1[0], "B", transform=ccrs.Geodetic(),
                                 verticalalignment='bottom', horizontalalignment='center',
                                 path_effects=[pe.withStroke(linewidth=2, foreground="white")])
@@ -491,6 +473,7 @@ def _create_wingplot(lat, lon, radial_extent_km=50.,
     if map_color == True:
         tiles = cimgt.Stamen(map_type)
     else:
+        # Try this as an alternative: http://geologyandpython.com/dem-processing.html
         tiles = cimgt.Stamen(map_type, desired_tile_form="L")
 
     # definitions for the axes (% of figure size)
@@ -541,10 +524,50 @@ def _create_wingplot(lat, lon, radial_extent_km=50.,
     extent = vdapseisutils.maputils.utils.utils.radial_extent2map_extent(lat, lon, radial_extent_km)
     axm.set_extent(extent)
 
+    # TODO This is turned off until add_image w cmap is handled correctly
+    from matplotlib.image import NonUniformImage
+    from matplotlib import cm
     if map_color == True:
         axm.add_image(tiles, zoom)
     else:
+        # axm.imshow(tiles, cmap="Greys_r")
+        # axm.add_image(tiles, zoom)
         axm.add_image(tiles, zoom, cmap='Greys_r')
+
+    # Instead, add contour
+    # Extent should be defined in LBRT
+    import elevation
+    from osgeo import gdal
+
+    elev_extent = [extent[0], extent[2], extent[1], extent[3]]  # switch LRBT to LRBT
+    elevation.clip(bounds=(elev_extent), output='/home/jwellik/Downloads/tmp.tif')
+    elevation.clean()
+
+    filename = "/home/jwellik/Downloads/tmp.tif"
+    gdal_data = gdal.Open(filename)
+    gdal_band = gdal_data.GetRasterBand(1)
+    nodataval = gdal_band.GetNoDataValue()
+
+    # convert to a numpy array
+    data_array = gdal_data.ReadAsArray().astype(np.float)
+    data_array
+
+    # replace missing values if necessary
+    if np.any(data_array == nodataval):
+        data_array[data_array == nodataval] = np.nan
+    print()
+
+    print("Plot contours...")
+    #Plot out data with Matplotlib's 'contour'
+    # fig = plt.figure(figsize = (12, 8))
+    # ax = fig.add_subplot(111)
+    axm.contour(data_array, #cmap = "viridis",
+                colors="k", alpha=0.5, extent=extent,
+                levels = list(range(0, 5000, 100)))
+    # plt.title("Elevation Contours of Mt. Shasta")
+    # cbar = plt.colorbar()
+    # plt.gca().set_aspect('equal', adjustable='box')
+    # plt.show()
 
     # Map gridlines
     glv = axm.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, linewidth=1, color='gray', alpha=0.5)

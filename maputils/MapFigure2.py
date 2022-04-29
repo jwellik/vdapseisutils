@@ -199,15 +199,12 @@ class MapFigure:
                   **kwargs):
         """*args is supposed to be an optional length 1 to provide the depth"""
 
-        self.fig.axes[AXM].plot(lon, lat, transform=transform, marker=marker, color=color, markersize=markersize,
-                              alpha=alpha, **kwargs)
+        self.fig.axes[AXM].plot(lon, lat, color=color, **kwargs)
 
         if len(args) > 0:
             depth = args[0]
-            self.fig.axes[AXH].plot(lon, depth * -1, marker=marker, color=color, markersize=markersize, alpha=alpha,
-                                  **kwargs)
-            self.fig.axes[AXV].plot(depth * -1, lat, marker=marker, color=color, markersize=markersize, alpha=alpha,
-                                  **kwargs)
+            self.fig.axes[AXH].plot(lon, depth * -1, color=color, **kwargs)
+            self.fig.axes[AXV].plot(depth * -1, lat, color=color, **kwargs)
 
         # Set axes extents. Do this elsewhere?
         radextent = vmaputils.radial_extent2map_extent(self.origin[0], self.origin[1],
