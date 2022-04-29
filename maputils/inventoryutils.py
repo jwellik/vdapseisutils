@@ -4,17 +4,23 @@ def write_simple_csv(inventory, filename='~/inventory.csv', verbose=False):
     """Writes inventory as CSV formatted channel,latitude,longitude,elevation"""
     import pandas as pd
 
-    stationdf = pd.DataFrame()
+    stationdf = pd.DataFrame({"nslc": [], "latitude": [], "longitude": [], "elevation": [], "local_depth":[]})
 
     for cha in inventory.get_contents()['channels']:
         print(cha)
         coords = inventory.get_coordinates(cha)
-        coords['channel'] = cha
-        stationdf = stationdf.append(coords, ignore_index=True)
-
-    stationdf = stationdf[['channel', 'latitude', 'longitude', 'elevation']]
-    if verbose: print(stationdf)
+        coords["nslc"] = [cha]
+        coords["latitude"] = [coords["latitude"]]
+        coords["longitude"] = [coords["longitude"]]
+        coords["elevation"] = [coords["elevation"]]
+        coords["local_depth"] = [coords["local_depth"]]
+        # stationdf = stationdf.append(coords, ignore_index=True)
+        stationdf = pd.concat([stationdf, pd.DataFrame(coords)])
+    # stationdf = stationdf[['channel', 'latitude', 'longitude', 'elevation']]
+    if verbose:
+        print(stationdf)
     stationdf.to_csv(filename, index=False)
+    return stationdf
 
 
 def write_swarm(inventory, filename='~/inventorylatlon.config', verbose=False):
