@@ -1,3 +1,9 @@
+"""
+Python scripts for plotting earthquake catalogs.
+
+Author: Jay Wellik, jwellik@vdap.org
+Last updated: May 5, 2022
+"""
 
 
 def wingplotT(catalog,  # ObsPy catalog object to plot
@@ -46,6 +52,7 @@ def wingplotT(catalog,  # ObsPy catalog object to plot
     # [x] Add cross-section annotations to map and cross-sections
     # [x] Fix EQ Mag scales
     # [X] Add basemap
+    # [X] Fix time extent of time-series graph
     # [ ] TODO Filter eqs to map extent
     # [ ] TODO Resize to make map bigger
     # [ ] TODO Add grid to map axis
@@ -67,6 +74,8 @@ def wingplotT(catalog,  # ObsPy catalog object to plot
     import cartopy.io.img_tiles as cimgt
 
     import vdapseisutils.maputils.utils
+
+    from vdapseisutils.maputils.utils.utils import radial_extent2map_extent
 
     ####################################################################
     ## Define plot properties
@@ -195,7 +204,7 @@ def wingplotT(catalog,  # ObsPy catalog object to plot
     ####################################################################
     ## AXIS EXTENTS
     # Set XSection, Time Series Depth Extent
-    map_extent = vdapseisutils.maputils.utils.utils.radial_extent2map_extent(lat, lon, radial_extent_km)
+    map_extent = radial_extent2map_extent(lat, lon, radial_extent_km)
     axm.set_extent(map_extent, crs=ccrs.Geodetic())
     # axm.set_xlim(map_extent[0], map_extent[1])
     # axm.set_ylim(map_extent[2], map_extent[3])
@@ -356,7 +365,7 @@ def wingplotT(catalog,  # ObsPy catalog object to plot
     catdata["dAA"] = np.array(DAA)/1000  # Distance along cross-section A-A'
     catdata["dBB"] = np.array(DBB)/1000  # Distance along cross-section A-A'
 
-    print("Done projecting points.")
+    # print("Done projecting points.")
 
     # Print Cross-Section info
     # print("::: XS Profiles")
@@ -401,6 +410,7 @@ def wingplotT(catalog,  # ObsPy catalog object to plot
         rslt = catdata[(catdata["mag"] >= mag) & (catdata["mag"] < mag+1)]
         nmags.append(len(rslt))
 
+    # Print Catalog information
     print("::: Magnitude Distribution")
     for M, N in zip(scale_mag, nmags):
         print(": M{:2d}  : {: 5d}".format(M, N))
@@ -433,6 +443,7 @@ def wingplotT(catalog,  # ObsPy catalog object to plot
     loc = mdates.AutoDateLocator()  # from matplotlib import dates as mdates
     cb.ax.xaxis.set_major_locator(loc)
     cb.ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(loc))
+    axT.set_xlim([tmin.matplotlib_date, tmax.matplotlib_date])  # Set time extent of time series axis
 
     ####################################################################
     ## PLOT DATA TO AXES
@@ -451,7 +462,7 @@ def wingplotT(catalog,  # ObsPy catalog object to plot
     axT.scatter(catdata["time"], catdata["depth"], s=catdata["size"], c=catdata["time"],
                             norm=norm, cmap=cmap, alpha=alpha, **kwargs)
 
-    # if show:
-    #     # plt.show()
+    if show:
+        plt.show()
 
     return fig
