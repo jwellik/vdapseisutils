@@ -43,7 +43,7 @@ def geodesic_point_buffer(lat, lon, km):
 
 
 def radial_extent2map_extent(lat, lon, km):
-    """Returns [minlon, maxlon, minlat, maxlat]"""
+    """Returns [minlon, maxlon, minlat, maxlat] LRBT"""
     rlatlon = geodesic_point_buffer(lat, lon, km)
     map_extent = [min(rlatlon[:, 1]), max(rlatlon[:, 1]), min(rlatlon[:, 0]), max(rlatlon[:, 0])]
     return map_extent
@@ -212,7 +212,7 @@ def plot_heatmap(ax, catalog, grid_size, colormap='plasma', ncmap=15):
 
 
 def plot_hypo(ax, lat, lon, transform=ccrs.Geodetic(), marker='o', color='black', markersize=8, alpha=0.95):
-    ax.plot(lon, lat, transform=transform, marker=marker, color=color, markersize=markersize, alpha=alpha)
+    ax.plot(lon, lat, color=color)
     return ax
 
 
@@ -258,15 +258,15 @@ def plot_catalog2xs_dep(fig, catalog, marker='o', color='black', markersize=8, a
 
     # Plot to horizontal xsection
     if plot_errors:
-        fig.axes[1].plot(lonerrorx, [depth, depth], color=color, alpha=alpha, linewidth=1)
-        fig.axes[1].plot([lon, lon], zerror, color=color, alpha=alpha, linewidth=1)
-    fig.axes[1].plot(lon, depth, marker=marker, color=color, markersize=markersize, alpha=alpha)
+        fig.axes[1].plot(lonerrorx, [depth, depth], color=color, linewidth=1)
+        fig.axes[1].plot([lon, lon], zerror, color=color, linewidth=1)
+    fig.axes[1].plot(lon, depth, color=color)
 
     # Plot to vertical xsection
     if plot_errors:
-        fig.axes[2].plot([depth, depth], laterrory, color=color, alpha=alpha, linewidth=1)
-        fig.axes[2].plot(zerror, [lat, lat], color=color, alpha=alpha, linewidth=1)
-    fig.axes[2].plot(depth, lat, marker=marker, color=color, markersize=markersize, alpha=alpha)
+        fig.axes[2].plot([depth, depth], laterrory, color=color, linewidth=1)
+        fig.axes[2].plot(zerror, [lat, lat], color=color, linewidth=1)
+    fig.axes[2].plot(depth, lat, color=color)
 
     return fig
 
@@ -292,15 +292,15 @@ def plot_catalog2xs(fig, catalog, marker='o', color='black', markersize=8, alpha
 
         # Plot to horizontal xsection
         if contains_errors:
-            fig.axes[1].plot(lonerrorx, [depth, depth], color=color, alpha=alpha, linewidth=1)
-            fig.axes[1].plot([lon, lon], zerror, color=color, alpha=alpha, linewidth=1)
-        fig.axes[1].plot(lon, depth, marker=marker, color=color, markersize=markersize, alpha=alpha)
+            fig.axes[1].plot(lonerrorx, [depth, depth], color=color, linewidth=1)
+            fig.axes[1].plot([lon, lon], zerror, color=color, linewidth=1)
+        fig.axes[1].plot(lon, depth, color=color)
 
         # Plot to vertical xsection
         if contains_errors:
-            fig.axes[2].plot([depth, depth], laterrory, color=color, alpha=alpha, linewidth=1)
-            fig.axes[2].plot(zerror, [lat, lat], color=color, alpha=alpha, linewidth=1)
-        fig.axes[2].plot(depth, lat, marker=marker, color=color, markersize=markersize, alpha=alpha)
+            fig.axes[2].plot([depth, depth], laterrory, color=color, linewidth=1)
+            fig.axes[2].plot(zerror, [lat, lat], color=color, linewidth=1)
+        fig.axes[2].plot(depth, lat, color=color)
 
     return fig
 
@@ -309,9 +309,9 @@ def plot_hypo2xs(ax, lat=None, lon=None, depth=None, orientation='h', marker='o'
 
     # Plot to horizontal xsection
     if plot_errors:
-        fig.axes[1].plot(lonerrorx, [depth, depth], color=color, alpha=alpha, linewidth=1)
-        fig.axes[1].plot([lon, lon], zerror, color=color, alpha=alpha, linewidth=1)
-    fig.axes[1].plot(lon, depth, marker=marker, color=color, markersize=markersize, alpha=alpha)
+        fig.axes[1].plot(lonerrorx, [depth, depth], color=color, linewidth=1)
+        fig.axes[1].plot([lon, lon], zerror, color=color, linewidth=1)
+    fig.axes[1].plot(lon, depth, color=color)
 
 
 def plot_eventerror2map(ax, event, color='black', linewidth=1, alpha=0.95,
@@ -325,11 +325,11 @@ def plot_eventerror2map(ax, event, color='black', linewidth=1, alpha=0.95,
     if lat_uncertainty:
         laty = [lat - lat_uncertainty / 110, lat + lat_uncertainty / 110]
         latx = [lon, lon]
-        ax.plot(latx, laty, transform=transform, color=color, linewidth=1)  # plot lat error
+        ax.plot(latx, laty, color=color, linewidth=1)  # plot lat error
     if lon_uncertainty:
         lonx = [lon - lon_uncertainty / 110, lon + lon_uncertainty / 100]
         lony = [lat, lat]
-        ax.plot(lonx, lony, transform=transform, color=color, linewidth=1)  # plot lon error
+        ax.plot(lonx, lony, color=color, linewidth=1)  # plot lon error
 
     return ax
 
@@ -345,8 +345,7 @@ def plot_eventerror2xs(ax, event, color='black', linewidth=1, alpha=0.95,
 
 def plot_volcano(ax, lat, lon, marker='^', color='red', edgecolor='black', markersize=12, alpha=0.95,
                  transform=ccrs.Geodetic(), **kwargs):
-    ax.plot(lon, lat, marker=marker, color=edgecolor, markerfacecolor=color, markeredgecolor='black', markersize=markersize,
-            alpha=alpha, transform=transform, linewidth=0, **kwargs)
+    ax.plot(lon, lat, color=edgecolor, linewidth=0, **kwargs)
     return ax
 
 
@@ -357,8 +356,7 @@ def plot_volcano(ax, lat, lon, marker='^', color='red', edgecolor='black', marke
 
 def plot_stations(ax, lat, lon, marker='v', color='white', edgecolor='black', markersize=10, alpha=0.95,
                   transform=ccrs.Geodetic()):
-    ax.plot(lon, lat, marker=marker, markerfacecolor=color, markeredgecolor=edgecolor, markersize=markersize,
-            alpha=alpha, transform=transform, linewidth=0)
+    ax.plot(lon, lat, linewidth=0)
     return ax
 
 
@@ -391,8 +389,7 @@ def plot_station_inventory(ax, inventory, marker='v', color='white', edgecolor='
     if not label:
         labels = None
 
-    ax.plot(lons, lats, marker=marker, markerfacecolor=color, markeredgecolor=edgecolor, markersize=markersize,
-            alpha=alpha, transform=transform, linewidth=0)
+    ax.plot(lons, lats, linewidth=0)
 
     plt.draw()
 
