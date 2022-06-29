@@ -1,3 +1,4 @@
+
 def get_waveforms_from_client(client, nslc_list, t1, t2,
                               max_download=86400,
                               fill_value=None,
@@ -11,6 +12,8 @@ def get_waveforms_from_client(client, nslc_list, t1, t2,
     from vdapseisutils.waveformutils.nslcutils import str2nslc
     from vdapseisutils.waveformutils.streamutils import sortStreamByNSLClist, createEmptyTrace
     from vdapseisutils.waveformutils import timeutils
+
+    from numpy import dtype
 
     import time
 
@@ -27,7 +30,6 @@ def get_waveforms_from_client(client, nslc_list, t1, t2,
 
     # Loop through list of NSLCs
     for nslc in nslc_list:
-
 
         net, sta, loc, cha = str2nslc(nslc)
 
@@ -54,9 +56,18 @@ def get_waveforms_from_client(client, nslc_list, t1, t2,
                 #                         stmp = stmp.detrend('demean')
                 #                     stmp = stmp.taper(max_percentage=0.01)
 
-                #                     for tr in stmp: # Deal w error when sub-traces have different dtypes
-                #                         if tr.data.dtype.name != 'int32': tr.data=tr.data.astype('int32') # force type int32
-                #                         if tr.data.dtype!=dtype('int32'): tr.data=tr.data.astype('int32') # force type int32
+                stmp2 = stmp2.detrend("linear")
+                stmp2 = stmp2.detrend("demean")
+                # stmp2 = stmp2.taper(max_percentage=0.01)
+
+                # Stolen from Aaron Wech, I think
+                for tr in stmp2: # Deal w error when sub-traces have different dtypes
+                    if tr.data.dtype.name != 'int32':
+                        # print("dtype != 'int32'")
+                        tr.data=tr.data.astype('int32') # force type int32
+                    if tr.data.dtype!=dtype('int32'):
+                        # print("dtype != dtype('int32')")
+                        tr.data=tr.data.astype('int32') # force type int32
                 #                     # deal with rare error when sub-traces have different sample rates
                 #                 print('  - Merging stream')
                 stmp2 = stmp2.merge(fill_value=fill_value)
@@ -92,7 +103,7 @@ def get_waveforms_from_client(client, nslc_list, t1, t2,
 
     # Now operate on all requested times from all requested NSLCs
     print('- All the data are downloaded')
-    tclip = dt.timedelta(seconds=0.001)
+    # tclip = dt.timedelta(seconds=0.001)
     # st = st.slice(t1, t2, nearest_sample=False)  # Slice to entire request time, right?
     # st = st.merge(method=1, fill_value=fill_value)
     # st = st.slice(t1, t2-tclip)

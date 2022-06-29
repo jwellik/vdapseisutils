@@ -20,7 +20,7 @@ class DataSource:
     EXAMPLES:
     # Many strings are approved if you want to use files
     >>> DataSource('/path/to/top/directory')
-    >>> DataSource(['/path/to/file1', '/path/to/file2']
+    >>> DataSource(['/path/to/file1', '/path/to/file2'])
 
     # Various ObsPy client strings are supported
     # Server & Port are formatted as 'server:port'
@@ -121,6 +121,10 @@ class DataSource:
             self.ds_type = '--'
             self.name = '--'
 
+    def getFileList(self, nslc_list, tstart, tend, filepattern="*.mseed"):
+        self.filelist = get_filelist(self.searchdir, nslc_list, tstart, tend, filepattern=filepattern)
+        return self.filelist
+
     def getWaveforms(self, nslc_list, tstart, tend, max_download=86400, create_empty_trace=False, fill_value=None, verbose=False):
 
         from vdapseisutils.waveformutils.datasource.fileutils import get_filelist, get_waveforms_from_file_sublist
@@ -197,4 +201,5 @@ class DataSource:
     list_of_files = ds.getFileList(nslc, t1, t2, filepattern )
     > filelist_all  = get_filelist_all(searchdir, filepattern)
      > list_of_files = parsefilelist_for_nslc_time(filelist_all, nslc, t2, t2 )
+          
     """

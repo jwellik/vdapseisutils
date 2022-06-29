@@ -20,7 +20,7 @@ def get_all_files(searchdir, filepattern='*'):
     return flist
 
 
-def get_filelist(searchdir, nslc_list, t1, t2, filepattern='*'):
+def get_filelist(searchdir, nslc_list, t1, t2, filepattern='*', verbose=False):
     """GET_FILELIST Returns all files under searchdir that match filepattern, nslc, t1, and t2"""
 
     from obspy import UTCDateTime, read
@@ -42,7 +42,8 @@ def get_filelist(searchdir, nslc_list, t1, t2, filepattern='*'):
             stend = stmp[-1].stats.endtime
             if (ststart <= t1 <= stend) or (ststart <= t2 <= stend) or (t1 <= stend and ststart <= t2):
                 flist_sub.append(f)
-    print(flist_sub)
+    if verbose:
+        print(flist_sub)
 
     return flist_sub
 
@@ -52,6 +53,8 @@ def get_waveforms_from_file_sublist(flist_sub, nslc_list, t1, t2, filepattern='*
     from obspy import UTCDateTime, Stream, Trace, read
     from vdapseisutils.waveformutils.nslcutils import getNSLCstr
     from vdapseisutils.waveformutils.streamutils import sortStreamByNSLClist, createEmptyTrace
+
+    STATUSMSG = '- {nslc:15} : {status:15} {t1} to {t2}'
 
     t1 = UTCDateTime(t1)
     t2 = UTCDateTime(t2)
@@ -73,8 +76,9 @@ def get_waveforms_from_file_sublist(flist_sub, nslc_list, t1, t2, filepattern='*
     #         stmp = stmp.merge(method=1, fill_value=0)
 
     stmp = stmp.merge(method=1, fill_value=fill_value)
-    print("::: GET_WAVEFORMS_FROM_FILE_SUBLIST ::: ")
-    print(stmp)
+    if verbose:
+        print("::: GET_WAVEFORMS_FROM_FILE_SUBLIST ::: ")
+    # print(stmp)
 
     #     # Only grab stations/channels that we want and in order - Modelled after Alicia's code in REDPy
     #     # But this already happens?
