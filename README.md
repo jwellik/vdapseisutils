@@ -4,6 +4,7 @@
 VDAPSEISUTILS is a set of (mostly) Python code that provides easy methods for common tasks in operational volcano seismology.
 
 At the moment, covered tasks include:
+- Plot a basic map and cross section of earthquakes around a volcano.
 - importing/exporting non-standard Catalog & Inventory formats (primarily for Swarm, Earthworm, and NonLinLoc)
 
 Pending tasks:
