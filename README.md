@@ -3,6 +3,13 @@
 ## Overview
 VDAPSEISUTILS is a set of (mostly) Python code that provides easy methods for common tasks in operational volcano seismology.
 
+At the moment, covered tasks include:
+- importing/exporting non-standard Catalog & Inventory formats (primarily for Swarm, Earthworm, and NonLinLoc)
+
+Pending tasks:
+- Cross Correlate catalogs using EQcorrscan and create standard plots
+- Compute Frequency Index for a Catalog of events and compare results across events
+
 ## Installation
 If you are familiar with the usage of [REDPy](https://github.com/ahotovec/REDPy), you will be familiar with VDAPSEISUTILS.
 
