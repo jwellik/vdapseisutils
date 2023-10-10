@@ -4,6 +4,8 @@
 VDAPSEISUTILS is a set of (mostly) Python code that provides easy methods for common tasks in operational volcano seismology.
 
 ## Installation
+If you are familiar with the usage of [REDPy](https://github.com/ahotovec/REDPy), you will be familiar with VDAPSEISUTILS.
+
 Download the [zip file](https://github.com/jwellik/vdapseisutils/archive/main.zip) or use `git` to clone the entire repository to a working directory (e.g., mine is `/home/jwellik/PYTHON/vdapseisutils`).
 
 VDAPSEISUTILS runs on Python 3.9. The suite of codes in this repository is comprehensive. Thus, many dependencies are required to run all of them.  
