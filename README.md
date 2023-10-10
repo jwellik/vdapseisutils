@@ -10,6 +10,7 @@ At the moment, covered tasks include:
 Pending tasks:
 - Cross Correlate catalogs using EQcorrscan and create standard plots
 - Compute Frequency Index for a Catalog of events and compare results across events
+- Read, write, and visualize velocity models
 
 ## Installation
 If you are familiar with the usage of [REDPy](https://github.com/ahotovec/REDPy), you will be familiar with VDAPSEISUTILS.
