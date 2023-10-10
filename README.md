@@ -16,8 +16,14 @@ These dependencies can be easily installed via [Anaconda](https://www.continuum.
 $ conda config --add channels conda-forge
 $ conda create -n vseis399 python=3.9 obspy pandas cartopy pygmt bokeh
 $ conda activate vseis399  # run this before you use VDAPSEISUTILS
+$ cd /home/jwellik/PYTHON/vdapseisutils
+$ pip install -e .
 $ conda deactivate vseis399  # run this when you are done with VDAPSEISUTILS
 ```
+The 'pip install -e' command installs the package in "editable" mode, which means that you can update it with a simple git pull in your local repository. This install command only needs to be run once.
+
+
+
 ## Usage
 ```
 $ cd /home/jwellik/PYTHON/vdapseisutils
