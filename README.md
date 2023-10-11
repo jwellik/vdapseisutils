@@ -36,8 +36,8 @@ $ mv vdapseisutils-main vdapseisutils
 $ cd /home/jwellik/PYTHON/vdapseisutils/gallery
 $ conda activate vseis399
 $ python
->>> import os
->>> os.addpath("/home/jwellik/PYTHON")  # Add all codes in the repository to your path
+>>> import sys
+>>> sys.path.append("/home/jwellik/PYTHON")  # Add all codes in the repository to your path
 >>> from vdapseisutils.gallery import VolcanoMap_Hood_earthquakes
 >>> VolcanoMap_VolcanoMap-Hood_earthquakes.main()
 ```
