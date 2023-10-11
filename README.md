@@ -41,5 +41,5 @@ $ python
 >>> from vdapseisutils.gallery import VolcanoMap_Hood_earthquakes
 >>> VolcanoMap_VolcanoMap-Hood_earthquakes.main()  # Make sure your terminal has graphics forwarding
 ```
-This will run a script that reads .arc files from Wy'East/Mt Hood, Oregon and plots them on a map and cross sections.
+This will run a script that reads .arc files from Wy'East/Mt Hood, Oregon and plots them on a map and cross sections. Look at the [Gallery](https://github.com/jwellik/vdapseisutils/tree/main/gallery) for more examlpes and detailed usage.
 
