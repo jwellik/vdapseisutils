@@ -3,14 +3,17 @@
 ## Overview
 VDAPSEISUTILS is a set of (mostly) Python code that provides easy methods for common tasks in operational volcano seismology.
 
-At the moment, covered tasks include:
-- Plot a basic map and cross section of earthquakes around a volcano.
-- importing/exporting non-standard Catalog & Inventory formats (primarily for Swarm, Earthworm, and NonLinLoc)
+At the moment, core tasks include:
+- VolcanoMap: Plot a basic map and cross section of earthquakes around a volcano.
+- ObsPy Catalog & Inventory IO: Import/Export ObsPy Catalog & Inventory formats from Swarm, Earthworm, and NonLinLoc
+
+Sandbox tasks:
+(These routines are available, but I may change them significantly before they are stored in core. I am still working on them."
+- Velocity: Load, save, and plot velocity models.
 
 Pending tasks:
-- Cross Correlate catalogs using EQcorrscan and create standard plots
-- Compute Frequency Index for a Catalog of events and compare results across events
-- Read, write, and visualize velocity models
+- CCMatrix: Create, save, load, and plot cross correlation matrices.
+- Waveform statistics: E.g., compute Frequency Index for a Catalog of events and compare results across events
 
 ## Installation
 If you are familiar with the usage of [REDPy](https://github.com/ahotovec/REDPy), you will be familiar with VDAPSEISUTILS.
