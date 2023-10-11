@@ -5,7 +5,7 @@ VDAPSEISUTILS is a set of (mostly) Python code that provides easy methods for co
 
 At the moment, core tasks include:
 - VolcanoMap: Plot a basic map and cross section of earthquakes around a volcano.
-- ObsPy Catalog & Inventory IO: Import/Export ObsPy Catalog & Inventory formats from Swarm, Earthworm, and NonLinLoc
+- ObsPy Catalog & Inventory IO: Import/Export ObsPy Catalog & Inventory formats from Swarm, Earthworm, and NonLinLoc.
 
 Sandbox tasks:
 (These routines are available, but I may change them significantly before they are stored in core. I am still working on them.)
@@ -13,7 +13,9 @@ Sandbox tasks:
 
 Pending tasks:
 - CCMatrix: Create, save, load, and plot cross correlation matrices.
-- Waveform statistics: E.g., compute Frequency Index for a Catalog of events and compare results across events
+- Waveform statistics: E.g., compute Frequency Index for a list of Stream objects and compare results across events.
+- SwarmMPL: MatPlotLib routines for [Swarm](https://volcanoes.usgs.gov/software/swarm/index.shtml)-like plots (Helicorders, waveform traces, spectrograms, spectra).
+- DataSource: A wrapper for ObsPy Clients with a more universal usage (automatically determines Client type).
 
 ## Installation
 This package is not quite ready yet for installation with pip. Instead, download the repository and add it to your path before running other Python code.
