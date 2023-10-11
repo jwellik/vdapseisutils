@@ -8,7 +8,7 @@ At the moment, core tasks include:
 - ObsPy Catalog & Inventory IO: Import/Export ObsPy Catalog & Inventory formats from Swarm, Earthworm, and NonLinLoc
 
 Sandbox tasks:
-(These routines are available, but I may change them significantly before they are stored in core. I am still working on them."
+(These routines are available, but I may change them significantly before they are stored in core. I am still working on them.)
 - Velocity: Load, save, and plot velocity models.
 
 Pending tasks:
