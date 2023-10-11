@@ -10,7 +10,7 @@ def main():
     # Open inventory file
     inventory_file = '/home/jwellik/PROJECTS/sc4projects/Copahue/data/OAVV_okk.xml'
     inventory = obspy.read_inventory(inventory_file)
-    inventory = inventory.select(location="CP")
+    inventory = inventory.select(network="VV", location="CP")
     # inventory_file = '../data/MtHood_inventory.xml'
     # inventory = obspy.read_inventory(inventory_file)
 
