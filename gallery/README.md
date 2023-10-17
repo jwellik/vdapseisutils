@@ -14,6 +14,7 @@ $ python
 <img src="https://github.com/jwellik/vdapseisutils/blob/main/gallery/output/VolcanoMap_Hood_earthquakes.png" width=600 alt="VolcanoMap" />
 
 ## Helicorder
+SwarmMPL (vdapseisutils.core.swarmmpl) provides MatPlotLib based codes for plotting helicorders and "clipboards" (waveforms, spectrograms, or both). The Helicorder plotting routines borrow heavily from the 'dayplot' mode available to ObsPy Stream objects. SwarmMPL's Helicorder is more flexible. Look at [Helicorder_Goma_earthquakes.py](https://github.com/jwellik/vdapseisutils/blob/main/gallery/Helicorder_Goma_earthquakes.py) for examples of the flexible usage.
 ```
 >>> from vdapseisutils.gallery import Helicorder_Goma_earthquakes
 >>> Helicorder_Goma_earthquakes.main()
