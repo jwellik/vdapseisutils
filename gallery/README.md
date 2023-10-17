@@ -9,6 +9,13 @@ $ python
 >>> import sys
 >>> sys.path.append("/home/jwellik/PYTHON")  # Add all codes in the repository to your path
 >>> from vdapseisutils.gallery import VolcanoMap_Hood_earthquakes
->>> VolcanoMap_VolcanoMap-Hood_earthquakes.main()  # Make sure your terminal has graphics forwarding
+>>> VolcanoMap_Hood_earthquakes.main()  # Make sure your terminal has graphics forwarding
 ```
 <img src="https://github.com/jwellik/vdapseisutils/blob/main/gallery/output/VolcanoMap_Hood_earthquakes.png" width=1650 alt="VolcanoMap" />
+
+## Helicorder
+```
+>>> from vdapseisutils.gallery import Helicorder_Goma_earthquakes
+>>> Helicorder_Goma_earthquakes.main()
+```
+<img src="https://github.com/jwellik/vdapseisutils/blob/main/gallery/output/Helicorder_Goma_earthquakes.png" width=1650 alt="Helicorder" />
