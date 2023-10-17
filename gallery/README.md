@@ -11,11 +11,11 @@ $ python
 >>> from vdapseisutils.gallery import VolcanoMap_Hood_earthquakes
 >>> VolcanoMap_Hood_earthquakes.main()  # Make sure your terminal has graphics forwarding
 ```
-<img src="https://github.com/jwellik/vdapseisutils/blob/main/gallery/output/VolcanoMap_Hood_earthquakes.png" width=1650 alt="VolcanoMap" />
+<img src="https://github.com/jwellik/vdapseisutils/blob/main/gallery/output/VolcanoMap_Hood_earthquakes.png" width=825 alt="VolcanoMap" />
 
 ## Helicorder
 ```
 >>> from vdapseisutils.gallery import Helicorder_Goma_earthquakes
 >>> Helicorder_Goma_earthquakes.main()
 ```
-<img src="https://github.com/jwellik/vdapseisutils/blob/main/gallery/output/Helicorder_Goma_earthquakes.png" width=1650 alt="Helicorder" />
+<img src="https://github.com/jwellik/vdapseisutils/blob/main/gallery/output/Helicorder_Goma_earthquakes.png" width=825 alt="Helicorder" />
