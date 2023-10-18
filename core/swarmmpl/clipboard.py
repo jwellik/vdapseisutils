@@ -113,7 +113,7 @@ class Clipboard(plt.Figure):
             # ax = fig.add_subplot(gs[0])  # Create subplot for Waveform/Spectrogram/Spectra
             # Plot the top/secondary axis if "wg"
             if self.mode == "wg":
-                print(i)
+                # print(i)
                 axT = fig.add_subplot(gs[i*self.nax])  # Create subplot for waveform
                 axT.plot(tr.data, **self.wax)  # Just plot points, not time
                 axT.set_xlim([0, len(tr.data)])
@@ -123,7 +123,7 @@ class Clipboard(plt.Figure):
 
             # Plot the Primary axis
             if self.mode == "wg" or self.mode == "g":
-                print(i)
+                # print(i)
                 a = 1 if self.mode == "wg" else 0
                 axP = fig.add_subplot(gs[i*self.nax+a])  # Create subplot for spectrogram
                 axP.yaxis.set_ticks_position('right')
@@ -136,7 +136,7 @@ class Clipboard(plt.Figure):
                 ticks, tick_labels = __define_t_ticks__(tr.stats.starttime, tr.stats.endtime, axP)
                 axP.set_xticks(ticks, tick_labels, fontsize=12)
             elif self.mode == "w":
-                print(i)
+                # print(i)
                 axP = fig.add_subplot(gs[i*self.nax])  # Create subplot for waveform
                 axP.plot(tr.data, **self.wax)  # Just plot points, not time
                 axP.set_xlim([0, len(tr.data)])
