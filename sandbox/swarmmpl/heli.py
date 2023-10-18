@@ -13,7 +13,7 @@ from obspy import Stream, Trace, UTCDateTime
 from obspy.core.util import create_empty_data_chunk
 from obspy.geodetics import FlinnEngdahl
 from vdapseisutils.utils.obspyutils.catalogutils import catalog2txyzm
-from vdapseisutils.core.swarmmpl.colors import swarm_colors_hex
+from vdapseisutils.sandbox.swarmmpl.colors import swarm_colors_hex
 
 MINMAX_ZOOMLEVEL_WARNING_TEXT = "Warning: Zooming into MinMax Plot!"
 SECONDS_PER_DAY = 3600.0 * 24.0
