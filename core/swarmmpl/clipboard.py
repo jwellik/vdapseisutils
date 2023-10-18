@@ -104,11 +104,11 @@ class Clipboard(plt.Figure):
         num_rows = self.ntr*self.nax
         height_ratio = [1, 3] if self.mode=="wg" else [1]  # w:g ratio is 1:3 if necessary
         gs = fig.add_gridspec(nrows=num_rows, ncols=1, height_ratios=height_ratio * self.ntr)
-        print(gs, self.ntr)
+        # print(gs, self.ntr)
 
         for i in range(self.ntr):
             tr = self.st[i]
-            print(i, tr)
+            # print(i, tr)
 
             # ax = fig.add_subplot(gs[0])  # Create subplot for Waveform/Spectrogram/Spectra
             # Plot the top/secondary axis if "wg"
