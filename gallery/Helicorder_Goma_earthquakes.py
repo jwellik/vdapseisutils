@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from obspy.clients.fdsn import Client
 from obspy import UTCDateTime
-from vdapseisutils.core.swarmmpl import Helicorder, greyscale_hex
+from vdapseisutils.sandbox.swarmmpl import Helicorder, greyscale_hex
 
 
 def main():
