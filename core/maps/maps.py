@@ -1,5 +1,5 @@
 """
-Python scripts for plotting earthquake catalogs at volcanoes.
+Python scripts for swarmmpl earthquake catalogs at volcanoes.
 
 Author: Jay Wellik, jwellik@vdap.org
 Last updated: 2022 December 19
@@ -117,7 +117,7 @@ class MagLegend:
     #        14.28571429, 17.14285714, 20.])
 
     def __init__(self,
-                 # mrange=[-2, 5], msrange=[0, 15],  # results in M0 plotting at ~markersize=6, default (see above)
+                 # mrange=[-2, 5], msrange=[0, 15],  # results in M0 swarmmpl at ~markersize=6, default (see above)
                  mrange=[-2, 2], msrange=[0, 6],  # defined this way so M-2 is smallest possible event & M2 is ~markersize=6 (default)
                  disprange=[-1, 5]
                  ):
@@ -205,7 +205,7 @@ class ColorBar:
 def prep_catalog_data_mpl(catalog, s="magnitude", c="time", maglegend=MagLegend(), time_format="matplotlib"):
     """
 
-    PREPCATALOG Converts ObsPy Catalog object to DataFrame w fields appropriate for plotting
+    PREPCATALOG Converts ObsPy Catalog object to DataFrame w fields appropriate for swarmmpl
 
     TODO Allow for custom MagLegends
     TODO Add color column
@@ -220,7 +220,7 @@ def prep_catalog_data_mpl(catalog, s="magnitude", c="time", maglegend=MagLegend(
     # returns time(UTCDateTime), lat, lon, depth(km, positive below sea level), mag
     catdata = catalog2txyzm(catalog, time_format=time_format)
     catdata = pd.DataFrame(catdata).sort_values("time")
-    catdata["depth"] *= -1  # below sea level values are negative for plotting purposes
+    catdata["depth"] *= -1  # below sea level values are negative for swarmmpl purposes
     catdata["size"] = MagLegend().mag2s(catdata["mag"])  # converts magnitudes to point size for scatter plot
     return catdata
 
@@ -498,7 +498,7 @@ class CrossSection(plt.Axes):
         print("NOTE: PLOT_INVENTORY not yet implemented.")
         # Convert inventory to df
         # Project inventory lat,lon to profile
-        # z = np.array(z) / 1000 * -1  # Convert to km and make negative for plotting purposes
+        # z = np.array(z) / 1000 * -1  # Convert to km and make negative for swarmmpl purposes
         # super().plot(x, z, **kwargs)
 
     def plot_profile(self, x, elev, *args, **kwargs):
@@ -516,7 +516,7 @@ class CrossSection(plt.Axes):
 
         lat = lat  # Should this be put into a list or not?
         lon = lon
-        z = np.array(z)/z_unit_conv*z_dir_conv  # Convert to km and make negative for plotting purposes
+        z = np.array(z)/z_unit_conv*z_dir_conv  # Convert to km and make negative for swarmmpl purposes
         x = self.project2xs(lat, lon)  # returned as array
         super().plot(x, z, *args, **kwargs)
 
@@ -674,7 +674,7 @@ class VolcanoMap(Figure):
         # try:
         #     self.axm.add_image(self.tiles, zoom, cmap="Greys_r")  # Add basemap
         # except:
-        #     print("Error: Problem plotting basemap w Cartopy.")
+        #     print("Error: Problem swarmmpl basemap w Cartopy.")
         self.__add_xsections_to_map()  # Add both cross-sections to mapview
 
         scale_bar(self.axes[0], 10)
@@ -720,7 +720,7 @@ class VolcanoMap(Figure):
         # tmax = UTCDateTime(trange[-1]) if trange is not None else catalog[0].origins[-1].time
         # norm = norm = mpl.colors.Normalize(vmin=tmin.matplotlib_date, vmax=tmax.matplotlib_date)
 
-        # Retrieves catalog data for plotting with proper size and colors pre-assigned
+        # Retrieves catalog data for swarmmpl with proper size and colors pre-assigned
         catdata = prep_catalog_data_mpl(catalog, MagLegend)
         s_input = s
         if s == "magnitude":
@@ -790,7 +790,6 @@ class VolcanoMap(Figure):
                 verticalalignment='center', horizontalalignment='center',
                 path_effects=[pe.withStroke(linewidth=2, foreground="white")])
 
-
     def __define_axis_positions(self):
 
         ## Define Axis Positions
@@ -809,7 +808,6 @@ class VolcanoMap(Figure):
         fig_pos["subtitle"] = list(np.array([6, 9.5+((s-9)/2), 12, 0.5])/s)
 
         return fig_pos
-
 
     def __make_all_axes(self, lat, lon, radial_extent_km, depth_extent, xs1, xs2):
         # Make axes

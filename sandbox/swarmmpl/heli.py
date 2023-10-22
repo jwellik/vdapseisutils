@@ -40,7 +40,7 @@ class Helicorder(object):
         # vvvvv
 
         self.kwargs = kwargs
-        # self.stream = kwargs.get('stream')
+        # self.st = kwargs.get('st')
         self.stream = st
         # Check if it is a Stream or a Trace object.
         if isinstance(self.stream, Trace):
@@ -50,7 +50,7 @@ class Helicorder(object):
             raise TypeError(msg)
         # Stream object should contain at least one Trace
         if len(self.stream) < 1:
-            msg = "Empty stream object"
+            msg = "Empty st object"
             raise IndexError(msg)
         self.stream = self.stream.copy()
         # Type of the plot.
@@ -59,7 +59,7 @@ class Helicorder(object):
         self.starttime = kwargs.get('starttime', None)
         self.endtime = kwargs.get('endtime', None)
         self.fig_obj = kwargs.get('fig', None)
-        # If no times are given take the min/max values from the stream object.
+        # If no times are given take the min/max values from the st object.
         if not self.starttime:
             self.starttime = min([trace.stats.starttime for trace in
                                   self.stream])
@@ -129,7 +129,7 @@ class Helicorder(object):
             #         count = self.__get_mergable_ids()
             #         count = len(count)
             #     else:
-            #         count = len(self.stream)
+            #         count = len(self.st)
             #     self.height = count * 250
         else:
             self.width, self.height = self.size

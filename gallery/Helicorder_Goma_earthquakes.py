@@ -28,7 +28,7 @@ def main():
                    show_y_UTC_label=True, right_vertical_labels=True,
                    title=st[0].id + ": Earthquakes at Goma",
                    )
-    h.plot()  # plot the stream
+    h.plot()  # plot the st
     h.plot_tags(UTCDateTime("2021/05/20 01:36:30"), color="yellow", markersize=8)  # plot a single time
     h.plot_tags(UTCDateTime("2021/05/20 17:19:35"), marker="|", markeredgecolor="blue", markersize=15)  # plot a single time as a P arrival
     h.plot_tags(UTCDateTime("2021/05/20 17:25:00"), marker="|", markeredgecolor="red", markersize=15)   # plot a single time as a S arrival

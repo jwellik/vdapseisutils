@@ -139,44 +139,44 @@ class hypoSta:
         self.location = staline[111:113]
         return
     '''
-    def __str__(self,stream=None):
-        stream = stream or sys.stderr            
-        stream.write('SEED String: %s.%s.%s.%s\n' % (self.network, self.station, self.location, self.channel))
-        stream.write('Component Code: %s\n' % (self.compCode))
-        stream.write('Distance to earthquake: %0.1f\n' % (self.delta))
-        stream.write('Azimuth to earthquake: %d, Emergence Angle: %d\n' % (self.azimuth, self.emergenceAngle))
-        stream.write('Data source: %s\n' % (self.dataSource))
-        stream.write('Station Remark: %s\n' % (self.staRemark))
-        stream.write('P wave parameters:\n')
+    def __str__(self,st=None):
+        st = st or sys.stderr            
+        st.write('SEED String: %s.%s.%s.%s\n' % (self.network, self.station, self.location, self.channel))
+        st.write('Component Code: %s\n' % (self.compCode))
+        st.write('Distance to earthquake: %0.1f\n' % (self.delta))
+        st.write('Azimuth to earthquake: %d, Emergence Angle: %d\n' % (self.azimuth, self.emergenceAngle))
+        st.write('Data source: %s\n' % (self.dataSource))
+        st.write('Station Remark: %s\n' % (self.staRemark))
+        st.write('P wave parameters:\n')
         if self.pArrival:
-            stream.write('	Pick time = %s\n' % (self.pArrival))
-            stream.write('	Pick remark = %s, Pick FM = %s, Pick Weight = %d\n' % (self.pRemark, self.pFM, self.pWeight))
-            stream.write('	Pick residual = %0.2f, Pick delay = %0.2f, Pick True Weight = %0.2f\n' % (self.pRes, self.pDelay, self.pWeightTrue))
-            stream.write('	Pick importance = %0.3f\n' % (self.pImport))
+            st.write('	Pick time = %s\n' % (self.pArrival))
+            st.write('	Pick remark = %s, Pick FM = %s, Pick Weight = %d\n' % (self.pRemark, self.pFM, self.pWeight))
+            st.write('	Pick residual = %0.2f, Pick delay = %0.2f, Pick True Weight = %0.2f\n' % (self.pRes, self.pDelay, self.pWeightTrue))
+            st.write('	Pick importance = %0.3f\n' % (self.pImport))
         else:
-            stream.write('	No pick\n')
-        stream.write('S wave parameters:\n')
+            st.write('	No pick\n')
+        st.write('S wave parameters:\n')
         if self.sArrival:
-            stream.write('	Pick time = %s\n' % (self.sArrival))
-            stream.write('	Pick remark = %s,  Pick Weight = %d\n' % (self.sRemark, self.sWeight))
-            stream.write('	Pick residual = %0.2f, Pick delay = %0.2f, Pick True Weight = %0.2f\n' % (self.sRes, self.sDelay, self.sWeightTrue))
-            stream.write('	Pick importance = %0.3f\n' % (self.sImport))
+            st.write('	Pick time = %s\n' % (self.sArrival))
+            st.write('	Pick remark = %s,  Pick Weight = %d\n' % (self.sRemark, self.sWeight))
+            st.write('	Pick residual = %0.2f, Pick delay = %0.2f, Pick True Weight = %0.2f\n' % (self.sRes, self.sDelay, self.sWeightTrue))
+            st.write('	Pick importance = %0.3f\n' % (self.sImport))
         else:
-            stream.write('	No pick\n')
-        stream.write('Amplitude parameters:\n')
+            st.write('	No pick\n')
+        st.write('Amplitude parameters:\n')
         if self.amp:
-            stream.write('	Amplitude = %0.2f\n' % (self.amp))
-            stream.write('	Amplitude Units = %d (0 = PP mm, 1 = Zero to Peak mm, 2 = digital counts)\n' % (self.amp))
-            stream.write('	Amplitude Period = %0.2f\n' % (self.ampPeriod))
-            stream.write('	Amplitude Mag = %0.2f, Mag Type = %s, Amp Mag Weight = %d\n' % (self.ampMag, self.ampMagType, self.ampMagWeight))
+            st.write('	Amplitude = %0.2f\n' % (self.amp))
+            st.write('	Amplitude Units = %d (0 = PP mm, 1 = Zero to Peak mm, 2 = digital counts)\n' % (self.amp))
+            st.write('	Amplitude Period = %0.2f\n' % (self.ampPeriod))
+            st.write('	Amplitude Mag = %0.2f, Mag Type = %s, Amp Mag Weight = %d\n' % (self.ampMag, self.ampMagType, self.ampMagWeight))
         else:
-            stream.write('	No Amplitude Information \n')
-        stream.write('Duration parameters:\n')
+            st.write('	No Amplitude Information \n')
+        st.write('Duration parameters:\n')
         if self.codaDur:
-            stream.write('	Duration = %0.2f\n' % (self.codaDur))
-            stream.write('	Duration Mag = %0.2f, Mag Type = %s, Dur Mag Weight = %d\n' % (self.durMag, self.durMagType, self.durMagWeight))
+            st.write('	Duration = %0.2f\n' % (self.codaDur))
+            st.write('	Duration Mag = %0.2f, Mag Type = %s, Dur Mag Weight = %d\n' % (self.durMag, self.durMagType, self.durMagWeight))
         else:
-            stream.write('	No Duration Information\n')
+            st.write('	No Duration Information\n')
         return 'Populated HypoSum object\n'
         
         '''
@@ -248,55 +248,55 @@ class hypoSum:
         self.picks = {}
         
     '''
-    def __str__(self,stream=None):
-        stream = stream or sys.stderr            
-        stream.write('Origin Time = %s\n' % self.originTime)
-        stream.write('Loc Parameters:\n')
-        stream.write('Lat: %s ' % self.lat)
-        stream.write('Lon: %s ' % self.lon)
-        stream.write('Depth: %s ' % self.depth)
+    def __str__(self,st=None):
+        st = st or sys.stderr            
+        st.write('Origin Time = %s\n' % self.originTime)
+        st.write('Loc Parameters:\n')
+        st.write('Lat: %s ' % self.lat)
+        st.write('Lon: %s ' % self.lon)
+        st.write('Depth: %s ' % self.depth)
         if self.depthType:
-            stream.write('Depth Type: %s Model Type: %s Depth Datum: %d Geoid Depth: %f ' % (self.depthType, self.modelType, self.depthDatum, self.geoidDepth))
-        stream.write('Mag: %s\n' % self.mag)
-        stream.write('Error Stats:\n')
-        stream.write('Vert Err: %s ' % self.verr)
-        stream.write('Horiz Err: %s ' % self.herr)
-        stream.write('RMS: %s ' % self.rms)
-        stream.write('Delta: %s ' % self.dmin)
-        stream.write('Gap: %s\n' % self.gap)
-        stream.write('Station Parameters:\n')
-        stream.write('Num Phase: %s ' % self.numPha)
-        stream.write('Num S Phase: %s ' % self.numPhaS)
-        stream.write('Total Phases: %s\n' % self.numPhaTotal)
-        stream.write('Preferred Magnitude Params:\n')
-        stream.write('Mag: %s ' % self.mag)
-        stream.write('MagType: %s ' % self.magType)
-        stream.write('MagNumPha: %s\n' % self.magNumPha)
-        stream.write('Coda Magnitude Params:\n')
-        stream.write('Mag: %s ' % self.magCoda)
-        stream.write('MagNumPha: %s ' % self.nCodaMag)
-        stream.write('AltMag: %s ' % self.magCodaAlt)
-        stream.write('AltMagType: %s ' % self.magCodaAltType)
-        stream.write('AltMagWeight: %s\n' % self.magCodaAltWeight)
-        stream.write('Amp Magnitude Params:\n')
-        stream.write('Mag: %s ' % self.magAmp)
-        stream.write('MagNumPha: %s ' % self.nAmpMag)
-        stream.write('AltMag: %s ' % self.magAmpAlt)
-        stream.write('AltMagType: %s ' % self.magAmpAltType)
-        stream.write('AltMagTypeWeight: %s\n' % self.magAmpAltWeight)
-        stream.write('External Magnitude Params:\n')
-        stream.write('Mag: %s ' % self.magExt)
-        stream.write('MagType: %s ' % self.magExtType)
-        stream.write('MagNumPha: %s\n' % self.magExtWeight)
-        stream.write('Location params_generic:\n')
-        stream.write('Velocity Model: %s ' % self.velmodel)
-        stream.write('Region: %s\n' % self.region)
-        stream.write('Version Info:\n')
-        stream.write('Version: %s ' % self.ver)
-        stream.write('ReviewFlag: %s ' % self.reviewFlag)
-        stream.write('ID: %s ' % self.dbid)
-        stream.write('Domain: %s ' % self.domain)
-        stream.write('VersionLoc: %s\n' % self.versionLoc)
+            st.write('Depth Type: %s Model Type: %s Depth Datum: %d Geoid Depth: %f ' % (self.depthType, self.modelType, self.depthDatum, self.geoidDepth))
+        st.write('Mag: %s\n' % self.mag)
+        st.write('Error Stats:\n')
+        st.write('Vert Err: %s ' % self.verr)
+        st.write('Horiz Err: %s ' % self.herr)
+        st.write('RMS: %s ' % self.rms)
+        st.write('Delta: %s ' % self.dmin)
+        st.write('Gap: %s\n' % self.gap)
+        st.write('Station Parameters:\n')
+        st.write('Num Phase: %s ' % self.numPha)
+        st.write('Num S Phase: %s ' % self.numPhaS)
+        st.write('Total Phases: %s\n' % self.numPhaTotal)
+        st.write('Preferred Magnitude Params:\n')
+        st.write('Mag: %s ' % self.mag)
+        st.write('MagType: %s ' % self.magType)
+        st.write('MagNumPha: %s\n' % self.magNumPha)
+        st.write('Coda Magnitude Params:\n')
+        st.write('Mag: %s ' % self.magCoda)
+        st.write('MagNumPha: %s ' % self.nCodaMag)
+        st.write('AltMag: %s ' % self.magCodaAlt)
+        st.write('AltMagType: %s ' % self.magCodaAltType)
+        st.write('AltMagWeight: %s\n' % self.magCodaAltWeight)
+        st.write('Amp Magnitude Params:\n')
+        st.write('Mag: %s ' % self.magAmp)
+        st.write('MagNumPha: %s ' % self.nAmpMag)
+        st.write('AltMag: %s ' % self.magAmpAlt)
+        st.write('AltMagType: %s ' % self.magAmpAltType)
+        st.write('AltMagTypeWeight: %s\n' % self.magAmpAltWeight)
+        st.write('External Magnitude Params:\n')
+        st.write('Mag: %s ' % self.magExt)
+        st.write('MagType: %s ' % self.magExtType)
+        st.write('MagNumPha: %s\n' % self.magExtWeight)
+        st.write('Location params_generic:\n')
+        st.write('Velocity Model: %s ' % self.velmodel)
+        st.write('Region: %s\n' % self.region)
+        st.write('Version Info:\n')
+        st.write('Version: %s ' % self.ver)
+        st.write('ReviewFlag: %s ' % self.reviewFlag)
+        st.write('ID: %s ' % self.dbid)
+        st.write('Domain: %s ' % self.domain)
+        st.write('VersionLoc: %s\n' % self.versionLoc)
         if self.originTime:
             return 'initalized hypoinverse sum object\n'
         else:
@@ -847,11 +847,11 @@ class hypoCatalog:
     def __iter__(self):
         return self.data.__iter__()
     '''
-    def __str__(self,stream=None):
-        stream = stream or sys.stderr            
-        stream.write('Start Time = %s\n' % self.starttime)
-        stream.write('End Time = %s\n' % self.endtime)
-        stream.write('Number of Earthquakes = %s\n' % len(self.data))
+    def __str__(self,st=None):
+        st = st or sys.stderr            
+        st.write('Start Time = %s\n' % self.starttime)
+        st.write('End Time = %s\n' % self.endtime)
+        st.write('Number of Earthquakes = %s\n' % len(self.data))
         if self.starttime:
             return 'Initalized catalog object\n'
         else:
