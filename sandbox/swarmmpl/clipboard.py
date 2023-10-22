@@ -4,6 +4,11 @@ Swarm like plots for matplotlib
 Author: Jay Wellik
 Created: 2022 June 30
 Last updated: 2023 October 18
+
+
+RESOURCES:
+https://matplotlib.org/stable/gallery/ticks/date_concise_formatter.html
+"offset_formats" are the big dates on the bottom right of the axis
 """
 
 # [x] Date ticks don't go on top if wg and len(st) == 1
@@ -19,20 +24,31 @@ from vdapseisutils.core.datasource.nslcutils import getNSLCstr
 
 
 def __define_t_ticks__(t1, t2, ax, tick_type="datetime"):
+    """
+    Returns appropriate locations (in original axis coordinates) and labels for an x axis that is meant to span t1 to t2
+
+    :param t1:
+    :param t2:
+    :param ax:
+    :param tick_type:
+    :return:
+    """
 
     # input
-    t1 = UTCDateTime(t1)
-    t2 = UTCDateTime(t2)
-    t0 = t1
+    t1 = UTCDateTime(t1)  # convert t1 to UTCDateTime
+    t2 = UTCDateTime(t2)  # convet t2 to UTCDateTime
+    t0 = t1  # preserve the original t1
 
     if tick_type == "datetime":
 
-        xlim = ax.get_xlim()
-        axis_length = xlim[1]-xlim[0]
-        plot_duration_min = (t2-t1)/60
-        axis_samp_rate = axis_length / (plot_duration_min * 60)
+        xlim = ax.get_xlim()  # original extent of x axis
+        axis_length = xlim[1]-xlim[0]  # length of original axis
+        plot_duration_min = (t2-t1)/60  # duration in minutes that axis is meant to represent
+        axis_samp_rate = axis_length / (plot_duration_min * 60)  # sample rate of axis coordiantes
         # plot_duration_samp = 2400  # axis_length --> ax2.get_xlim()
 
+        # determine axis format based on length of time represented
+        # there's gotta be a better way to do this
         tick_format = "%H:%M"
         tick_format_0 = "%Y/%m/%d"
         if plot_duration_min <= 2:  # 2 minutes or less
@@ -73,240 +89,106 @@ def __define_t_ticks__(t1, t2, ax, tick_type="datetime"):
 
 class Clipboard(plt.Figure):
 
-    def __init__(self, st, mode="wg", taxis="datetime",
+    def __init__(self, mode="wg",
                  figsize=None,
-                 spectrogram={"log":False, "samp_rate":25, "dbscale":True, "per_lap":0.5, "mult":25.0, "wlen":6, "cmap":"inferno"},
-                 wax={"color":"k"},
-                 gax={"ylim":[0.1, 10]},
-                 sax={"mode":"loglog", "ylim":[1.0, 10.0]}):
+                 spectrogram={"log": False, "samp_rate": 25, "dbscale": True, "per_lap": 0.5, "mult": 25.0, "wlen": 6,
+                              "cmap": "inferno"},
+                 w_ax={"color": "k"},
+                 g_ax={"ylim": [0.1, 10.0]},
+                 s_ax={"color": "k", "mode": "loglog", "ylim": [1.0, 10.0]},
+                 **kwargs,
+                 ):
 
-        self.st = Stream(st.copy())
-        self.ntr = len(self.st)
+
+        # self.st = Stream(st.copy())  # Ensure object is Stream (converts Trace)
+        self.st = Stream()
+        self.ntr = 0
+        self.n_subplots = 0
+        self.subplots = []
         self.mode = mode
 
-        # If figsize is not defined, make height 2* the number of Traces given with a minimum height of 3
-        self.figsize = figsize if figsize else (8.5, np.max([len(self.st)*2, 3]))
+        # Figure object
+        # self.figsize = (8.5, np.max([len(self.st)*2, 3])) or figsize
+        self.figsize = (8.5, 10) or figsize
 
-        self.set_spectrogram_settings(**spectrogram)  # Sets self.spectrogram_settings
-        self.set_wax(**wax)  # Sets self.wax
-        self.set_gax(**gax)  # Sets self.gax
-        self.set_sax(**sax)  # Sets self.sax
-        # self.__plot_data__(st, ax = self.ax)
+        # Other settings
+        self.wg_ratio = [1, 3]  # height ratio of waveform axis v specgram axis
 
-    def set_spectrogram_settings(self, **kwargs):
-        self.spectrogram_settings = dict(**kwargs)
+        # Default axis mode settings
+        self.g_ax = g_ax
+        self.w_ax = w_ax
+        self.s_ax = s_ax
 
-    def set_wax(self, **kwargs):
-        self.wax = dict(**kwargs)
+        super().__init__(figsize=self.figsize, **kwargs)
 
-    def set_gax(self, **kwargs):
-        self.gax = dict(**kwargs)
 
-    def set_sax(self, **kwargs):
-        self.sax = dict(**kwargs)
+    def add_streams(self, st, mode="wg", **kwargs):
 
-    def plot(self):
-
-        fig = plt.figure(figsize=self.figsize, constrained_layout=False)
-
-        self.nax = 2 if self.mode=="wg" else 1  # number of axes per trace
-        num_rows = self.ntr*self.nax
-        height_ratio = [1, 3] if self.mode=="wg" else [1]  # w:g ratio is 1:3 if necessary
-        gs = fig.add_gridspec(nrows=num_rows, ncols=1, height_ratios=height_ratio * self.ntr)
+        self.st = Stream(st)
+        self.ntr += len(self.st)
+        self.nax = 2 if self.mode == "wg" else 1
+        self.n_subplots += self.nax * self.ntr  # Total number of axes for given streams
+        self.mode = mode
+        gs = self.add_gridspec(nrows=self.n_subplots, ncols=1, height_ratios=self.wg_ratio * self.ntr)
 
         for i in range(self.ntr):
+            axn = i*self.nax  # axis number
             tr = self.st[i]
 
-            # ax = fig.add_subplot(gs[0])  # Create subplot for Waveform/Spectrogram/Spectra
-            # Plot the top/secondary axis if "wg"
+            # Plot the top/secondary axis for waveforms if "wg"
             if self.mode == "wg":
-                axT = fig.add_subplot(gs[i*self.nax])  # Create subplot for waveform
-                axT.plot(tr.data, **self.wax)  # Just plot points, not time
-                axT.set_xlim([0, len(tr.data)])
-                axT.yaxis.set_ticks_position('right')
-                ticks, tick_labels = __define_t_ticks__(tr.stats.starttime, tr.stats.endtime, axT)
-                axT.set_xticks(ticks, tick_labels, fontsize=12)
+                 self.subplots.append(self.add_subplot(gs[axn]))  # Create subplot for waveform
+                 self.subplots[axn].plot(tr.data, **self.w_ax)  # Just plot points, not time
+                 self.subplots[axn].set_xlim([0, len(tr.data)])
+                 self.subplots[axn].yaxis.set_ticks_position('right')
+                 ticks, tick_labels = __define_t_ticks__(tr.stats.starttime, tr.stats.endtime, self.subplots[axn])
+                 self.subplots[axn].set_xticks(ticks, tick_labels, fontsize=12)
 
             # Plot the Primary axis
             if self.mode == "wg" or self.mode == "g":
-                a = 1 if self.mode == "wg" else 0
-                axP = fig.add_subplot(gs[i*self.nax+a])  # Create subplot for spectrogram
-                axP.yaxis.set_ticks_position('right')
-                # axP.text(
-                #     -0.01, 0.67, getNSLCstr(tr), transform=axP.transAxes, rotation='vertical',
-                #     horizontalalignment='right', verticalalignment='center', fontsize=12,
-                # )
-                axP = tr.spectrogram(axes=axP, **self.spectrogram_settings)
-                axP.set_ylim(self.gax["ylim"])
-                ticks, tick_labels = __define_t_ticks__(tr.stats.starttime, tr.stats.endtime, axP)
-                axP.set_xticks(ticks, tick_labels, fontsize=12)
+                axn = axn+1 if self.mode == "wg" else axn  # increment axn by 1 if this is the second plot per trace
+                self.subplots.append(self.add_subplot(gs[axn]))  # Create subplot for spectrogram
+                self.subplots[axn].yaxis.set_ticks_position('right')
+                self.subplots[axn].text(
+                    -0.01, 0.67, getNSLCstr(tr), transform=self.subplots[axn].transAxes, rotation='vertical',
+                    horizontalalignment='right', verticalalignment='center', fontsize=12,
+                )
+                tr.spectrogram(axes=self.subplots[axn], cmap="plasma")  # No spectrogram settings for now
+                self.subplots[axn].set_ylim(self.g_ax["ylim"])
+                ticks, tick_labels = __define_t_ticks__(tr.stats.starttime, tr.stats.endtime, self.subplots[axn])
+                self.subplots[axn].set_xticks(ticks, tick_labels, fontsize=12)
             elif self.mode == "w":
-                axP = fig.add_subplot(gs[i*self.nax])  # Create subplot for waveform
-                axP.plot(tr.data, **self.wax)  # Just plot points, not time
-                axP.set_xlim([0, len(tr.data)])
-                axP.yaxis.set_ticks_position('right')
-                ticks, tick_labels = __define_t_ticks__(tr.stats.starttime, tr.stats.endtime, axP)
-                axP.set_xticks(ticks, tick_labels, fontsize=12)
-            axP.text(
-                -0.01, 0.5, getNSLCstr(tr), transform=axP.transAxes, rotation='vertical',
+                self.subplots.append(self.add_subplot(gs[axn]))  # Create subplot for waveform
+                self.subplots(tr.data, **self.w_ax)  # Just plot points, not time
+                self.subplots[axn].set_xlim([0, len(tr.data)])
+                self.subplots[axn].yaxis.set_ticks_position('right')
+                ticks, tick_labels = __define_t_ticks__(tr.stats.starttime, tr.stats.endtime, self.subplots[axn])
+                self.subplots[axn].set_xticks(ticks, tick_labels, fontsize=12)
+            self.subplots[axn].text(
+                -0.01, 0.5, getNSLCstr(tr), transform=self.subplots[axn].transAxes, rotation='vertical',
                 horizontalalignment='right', verticalalignment='center', fontsize=12,
             )
 
             # Put axes on top of top plot
             # Remove middle axes
+            if len(self.figure.get_axes()) >= 2:  # if len>2 bc 1 st will produce two axes
+                if len(self.figure.get_axes()) == 2:
+                    self.figure.get_axes()[0] = self.figure.get_axes()[0].xaxis.tick_top()  # Put axis on top for top plot
+                for i in range(1, len(self.figure.get_axes())-1):  # Remove middle axes
+                    self.figure.get_axes()[i] = self.figure.get_axes()[i].set_xticks([])
 
-            """
-            if 1 stream:  "w"   1 axis  bottom axis
-            if 1 stream:  "wg"  2 axes  bottom axis, delete axis 1 
-            if 2 streams: "w"   2 axes  top and bottom
-            if 2 streams: "wg"  4 axes  top and bottom
-            if 3 streams: "w"   3 axes  top and bottom
-            if 3 streams: "wg"  6 axes  top and bottom
-            """
+        print("Making axes...")
 
-            if len(fig.get_axes()) >= 2:  # if len>2 bc 1 stream will produce two axes
-                if len(fig.get_axes()) == 2:
-                    fig.get_axes()[0] = fig.get_axes()[0].xaxis.tick_top()  # Put axis on top for top plot
-                for i in range(1, len(fig.get_axes())-1):  # Remove middle axes
-                    fig.get_axes()[i] = fig.get_axes()[i].set_xticks([])
+    def __plot_streams(self):
+        # for i in range(len(self.subplots)):
+        for i, subplot in enumerate(self.subplots):
+            print(i)
+            print(self.subplots[i])
+            print(self.st[i])
+            print()
+            subplot.plot(self.st[i].data)
 
-        return fig
+    def plot_point(self, data_point, *args, **kwargs):
+        for i, subplot in enumerate(self.subplots):
+            subplot.plot(data_point, 0, *args, **kwargs)
 
-    def axvline(self, t):
-        pass
-
-    def show(self):
-        plt.show()
-
-
-def plot_triggers(triggers, cft, st, cftlim=None,
-                  trigonoff=(0.6, 1.5), nstatrig=None,
-                  stalta=None,
-                  wylim=None, wave_color='k'):
-    """SWARMWG Plots waveform/spectrogram pairs for Stream objects with multiple Traces
-
-    ARGS
-    st          : Stream : Stream object of seismic waveform
-    cft         : Stream : Stream object of cft function
-
-    KWARGS
-    cftlim      : list-like : 2 element list of Y-axis limits for spectrogram (Hz)
-                  Default:[1,10]
-    wylim       : list-like : 2 element list of Y-axis limits for waveform (data units)
-                  Default: None (auto-scale)
-    wave_color  : Color of the waveform. Anything understood by Matplotlib as a color
-    """
-
-    import numpy as np
-
-    #     st = replaceGapValue(st, gap_value=np.nan, fill_value=0) # Not sure this code is working
-
-    nstreams = len(st)
-    #    plot_duration = st[0].stats.endtime - st[0].stats.starttime
-    figheight = 0.5 + 2.5 * nstreams
-    left = 0.05
-    right = 0.95
-    top = 0.10
-    bottom = 0.05
-    space = 0.03
-    wgratio = [1, 3]
-    axheight = (1.0 - top - bottom - space * (nstreams - 1)) / nstreams
-    suptitley = 0.975
-    suptitlefs = 12
-
-    fig = plt.figure(figsize=(12, figheight), constrained_layout=False)
-
-    for n in range(len(st)):
-        tr = st[n]
-        tr2 = cft[n]
-
-        # bottom to top
-        # axbottom = bottom+axheight*n+space*(n)
-        # axtop    = axbottom+axheight
-        # top to bottom
-        axtop = 1 - top - axheight * n - space * n
-        axbottom = axtop - axheight
-        # print(n, axbottom, axtop)
-
-        wg = fig.add_gridspec(
-            nrows=wgratio[1] + 1, ncols=1, left=left, right=right,
-            # nrows=2, ncols=1, left=left, right=right,
-            bottom=axbottom, top=axtop,
-            wspace=0.00, hspace=0.00
-        )
-
-        # Create subplots for two axes per station
-        w = fig.add_subplot(wg[0, :])  # Create subplot for Waveform
-        g = fig.add_subplot(wg[1:, :])  # Create subplot for Spectrogram
-
-        # First, plot coincidence_triggers
-        # {'time': 2004 - 09 - 28T00: 00:11.360200
-        # Z,
-        # 'stations': ['SEP', 'HSR'],
-        # 'trace_ids': ['UW.SEP..EHZ', 'UW.HSR..EHZ'],
-        # 'coincidence_sum': 2.0,
-        # 'similarity': {},
-        # 'duration': 13.940000057220459},
-        if nstatrig is None: nstatrig = len(st)
-        for trig in triggers:
-            if trig["coincidence_sum"] >= nstatrig:
-                t1 = UTCDateTime(trig["time"]).matplotlib_date
-                t2 = UTCDateTime(trig["time"]+trig["duration"]).matplotlib_date
-                w.axvspan(t1, t2, facecolor='y', alpha=0.5)
-                g.axvspan(t1, t2, facecolor='y', alpha=0.5)
-
-        w.plot(tr.times("matplotlib"), tr.data, color=wave_color)
-        w.set_xlim([tr.times("matplotlib")[0], tr.times("matplotlib")[-1]])
-        # if wylim is not None: w.set_ylim(wylim)
-        w.yaxis.set_ticks_position('right')
-
-        g.yaxis.set_ticks_position('right')
-        g.text(
-            -0.01, 0.67, getNSLCstr(tr), transform=g.transAxes, rotation='vertical',
-            horizontalalignment='right', verticalalignment='center', fontsize=12,
-        )
-        g.plot(tr2.times("matplotlib"), tr2.data, color=wave_color)
-        g.set_xlim([tr.times("matplotlib")[0], tr.times("matplotlib")[-1]])  # Use xlim of waveform just to be sure
-        g.axhline(y=trigonoff[0], color="b", linestyle=":")
-        g.axhline(y=trigonoff[1], color="r", linestyle=":")
-        if cftlim is not None: g.set_ylim(cftlim)
-
-    # Set xaxis ticks and labels
-    # ??? settaxis( fig, n=2, minticks=3, maxticks=7 ) # n is how many plots per stream
-    """
-    The swarmwg() function makes two axes for each waveform - a waveform axis (w)
-    and a spectrogram axis (g).
-    First, 'locator' automatically decides how many xticks to create. Odd numbers ensure
-    that no ticks are at the end of the graphs.
-    Second, 'formatter' automatically decides the datetime format, based on how
-    'zoomed in' the plot is.
-    At the end, the last axis always gets x ticks.
-    Before that - in the if/for loop - if there is more than 1 waveform (2 axes), xticks
-    are added to the top axis, and all other axes are removed.
-    This allows the plots to sit right on top of each other with xticks on the bottom
-    (and top if there are multiple waveforms).
-    """
-    locator = mdates.AutoDateLocator(minticks=3, maxticks=7)  # Dynamic choice of xticks
-    formatter = mdates.ConciseDateFormatter(locator)  # Automatic date formatter
-    if len(fig.get_axes()) > 2:  # if len>2 bc 1 stream will produce two axes
-        fig.get_axes()[0] = fig.get_axes()[0].xaxis.tick_top()  # Put axis on top for top plot
-        fig.get_axes()[0] = fig.get_axes()[0].xaxis.set_major_locator(locator)  # Format top axis
-        fig.get_axes()[0] = fig.get_axes()[0].xaxis.set_major_formatter(formatter)
-        for n in range(1, len(fig.get_axes())):  # Remove middle axes
-            fig.get_axes()[n] = fig.get_axes()[n].set_xticks([])
-    fig.get_axes()[-1] = fig.get_axes()[-1].xaxis.set_major_locator(
-        locator)  # Format bottom axis (bottom axis is always [-1])
-    fig.get_axes()[-1] = fig.get_axes()[-1].xaxis.set_major_formatter(formatter)
-
-    # trigger header
-    nstatrig = 0 if not nstatrig else nstatrig
-    stalta = ["NA", "NA"] if not stalta else stalta
-    title_txt_1 = "# Stations : {}/{} ({} triggers)".format(nstatrig, len(st), len(triggers))
-    title_txt_2 = "STA/LTA : {}/{}     ON/OFF : {}/{}".format(stalta[0], stalta[1], trigonoff[0], trigonoff[1])
-    plt.suptitle("{:^100}\n{:^100}".format(title_txt_1, title_txt_2), y=suptitley, fontsize=suptitlefs)
-
-    return fig
-
-# RESOURCES:
-# https://matplotlib.org/stable/gallery/ticks/date_concise_formatter.html
-# "offset_formats" are the big dates on the bottom right of the axis
