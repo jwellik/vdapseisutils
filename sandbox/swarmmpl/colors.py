@@ -1,3 +1,8 @@
+import numpy as np
+import matplotlib.cm as cm
+from matplotlib.colors import LinearSegmentedColormap
+
+
 # Colors used by Swarm (https://volcanoes.usgs.gov/software/swarm/download.shtml)
 swarm_colors_hex = [
     "#0000ff",
@@ -22,3 +27,10 @@ greyscale_hex = [
     "#212121",
 ]
 earthworm_colors_hex = ('#B2000F', '#004C12', '#847200', '#0E01FF')  # Colors used by Earthworm helicorder
+
+# Default colormaps used for spectrograms
+# Only use upper half (got the idea from Aaron Wech) of perceptually uniform sequential colormaps
+# https://matplotlib.org/stable/gallery/color/colormap_reference.html
+plasma_u = LinearSegmentedColormap.from_list('Upper Half', cm.plasma(np.linspace(-1, 1.2, 256)))
+inferno_u = LinearSegmentedColormap.from_list('Upper Half', cm.inferno(np.linspace(-1, 1.2, 256)))
+viridis_u = LinearSegmentedColormap.from_list('Upper Half', cm.viridis(np.linspace(-1, 1.2, 256)))
