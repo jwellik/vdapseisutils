@@ -11,17 +11,25 @@ https://matplotlib.org/stable/gallery/ticks/date_concise_formatter.html
 "offset_formats" are the big dates on the bottom right of the axis
 """
 
+"""
+    Aaron Wech's colormap
+	colors=cm.jet(np.linspace(-1,1.2,256))
+	color_map = LinearSegmentedColormap.from_list('Upper Half', colors)
+"""
+
+
 # [x] Date ticks don't go on top if wg and len(st) == 1
 # TODO I don't like the way NSLC labels are added; hard to read if too many traces or small figure
 # TODO Need to figure out when to add st; current implementation basically requires mode to be specified twice
+# TODO Not satisfied with colormap
 
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 import numpy as np
 import pandas as pd
 from obspy import Stream, UTCDateTime
 
 from vdapseisutils.core.datasource.nslcutils import getNSLCstr
+from vdapseisutils.sandbox.swarmmpl import colors as vdap_colors
 
 
 def t2axiscoords(times, ax, textent, tick_type="datetime"):
@@ -82,8 +90,13 @@ def __define_t_ticks__(t1, t2, ax, tick_type="datetime"):
             tick_format = '%H:%M:%S'
             t1 = pd.Timestamp(t1.datetime).round("10s")  # round to nearest 10s
             t2 = pd.Timestamp(t2.datetime).round("10s")
-        elif plot_duration_min <= 60:  # 2 minutes to 1 hour
+        elif plot_duration_min <= 10:  # 2 minutes to 10 minutes
             nticks = 6
+            tick_format = "%H:%M"
+            t1 = pd.Timestamp(t1.datetime).round("10T")  # round to nearest 10 minutes
+            t2 = pd.Timestamp(t2.datetime).round("10T")
+        elif plot_duration_min <= 60:  # 10 minutes to 1 hour
+            nticks = 7
             tick_format = "%H:%M"
             t1 = pd.Timestamp(t1.datetime).round("10T")  # round to nearest 10 minutes
             t2 = pd.Timestamp(t2.datetime).round("10T")
@@ -93,6 +106,7 @@ def __define_t_ticks__(t1, t2, ax, tick_type="datetime"):
             t1 = pd.Timestamp(t1.datetime).round("1H")  # round to nearest 1 hr
             t2 = pd.Timestamp(t2.datetime).round("1H")
         elif plot_duration_min <= 60*24*7:  # 1 day to 1 week
+            nticks = 7
             tick_format_0 = "%Y/%m/%d"
             tick_format = "%m/%d"
             t1 = pd.Timestamp(t1.datetime).round("1D")  # round to nearest 1 day
@@ -114,17 +128,21 @@ def __define_t_ticks__(t1, t2, ax, tick_type="datetime"):
 
 
 class Clipboard(plt.Figure):
+    # FigureClass = plt.Figure
 
     def __init__(self, mode="wg",
                  figsize=None,
-                 spectrogram={"log": False, "samp_rate": 25, "dbscale": True, "per_lap": 0.5, "mult": 25.0, "wlen": 6,
-                              "cmap": "inferno"},
-                 w_ax={"color": "k"},
-                 g_ax={"ylim": [0.1, 10.0]},
-                 s_ax={"color": "k", "mode": "loglog", "ylim": [1.0, 10.0]},
+                 spectrogram={}, w_ax={}, g_ax={}, s_ax={},
                  **kwargs,
                  ):
 
+        # Defaults
+        spectrogram_defaults = {"log": False, "samp_rate": 25, "dbscale": True, "per_lap": 0.5, "mult": 25.0, "wlen": 6,
+                                "cmap": vdap_colors.inferno_u}
+        spectrogram_defaults_bw = {**spectrogram_defaults, **{"cmap": "binary", "dbscale": False, "clip": [0.0, 1.0]}}
+        w_ax_defaults = {"color": "k"}
+        g_ax_defaults = {"ylim": [0.1, 10.0]}
+        s_ax_defaults = {"color": "k", "mode": "loglog", "ylim": [1.0, 10.0]}
 
         # self.st = Stream(st.copy())  # Ensure object is Stream (converts Trace)
         self.st = Stream()  # Stream object
@@ -138,13 +156,13 @@ class Clipboard(plt.Figure):
         self.figsize = (8.5, 10) or figsize
 
         # Other settings
-        self.spectrogram = spectrogram  # kwargs for calls to tr.spectrogram()
+        self.spectrogram = {**spectrogram_defaults, **spectrogram}
         self.wg_ratio = [1, 3]  # height ratio of waveform axis v specgram axis
 
-        # Default axis mode settings
-        self.g_ax = g_ax
-        self.w_ax = w_ax
-        self.s_ax = s_ax
+        # Axis settings (y_lim, color, etc.)
+        self.g_ax = {**g_ax_defaults, **g_ax}
+        self.w_ax = {**w_ax_defaults, **w_ax}
+        self.s_ax = {**s_ax_defaults, **s_ax}
 
         super().__init__(figsize=self.figsize, **kwargs)
 
