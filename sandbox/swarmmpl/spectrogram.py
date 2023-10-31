@@ -76,7 +76,7 @@ def spectrogram(tr, samp_rate=None, wlen=6, overlap=0.5, dbscale=True, log_power
 
 
 def swarmg(tr, samp_rate=None, wlen=6.0, overlap=0.5, dbscale=True, log_power=False,
-                  cmap=vdap_colors.inferno_u, tick_type = "datetime", ax=None):
+                  cmap=vdap_colors.inferno_u, tick_type = "datetime", relative_offset=0, ax=None):
 
     import numpy as np
     import matplotlib.pyplot as plt
@@ -140,7 +140,7 @@ def swarmg(tr, samp_rate=None, wlen=6.0, overlap=0.5, dbscale=True, log_power=Fa
     if tick_type == "datetime":
         times_g = [start_date + timedelta(seconds=t) for t in times]  # time vector for g_kwargs (g)
     else:  # "relative"
-        times_g = times
+        times_g = [relative_offset + t for t in times]
 
     # Plot the g_kwargs with dates on the x-axis
     if not ax:

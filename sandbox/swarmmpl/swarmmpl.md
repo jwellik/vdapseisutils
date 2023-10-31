@@ -3,7 +3,7 @@
 spectrogram_settings =
 {
 'min_frequency': 0.0, 'max_frequency': 25.0,  # 'ylim': [0.0, 25.0]
-'power_range_db':[0.0, 120.0],
+'power_range_db':[20.0, 120.0],  # How can I use this?
 'window_size_s': 2.0, 'overlap': 0.86,
 'log_power': True,
 'cmap': 'inferno',
