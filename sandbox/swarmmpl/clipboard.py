@@ -3,12 +3,43 @@ Swarm like plots for matplotlib
 
 Author: Jay Wellik
 Created: 2022 June 30
-Last updated: 2023 October 18
+Last updated: 2023 October 31
 
 
 RESOURCES:
 https://matplotlib.org/stable/gallery/ticks/date_concise_formatter.html
 "offset_formats" are the big dates on the bottom right of the axis
+https://docs.obspy.org/_modules/obspy/imaging/spectrogram.html#spectrogram
+
+spectrogram_settings =
+{
+'min_frequency': 0.0, 'max_frequency': 25.0,  # 'ylim': [0.0, 25.0]
+'power_range_db':[20.0, 120.0],  # How can I use this?
+'window_size_s': 2.0, 'overlap': 0.86,
+'log_power': True,
+'cmap': 'inferno',
+}
+
+wave_settings =
+{
+#'min_amplitude': -1000.0, 'max_amplitude': 1000.0,  # 'ylim': [-1000.0, 1000.0]
+'color':'k',
+filter: {'bandpass', 'min_frequency': 1.0, 'max_frequency': 10.0, 'npoles': 4},  # include this?
+}
+
+spectra_settings =
+{
+'min_frequency': 0.0, 'max_frequency': 25.0,  # 'xlim': [0.0, 25.0]
+'log_power': True, 'log_frequency': True,
+'y_axis_range': [1.0, 5.0]
+}
+
+
+PROCESS:
+# Load all waveforms
+# Determine if sharex=True|False taxis="datetime"|"relative"
+# Determine if mode="wg"|"w"|"g"|"s"
+# Loop through waveforms and determine start:stops of each Trace, caluclate offset
 """
 
 """
@@ -18,22 +49,36 @@ https://matplotlib.org/stable/gallery/ticks/date_concise_formatter.html
 """
 
 
-# [x] Date ticks don't go on top if wg and len(st) == 1
-# TODO I don't like the way NSLC labels are added; hard to read if too many traces or small figure
-# TODO Need to figure out when to add st; current implementation basically requires mode to be specified twice
-# TODO Not satisfied with colormap
+# [TODO] Fix tick_type="relative": Currently doesn't offset data if sharex=True
+# [TODO] sharex=False
+# [x] Slowly add back spectrogram kwargs
+# [x] I don't like the way NSLC labels are added; hard to read if too many traces or small figure
+# [TODO] Make swarmg and swarmw methods; possible make set_tticks() method
+# [TODO] Eliminate waveform plot redundancy
+# [TODO] axvline just uses datetime ?
+# [TODO] ? Remove t2axiscoords and __define_t_ticks
+# [TODO] Need more room for xaxis is sharex = False
 
-import matplotlib.pyplot as plt
+
 import numpy as np
 import pandas as pd
+from datetime import datetime, timedelta
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+
 from obspy import Stream, UTCDateTime
 
 from vdapseisutils.core.datasource.nslcutils import getNSLCstr
 from vdapseisutils.sandbox.swarmmpl import colors as vdap_colors
+from vdapseisutils.sandbox.swarmmpl.spectrogram import swarmg
 
 
-def t2axiscoords(times, ax, textent, tick_type="datetime"):
-    """T2AXISCOORDS Converts time to axis coordinates. Requires the axis object and the actual time extent for the axis"""
+def t2axiscoords(times, textent, axextent, tick_type="datetime"):
+    """T2AXISCOORDS Converts time to axis coordinates. Requires the axis object and the actual time extent for the axis
+    textent should be a list-like pair of datetime objects
+    axextent should be the xlim of the axis (in sample units, in other words)
+
+    """
 
     # input
     times = [UTCDateTime(t) for t in times]  # convert to UTCDateTime
@@ -42,22 +87,21 @@ def t2axiscoords(times, ax, textent, tick_type="datetime"):
     t0 = t1  # preserve the original t1
 
     if tick_type == "datetime":
-
-        xlim = ax.get_xlim()  # original extent of x axis
-        axis_length = xlim[1]-xlim[0]  # length of original axis
-        plot_duration_min = (t2-t1)/60  # duration in minutes that axis is meant to represent
+        xlim = axextent  # original extent of x axis
+        axis_length = xlim[1] - xlim[0]  # length of original axis
+        plot_duration_min = (t2 - t1) / 60  # duration in minutes that axis is meant to represent
         axis_samp_rate = axis_length / (plot_duration_min * 60)  # sample rate of axis coordiantes
 
     if tick_type == "relative":
         # This is if the time axis should be in seconds instead of datetime
         raise Exception("Relative time axis not yet supported :-(")
 
-    x = [(t - t0) * axis_samp_rate for t in times]
+    x = [xlim[0] + ((t - t0) * axis_samp_rate) for t in times]
 
     return x
 
 
-def __define_t_ticks__(t1, t2, ax, tick_type="datetime"):
+def __define_t_ticks__(trange, xrange, tick_type="datetime"):
     """
     Returns appropriate locations (in original axis coordinates) and labels for an x axis that is meant to span t1 to t2
 
@@ -69,75 +113,93 @@ def __define_t_ticks__(t1, t2, ax, tick_type="datetime"):
     """
 
     # input
-    t1 = UTCDateTime(t1)  # convert t1 to UTCDateTime
-    t2 = UTCDateTime(t2)  # convet t2 to UTCDateTime
-    t0 = t1  # preserve the original t1
+    t1 = UTCDateTime(trange[0])  # convert t1 to UTCDateTime
+    t2 = UTCDateTime(trange[1])  # convet t2 to UTCDateTime
+    tA = t1
+    tB = t2
 
-    if tick_type == "datetime":
+    xlim = xrange  # original extent of x axis
+    axis_length = xlim[1]-xlim[0]  # length of original axis
+    plot_duration_min = (t2-t1)/60  # duration in minutes that axis is meant to represent
+    axis_samp_rate = axis_length / (plot_duration_min * 60)  # sample rate of axis coordiantes
+    # plot_duration_samp = 2400  # axis_length --> ax2.get_xlim()
 
-        xlim = ax.get_xlim()  # original extent of x axis
-        axis_length = xlim[1]-xlim[0]  # length of original axis
-        plot_duration_min = (t2-t1)/60  # duration in minutes that axis is meant to represent
-        axis_samp_rate = axis_length / (plot_duration_min * 60)  # sample rate of axis coordiantes
-        # plot_duration_samp = 2400  # axis_length --> ax2.get_xlim()
-
-        # determine axis format based on length of time represented
-        # there's gotta be a better way to do this
+    # determine axis format based on length of time represented
+    # there's gotta be a better way to do this
+    if plot_duration_min <= 2:  # 2 minutes or less
+        nticks = 6
+        tick_format_0 = "%Y/%m/%d %H:%M:%S"
+        tick_format = '%H:%M:%S'
+        t1 = pd.Timestamp(t1.datetime).round("10s")  # round to nearest 10s
+        t2 = pd.Timestamp(t2.datetime).round("10s")
+    elif plot_duration_min <= 10:  # 2 minutes to 10 minutes
+        nticks = 6
+        tick_format_0 = "%Y/%m/%d %H:%M"
         tick_format = "%H:%M"
+        t1 = pd.Timestamp(t1.datetime).round("2T")  # round to nearest 10 minutes
+        t2 = pd.Timestamp(t2.datetime).round("2T")
+    elif plot_duration_min <= 60:  # 10 minutes to 1 hour
+        nticks = 6
+        tick_format_0 = "%Y/%m/%d %H:%M"
+        tick_format = "%H:%M"
+        t1 = pd.Timestamp(t1.datetime).round("2T")  # round to nearest 10 minutes
+        t2 = pd.Timestamp(t2.datetime).round("2T")
+    elif plot_duration_min <= 60*24:  # 1 hour to 1 day
+        nticks = 7
+        tick_format_0 = "%Y/%m/%d %H:00"
+        tick_format = "%H"
+        t1 = pd.Timestamp(t1.datetime).round("1H")  # round to nearest 1 hr
+        t2 = pd.Timestamp(t2.datetime).round("1H")
+    elif plot_duration_min <= 60*24*7:  # 1 day to 1 week
+        nticks = 7
         tick_format_0 = "%Y/%m/%d"
-        if plot_duration_min <= 2:  # 2 minutes or less
-            nticks = 6
-            tick_format = '%H:%M:%S'
-            t1 = pd.Timestamp(t1.datetime).round("10s")  # round to nearest 10s
-            t2 = pd.Timestamp(t2.datetime).round("10s")
-        elif plot_duration_min <= 10:  # 2 minutes to 10 minutes
-            nticks = 6
-            tick_format = "%H:%M"
-            t1 = pd.Timestamp(t1.datetime).round("10T")  # round to nearest 10 minutes
-            t2 = pd.Timestamp(t2.datetime).round("10T")
-        elif plot_duration_min <= 60:  # 10 minutes to 1 hour
-            nticks = 7
-            tick_format = "%H:%M"
-            t1 = pd.Timestamp(t1.datetime).round("10T")  # round to nearest 10 minutes
-            t2 = pd.Timestamp(t2.datetime).round("10T")
-        elif plot_duration_min <= 60*24:  # 1 hour to 1 day
-            nticks = 7
-            tick_format = "%H"
-            t1 = pd.Timestamp(t1.datetime).round("1H")  # round to nearest 1 hr
-            t2 = pd.Timestamp(t2.datetime).round("1H")
-        elif plot_duration_min <= 60*24*7:  # 1 day to 1 week
-            nticks = 7
-            tick_format_0 = "%Y/%m/%d"
-            tick_format = "%m/%d"
-            t1 = pd.Timestamp(t1.datetime).round("1D")  # round to nearest 1 day
-            t2 = pd.Timestamp(t2.datetime).round("1D")
+        tick_format = "%m/%d"
+        t1 = pd.Timestamp(t1.datetime).round("1D")  # round to nearest 1 day
+        t2 = pd.Timestamp(t2.datetime).round("1D")
+    else:  # greater than 1 week
+        nticks = 7
+        tick_format_0 = "%Y/%m/%d"
+        tick_format = "%m/%d"
+        t1 = pd.Timestamp(t1.datetime).round("1D")  # round to nearest 1 day
+        t2 = pd.Timestamp(t2.datetime).round("1D")
 
-        dr = pd.date_range(t1, t2, periods=nticks)
+    dr = pd.date_range(t1, t2, periods=nticks)
+    ticks = np.linspace(xrange[0], xrange[1], nticks)
 
+    if tick_type == "days":
+        tick_labels = (ticks - xrange[0]) / axis_samp_rate / 60 / 60 / 24
+        axis_label = "Days"
+    elif tick_type == "hours":
+        tick_labels = (ticks - xrange[0]) / axis_samp_rate / 60 / 60
+        axis_label = "Hours"
+    elif tick_type == "minutes":
+        tick_labels = (ticks - xrange[0]) / axis_samp_rate / 60
+        axis_label = "Minutes"
+    elif tick_type == "relative" or tick_type == "seconds":
+        tick_labels = (ticks - xrange[0]) / axis_samp_rate
+        axis_label = "Seconds"
+    else:  #  tick_type == "datetime":
+        dr = dr[(dr >= pd.Timestamp(tA.datetime)) & (dr <= pd.Timestamp(tB.datetime))]
+        ticks = t2axiscoords(dr, trange, xrange, tick_type="datetime")
         tick_labels = [d.strftime(tick_format) for d in dr]
         tick_labels[0] = dr[0].strftime(tick_format_0)
+        axis_label = "Time"
 
-        # ticks need to be determined based on difference of t0.stats.starttime -
-        tick0 = (UTCDateTime(dr[0])-t0) * axis_samp_rate
-        ticks = np.linspace(0+tick0, axis_length+tick0, nticks)
-
-    elif tick_type == "relative":
-        raise Exception("Relative t tick labels not yet supported :-(")
-
-    return ticks, tick_labels
+    return ticks, tick_labels, axis_label
 
 
 class Clipboard(plt.Figure):
-    # FigureClass = plt.Figure
 
-    def __init__(self, mode="wg",
+    def __init__(self, st=Stream(), mode="wg",
                  figsize=None,
-                 spectrogram={}, w_ax={}, g_ax={}, s_ax={},
+                 g={}, w_ax={}, g_ax={}, s_ax={},
+                 tick_type="datetime",
+                 sharex=True,
                  **kwargs,
                  ):
 
         # Defaults
-        spectrogram_defaults = {"log": False, "samp_rate": 25, "dbscale": True, "per_lap": 0.5, "mult": 25.0, "wlen": 6,
+        spectrogram_defaults = {"log_power": False, "samp_rate": 50, "dbscale": True, "overlap": 0.5, "wlen": 6,
                                 "cmap": vdap_colors.inferno_u}
         spectrogram_defaults_bw = {**spectrogram_defaults, **{"cmap": "binary", "dbscale": False, "clip": [0.0, 1.0]}}
         w_ax_defaults = {"color": "k"}
@@ -145,19 +207,24 @@ class Clipboard(plt.Figure):
         s_ax_defaults = {"color": "k", "mode": "loglog", "ylim": [1.0, 10.0]}
 
         # self.st = Stream(st.copy())  # Ensure object is Stream (converts Trace)
-        self.st = Stream()  # Stream object
-        self.ntr = 0  # total number of traces in self.st
-        self.n_subplots = 0  # total number of subplots
-        self.subplots = []  # placeholder  list of mpl axis objects
-        self.subplot_extents = []  # placeholder [(ax_start_time, ax_stop_time), ...]
+        self.st = st.copy()  # Stream object
+        self.ntr = 0  # total number of traces in self.st  # Used?
+        self.n_subplots = 0  # total number of subplots  # ? Used?
         self.mode = mode  # "w", "g", "wg"
+        self.sharex = sharex
 
         # Figure object
-        self.figsize = (8.5, 10) or figsize
+        self.figsize = figsize if figsize else (8.5, np.max([len(self.st)*2, 3]))
 
         # Other settings
-        self.spectrogram = {**spectrogram_defaults, **spectrogram}
-        self.wg_ratio = [1, 3]  # height ratio of waveform axis v specgram axis
+        self.g_kwargs = {**spectrogram_defaults, **g}
+        self.tick_type = tick_type
+        if self.mode == "wg":
+            self.wg_ratio = [1, 3]  # height ratio of waveform axis : specgram axis
+            self.nplots = 2  # nplots per trace
+        else:
+            self.wg_ratio = [1]
+            self.nplots = 1
 
         # Axis settings (y_lim, color, etc.)
         self.g_ax = {**g_ax_defaults, **g_ax}
@@ -166,77 +233,101 @@ class Clipboard(plt.Figure):
 
         super().__init__(figsize=self.figsize, **kwargs)
 
-    def load_streams(self, st, mode="wg", **kwargs):
+        self._plot_clipboard()  # cretes gridspec, all the axes, and plots the data
 
-        self.st = Stream(st)
-        self.mode = mode
-        self.ntr += len(self.st)
-        self.nax = 2 if self.mode == "wg" else 1  # Number of axes per trace
-        self.n_subplots += self.nax * self.ntr  # Total number of axes for given streams
-        self.wg_ratio = [1,3] if self.mode == "wg" else [1]
-        gs = self.add_gridspec(nrows=self.n_subplots, ncols=1, height_ratios=self.wg_ratio * self.ntr)
 
-        for i in range(self.ntr):
-            axn = i*self.nax  # axis number
-            tr = self.st[i]
+    def _plot_clipboard(self):
+        ################################################################################################################
+        # Make figure: I could put it in another method, but it's a lot of unnecessary parameter passing (for now)
 
-            # Plot the top/secondary axis for waveforms if "wg"
+        st = self.st.copy()
+        gs = self.add_gridspec(nrows=len(self.st) * self.nplots, ncols=1, height_ratios=self.wg_ratio * len(self.st))
+
+        # Determine xlim for axes
+        starttimes = [tr.stats.starttime for tr in st]  # starttime for every trace
+        endtimes = [tr.stats.endtime for tr in st]  # endtime for every trace
+        if self.tick_type == "datetime":
+            self.data_extent = [min(starttimes).datetime, max(endtimes).datetime]  # maximum start:end extent across all traces
+        else:
+            self.data_extent = [0, max(endtimes)-min(starttimes)]  # length of maximum start:end extent in seconds
+
+        # Plot the data
+        for i, tr in enumerate(st):
+            axn = i * self.nplots
+
+            start_date = tr.stats.starttime
+
+            # Convert time values to datetime objects
+            if self.tick_type == "datetime":
+                times_w = [(start_date + timedelta(seconds=t)).datetime for t in tr.times()]  # time vector for the waveform (w)
+            else:  # "relative"
+                times_w = tr.times()
+
+            # Plot the secondary/top axis for waveforms if "wg"
+            # Waveform
             if self.mode == "wg":
-                 self.subplots.append(self.add_subplot(gs[axn]))  # Create subplot for waveform
-                 self.subplot_extents.append((tr.stats.starttime, tr.stats.endtime))
-                 self.subplots[axn].plot(tr.data, **self.w_ax)  # Just plot points, not time
-                 self.subplots[axn].set_xlim([0, len(tr.data)])
-                 self.subplots[axn].yaxis.set_ticks_position('right')
-                 ticks, tick_labels = __define_t_ticks__(tr.stats.starttime, tr.stats.endtime, self.subplots[axn])
-                 self.subplots[axn].set_xticks(ticks, tick_labels, fontsize=12)
+                self.add_subplot(gs[axn])
+                self.axes[axn].plot(times_w, tr.data, **self.w_ax)  # Just plot points, not time
+                self.axes[axn].yaxis.set_ticks_position("right")
+                self.axes[axn].set_xlim(self.data_extent)
 
-            # Plot the Primary axis
+            # Plot the primary/bottom axis
+            # Spectrogram
             if self.mode == "wg" or self.mode == "g":
                 axn = axn+1 if self.mode == "wg" else axn  # increment axn by 1 if this is the second plot per trace
-                self.subplots.append(self.add_subplot(gs[axn]))  # Create subplot for spectrogram
-                self.subplot_extents.append((tr.stats.starttime, tr.stats.endtime))
-                self.subplots[axn].yaxis.set_ticks_position('right')
-                tr.spectrogram(axes=self.subplots[axn], **self.spectrogram)
-                self.subplots[axn].set_ylim(self.g_ax["ylim"])
-                ticks, tick_labels = __define_t_ticks__(tr.stats.starttime, tr.stats.endtime, self.subplots[axn])
-                self.subplots[axn].set_xticks(ticks, tick_labels, fontsize=12)
-            elif self.mode == "w":
-                self.subplots.append(self.add_subplot(gs[axn]))  # Create subplot for waveform
-                self.subplots(tr.data, **self.w_ax)  # Just plot points, not time
-                self.subplots[axn].set_xlim([0, len(tr.data)])
-                self.subplots[axn].yaxis.set_ticks_position('right')
-                ticks, tick_labels = __define_t_ticks__(tr.stats.starttime, tr.stats.endtime, self.subplots[axn])
-                self.subplots[axn].set_xticks(ticks, tick_labels, fontsize=12)
+                self.add_subplot(gs[axn])
 
-            # Horizontal label with two rows
+                self.axes[axn] = swarmg(tr, tick_type=self.tick_type, ax=self.axes[axn], **self.g_kwargs)
+                self.axes[axn].set_xlabel("")
+                self.axes[axn].set_ylabel("")
+                self.axes[axn].yaxis.set_ticks_position("right")
+                self.axes[axn].set_xlim(self.data_extent)
+
+            # Waveform
+            elif self.mode == "w":
+                self.add_subplot(gs[axn])
+                self.axes[axn].plot(times_w, tr.data, **self.w_ax)  # Just plot points, not time
+                self.axes[axn].yaxis.set_ticks_position("right")
+                self.axes[axn].set_xlim(self.data_extent)
+
+            # NSLC Label - Horizontal label with two rows
             s = getNSLCstr(tr)
             idx = s.index(".",3)  # ? gets second instance of "." assuming NN.SS....
             s1, s2 = s[:idx], s[idx + 1:]
-            # print(s1)  # prints "hello.world"
-            # print(s2)  # prints "foo.bar"
-            self.subplots[axn].text(
-                -0.01, 0.67, s1 + "\n" + s2, transform=self.subplots[axn].transAxes, rotation='horizontal',
-                horizontalalignment="right", verticalalignment='center', fontsize=12,
+            self.axes[axn].text(
+                -0.01, 0.67, s1 + "\n" + s2, transform=self.axes[axn].transAxes, rotation='horizontal',
+                horizontalalignment="right", verticalalignment='center', fontsize=10,
             )
 
-            # Vertical label w 1 row
+            # NSLC Label - Vertical label w 1 row
             # self.subplots[axn].text(
             #     -0.01, 0.5, getNSLCstr(tr), transform=self.subplots[axn].transAxes, rotation='vertical',
             #     horizontalalignment='right', verticalalignment='center', fontsize=12,
             # )
 
-            # Put axes on top of top plot
-            # Remove middle axes
-            if len(self.figure.get_axes()) >= 2:  # if len>2 bc 1 st will produce two axes
-                if len(self.figure.get_axes()) == 2:
-                    self.figure.get_axes()[0] = self.figure.get_axes()[0].xaxis.tick_top()  # Put axis on top for top plot
-                for i in range(1, len(self.figure.get_axes())-1):  # Remove middle axes
-                    self.figure.get_axes()[i] = self.figure.get_axes()[i].set_xticks([])
+        # Set all x axis ticks and ticklabels
+        for i, ax in enumerate(self.get_axes()):
+            if self.tick_type == "datetime":
+                loc = mdates.AutoDateLocator(minticks=5, maxticks=7)  # from matplotlib import dates as mdates
+                # formatter = mdates.ConciseDateFormatter(loc, show_offset=True)
+                formatter = mdates.ConciseDateFormatter(loc)
+                ax.xaxis.set_major_locator(loc)
+                ax.xaxis.set_major_formatter(formatter)
+
+        # if sharex, Put axes on top of top plot, Remove middle axes
+        if self.sharex:
+            if len(self.get_axes()) >= 2:  # if len>=2 bc 1 st will produce 2 axes
+                self.get_axes()[0] = self.get_axes()[0].xaxis.tick_top()  # Put axis on top for top plot
+                for i in range(1, len(self.get_axes())-1):  # Remove middle axes (does not enter for loop if only 2 axes)
+                    self.get_axes()[i].set_xticks([])       # Must remove ticks and ticklabels
+                    self.get_axes()[i].set_xticklabels([])  # bc both have already been set earlier in code
+        self.get_axes()[-1].set_xlabel("Time", fontsize=10)  # Set x axis label on last plot
 
 
-    def axvline(self, t, *args, color="y", **kwargs):
-        """AXVLINE Adds a vertical line across all axes. Default color='yellow'"""
+
+    def axvline(self, t, *args, color="red", **kwargs):
+        """AXVLINE Adds a vertical line across all axes. Default color='red'"""
         t = t if isinstance(t, (tuple, list, set)) else [t]  # convert to list, if necessary
-        for i, subplot in enumerate(self.subplots):
-            x = t2axiscoords(t, subplot, self.subplot_extents[i])  # convert times to x axis coordinates
-            [subplot.axvline(x_, *args, color=color, **kwargs) for x_ in x]  # axvline can not take a list
+        for i, ax in enumerate(self.axes):
+            x = t2axiscoords(t, self.data_extent, ax.get_xlim(), tick_type=self.tick_type)  # convert times to x axis coordinates
+            [ax.axvline(x_, *args, color=color, **kwargs) for x_ in x]  # axvline can not take a list
