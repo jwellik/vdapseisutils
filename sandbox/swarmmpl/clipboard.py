@@ -102,11 +102,30 @@ class Clipboard(plt.Figure):
                  sharex=True,
                  **kwargs,
                  ):
+        """
+        CLIPBOARD Creates subplots of waveforms or spectrograms for an ObsPy Stream object.
+        X ticks can be plotted as datetimes or as "relative" seconds from the start of each Trace.
+        Similarly, Traces can be synced by aboslute time or by the beginning of each Trace
+        This class will not merge any Traces. Thus, it allows for different events from the station to be plotted
+        alongside one another. Therefore, it is important to make sure all Streams are pre-processed before they are
+        passed to Clipboard
+
+        :param st: Stream object with one or more Traces to plot
+        :param mode: "wg" waveform and spectrogram | "w" waveforms only | "g" spectrogram only
+        :param figsize: tuple passed to matplotlib.figure
+        :param g: dictionary of settings for spectrogram
+            defaults: {"samp_rate": 50, "wlen": 6, "overlap": 0.5, "dbscale": True, "log_power": False, "cmap": vdap_colors.inferno_u}
+        :param w_ax: dictionary of settings for waveform axes
+        :param g_ax: dictionary of settings for spectrogram axes
+        :param s_ax: dictionary of settings for spectra axes
+        :param tick_type: "datetime" | "relative" seconds after start of Trace
+        :param sharex: True (plots are synced by aboslute time of Trace objects) | False
+        :param kwargs:
+        """
 
         # Defaults
-        spectrogram_defaults = {"log_power": False, "samp_rate": 50, "dbscale": True, "overlap": 0.5, "wlen": 6,
-                                "cmap": vdap_colors.inferno_u}
-        spectrogram_defaults_bw = {**spectrogram_defaults, **{"cmap": "binary", "dbscale": False, "clip": [0.0, 1.0]}}
+        spectrogram_defaults = {"samp_rate": 50, "wlen": 6, "overlap": 0.5, "dbscale": True, "log_power": False, "cmap": vdap_colors.inferno_u}
+        # spectrogram_defaults_bw = {**spectrogram_defaults, **{"cmap": "binary", "dbscale": False, "clip": [0.0, 1.0]}}
         w_ax_defaults = {"color": "k"}
         g_ax_defaults = {"ylim": [0.1, 10.0]}
         s_ax_defaults = {"color": "k", "mode": "loglog", "ylim": [1.0, 10.0]}
