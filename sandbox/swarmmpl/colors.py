@@ -31,6 +31,11 @@ earthworm_colors_hex = ('#B2000F', '#004C12', '#847200', '#0E01FF')  # Colors us
 # Default colormaps used for spectrograms
 # Only use upper half (got the idea from Aaron Wech) of perceptually uniform sequential colormaps
 # https://matplotlib.org/stable/gallery/color/colormap_reference.html
+#
+#    Aaron Wech's colormap
+#	colors=cm.jet(np.linspace(-1,1.2,256))
+#	color_map = LinearSegmentedColormap.from_list('Upper Half', colors)
+#
 plasma_u = LinearSegmentedColormap.from_list('Upper Half', cm.plasma(np.linspace(-1, 1.2, 256)))
 inferno_u = LinearSegmentedColormap.from_list('Upper Half', cm.inferno(np.linspace(-1, 1.2, 256)))
 viridis_u = LinearSegmentedColormap.from_list('Upper Half', cm.viridis(np.linspace(-1, 1.2, 256)))

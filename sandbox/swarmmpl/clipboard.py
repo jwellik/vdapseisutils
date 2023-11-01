@@ -42,22 +42,17 @@ PROCESS:
 # Loop through waveforms and determine start:stops of each Trace, caluclate offset
 """
 
-"""
-    Aaron Wech's colormap
-	colors=cm.jet(np.linspace(-1,1.2,256))
-	color_map = LinearSegmentedColormap.from_list('Upper Half', colors)
-"""
-
 
 # [x] Fix tick_type="relative": Currently doesn't offset data if sharex=True
 # [x] sharex=False : date_extent and time_extent need to be lists of tuples for each stream (or axis)
 # [x] Slowly add back spectrogram kwargs
 # [x] I don't like the way NSLC labels are added; hard to read if too many traces or small figure
-# [TODO] Make swarmg and swarmw methods; possible make set_tticks() method
+# TODO Make swarmg and swarmw methods
+# TODO I don't love the results from AutoDateLocator
 # [x] Eliminate waveform plot redundancy
 # [x] axvline uses datetime or relative
-# [TODO] ? Remove t2axiscoords and __define_t_ticks
-# [TODO] Need more room for xaxis is sharex = False
+# [x] Remove __define_t_ticks
+# TODO Need more room for xaxis is sharex = False
 
 
 import numpy as np
