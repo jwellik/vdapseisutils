@@ -145,6 +145,7 @@ def swarmg(tr, samp_rate=None, wlen=6.0, overlap=0.5, dbscale=True, log_power=Fa
     # Plot the g_kwargs with dates on the x-axis
     if not ax:
         fig, ax = plt.subplots(1, 1, figsize=(10.0, 6.0))
+        
     ax.pcolormesh(times_g, frequencies, Sxx, shading='auto', cmap=cmap)  # plot g_kwargs
     ax.set_xlabel('Date and Time')
     ax.set_ylabel('Frequency (Hz)')
@@ -160,8 +161,6 @@ def swarmg(tr, samp_rate=None, wlen=6.0, overlap=0.5, dbscale=True, log_power=Fa
     else:  # "relative"
         ax.set_xlim([0, len(signal)/tr.stats.sampling_rate])
 
-    # ax[0].axvline(datetime(2022, 7, 10, 1, 35, 0), color="red")
-    # ax[1].axvline(datetime(2022, 7, 10, 1, 35, 0), color="red")
-    # plt.show()
+    data = {"freq": frequencies, "times": times_g, "power": Sxx}
 
-    return ax
+    return ax, data
