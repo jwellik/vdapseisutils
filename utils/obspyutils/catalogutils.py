@@ -248,6 +248,72 @@ def read_ew_arcfiles_as_catalog(path):
 
     return cat
 
+def read_hyp2000_log(logfile):
+    """READ_HYP2000_LOG Reads log file from hyp2000_mgr
+    Returns a dictionary of txyzm data
+    """
+    # I HATE THIS FORMAT LOL
+
+    import re
+    import datetime as dt
+    from obspy import UTCDateTime
+    from vdapseisutils.utils.geoutils import dms2dd
+
+    df = pd.DataFrame(columns=["time", "latitude", "longitude", "depth", "mag"])
+
+    # Open the file for reading
+    with open(logfile, 'r') as file:
+        for line in file:
+            if re.match(r'\d{8}_UTC_\d{2}:\d{2}:\d{2}', line):  # Check if the line matches the expected pattern
+                parts = line.strip().split()  # Split the line by spaces
+
+                if len(parts) == 17:  # A line of location data should have 16 parts
+
+                    # time
+                    date = parts[1]  # Extract the date part
+                    hhmm = parts[2]  # Extract the time part
+                    seconds = parts[3]
+                    time = UTCDateTime(dt.datetime.strptime(date+hhmm+seconds, "%Y%m%d%H%M%S.%f"))
+
+                    # latitude
+                    d = parts[4]  # degrees and decimal minutes are stored here
+                    try:
+                        d, m = d.split("S")  # e.g., 37S47.96 -- split degrees, minutes by S or N
+                        d = float(d) * -1  # mulitply by -1 if South
+                        m = float(m)
+                    except:
+                        d, m = d.split("N")
+                        d = float(d)
+                        m = float(m)
+                    latitude = dms2dd((d,m,0))  # Convert degrees, minutes to decimal degrees
+
+                    # longitude
+                    d = float(parts[5][0:-1])
+                    d = d * -1 if parts[5][-1] == "W" else d
+                    m = float(parts[6])
+                    longitude = dms2dd((d, m, 0))
+
+                    depth = float(parts[7])
+                    mag = float(parts[8])
+
+                    nphases = int(parts[9])
+
+                    column10 = parts[10]
+                    column11 = parts[11]
+                    column12 = parts[12]
+                    column13 = parts[13]
+                    column14 = parts[14]
+                    column15 = parts[15]
+                    column15 = parts[15]
+
+                    # append data to a DataFrame here
+                    df = pd.concat([df, pd.DataFrame({"time": time, "latitude": latitude, "longitude": longitude,
+                                                      "depth": depth, "mag": mag}, index=[0])],
+                                   ignore_index=True)  # thanks chatGPT
+
+    return df
+
+
 ########################################################################################################################
 # Catalog to Text-based files
 ########################################################################################################################
@@ -375,6 +441,51 @@ def createSwarmTags(times, nslc, tag, filename="swarm_tagger.csv"):
     # write the DataFrame to a CSV file
     df.to_csv(filename, header=False)
 
+def txyzm2catalog(data):
+    """
+    TXYZM2CATALOG Converts time, latitude, longitude, depth, mag to an ObsPy Catalog object
+
+    Input: dict or DataFrame of earthquake origin fields.
+    Requires columns/fields to be time, latitude, longitude, depth, magnitude
+
+    In the future, allow alternative column names to be specified
+    colnames={"time": "time", "latitude": "latitude", "longitude": "longitude", "depth": "depth", "magn": "mag"}
+    """
+
+    cat = Catalog()
+    cat.description = "Catalog imported from CSV file via Pandas DataFrame"
+    for index, row in data.iterrows():
+        e = Event()
+        e.event_type = "not existing"
+
+        o = Origin()
+        o.time = UTCDateTime(row['time'])
+        o.latitude = row['latitude']
+        o.longitude = row['longitude']
+        o.depth = row['depth']
+        o.depth_type = "operator assigned"
+        o.evaluation_mode = "manual"
+        o.evaluation_status = "preliminary"
+        # o.region = FlinnEngdahl().get_region(o.longitude, o.latitude)
+
+        m = Magnitude()
+        m.mag = row['mag']
+        m.magnitude_type = "Md"
+
+        # also included could be: custom picks, amplitude measurements, station magnitudes,
+        # focal mechanisms, moment tensors, ...
+
+        # make associations, put everything together
+        cat.append(e)
+        e.origins = [o]
+        e.magnitudes = [m]
+        m.origin_id = o.resource_id
+
+    return cat
+
+def basics2catalog(*args, **kwargs):
+    """BASICS2CATALOG Wrapper for TXYZM2CATALOG"""
+    return txyzm2catalog(*args, **kwargs)
 
 if __name__ == '__main__':
     example()
