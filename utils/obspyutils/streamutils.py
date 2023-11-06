@@ -1,7 +1,7 @@
 """
 streamutils
 TODO Move all funtions to utils.obspyutils.streamutils
-TODO preprocess_data()
+[x] preprocess_data()
 """
 
 import numpy as np
