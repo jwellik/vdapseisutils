@@ -14,7 +14,6 @@ def __true_npts(st):
     return npts
 
 # Code stolen from LiamTooney
-import pandas as pd
 def _safe_merge(st, fill_value):
     """
     Merge Traces with same ID, modifying data types if necessary. Modified from code by
@@ -48,7 +47,7 @@ def get_waveforms_from_client(client, nslc_list, t1, t2,
     from numpy import dtype
     from obspy import UTCDateTime, Stream
     from vdapseisutils.core.datasource.nslcutils import str2nslc
-    from vdapseisutils.core.datasource.streamutils import createEmptyTrace
+    from vdapseisutils.utils.obspyutils.streamutils import createEmptyTrace
     from vdapseisutils.utils import timeutils
 
     STATUSMSG = '- {nslc:15} | {t1} - {t2} | {status:15} ({ntr:2} traces, {npts:7} samples)'
