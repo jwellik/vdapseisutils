@@ -249,8 +249,7 @@ def read_ew_arcfiles_as_catalog(path):
     return cat
 
 def read_hyp2000_log(logfile):
-    """READ_HYP2000_LOG Reads log file from hyp2000_mgr
-    Returns a dictionary of txyzm data
+    """READ_HYP2000_LOG Reads log file from hyp2000_mgr, returns ObsPy Catalog object
     """
     # I HATE THIS FORMAT LOL
 
@@ -311,7 +310,9 @@ def read_hyp2000_log(logfile):
                                                       "depth": depth, "mag": mag}, index=[0])],
                                    ignore_index=True)  # thanks chatGPT
 
-    return df
+    cat = basics2catalog(df)
+
+    return cat
 
 
 ########################################################################################################################
