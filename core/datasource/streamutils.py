@@ -10,6 +10,36 @@ from obspy import Stream
 winston_gap_value = -2**31
 
 
+
+def preprocess(st, resample=None, taper=5, filter_type=None, filter_kwargs=None, trim=None):
+    """
+    PREPROCESS Basic pre-processing steps for processing short time chunks of data
+
+    :param st: ObsPy Stream object
+    :param resample: desired sample rate (Hz)
+    :param taper: seconds to taper beginning and end of trace before filtering
+    :param filter_type: string : "bandpass", "highpass" or "lowpass"
+    :param filter_kwargs: dict : any kwargs that are passed to ObsPy Stream filter() method
+    :param trim: (t1, t2) to trim extent of trace
+    :return:
+    """
+
+    # filter_defaults = {"freqmin": 1.0, "freqmax": 10, "corners":2, "zerophase":True}  # Not used, at the moment
+
+    st.detrend('demean')
+    if resample:
+        for tr in st:
+            if tr.stats['sampling_rate'] != resample:
+                tr.resample(resample)
+    st.taper(max_percentage=None, max_length=taper)
+    if filter_type:
+        st.filter(filter_type, **filter_kwargs)
+    if trim:
+        st.trim(trim[0], trim[1])
+
+    return st
+
+
 def removeWinstonGaps(st, winston_gap_value=winston_gap_value, fill_value=0):
     for m in range(len(st)):
         st[m].data = np.where(st[m].data == winston_gap_value, fill_value, st[m].data) # replace -2**31 (Winston NaN token) w 0  
