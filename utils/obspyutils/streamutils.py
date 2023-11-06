@@ -1,6 +1,6 @@
 """
 streamutils
-TODO Move all funtions to utils.obspyutils.streamutils
+[x] Move all funtions to utils.obspyutils.streamutils
 [x] preprocess_data()
 """
 
