@@ -392,56 +392,6 @@ def catalog2txyzm(cat, depth_unit="km", z_dir="depth", time_format="UTCDateTime"
 
     return data
 
-def catalog2swarm(catalogs, nslc, tags, filename="swarm_tagger.csv"):
-    """CATALOG2SWARM Create Swarm csv tagger file from ObsPy Catalog
-
-    Requires that 'catalogs' and 'tags' must be a list of the same size
-    There's no
-    """
-    # 2019-09-09 00:39:51.95,COP HHZ VV CP,VT
-
-    from vdapseisutils.utils.obspyutils.inventoryutils import convertNSLCstr
-
-    csv = pd.DataFrame(dict({"time": [], "nslc": [], "tag": []}))
-    i = 0
-    for catalog in catalogs:
-        df = pd.DataFrame(catalog2txyzm(catalog, time_format="%Y-%m-%d %H:%M:%S.%f"))  # returns dictionary with time, lat, lon, depth, magnitude
-        df = df.drop(labels=["lat", "lon", "depth", "mag"], axis=1)
-        df["nslc"] = convertNSLCstr(nslc, order="nslc", neworder="scnl", sep=".", newsep=" ")
-        df["tag"] = tags[i]
-        csv = pd.concat([csv, df], ignore_index=False)
-        i += 1
-
-    csv = csv.reindex(columns=['time', 'nslc', 'tag'])
-    csv.to_csv(filename, index=False, header=False)
-
-    # TODO Accept multiple Catalogs & Trigger labels
-    # TODO Change Time format to match Swarm "1988-03-17 21:19:7.45"
-
-# rename times2swarm?
-def createSwarmTags(times, nslc, tag, filename="swarm_tagger.csv"):
-    import pandas as pd
-
-    # create a sample nslc
-    if len(nslc) == 1:
-        nslc = nslc*len(times)
-
-    # create a sample tag
-    if len(tag) == 1:
-        tag = tag*len(times)
-
-    # create a pandas DataFrame with the times, nslc, and tag
-    df = pd.DataFrame({'time': times, 'nslc': nslc, 'tag': tag})
-
-    # convert the 'time' column to the correct format
-    df['time'] = pd.to_datetime(df['time'])
-
-    # set the 'time' column as the index
-    df.set_index('time', inplace=True)
-
-    # write the DataFrame to a CSV file
-    df.to_csv(filename, header=False)
-
 def txyzm2catalog(data):
     """
     TXYZM2CATALOG Converts time, latitude, longitude, depth, mag to an ObsPy Catalog object
@@ -487,6 +437,56 @@ def txyzm2catalog(data):
 def basics2catalog(*args, **kwargs):
     """BASICS2CATALOG Wrapper for TXYZM2CATALOG"""
     return txyzm2catalog(*args, **kwargs)
+
+def catalog2swarm(catalog, nslc, tags=["default"], filename="swarm_tagger.csv"):
+    """
+    CATALOG2SWARM Create Swarm csv tagger file from ObsPy Catalog
+
+    Usage: catalog2swarm(<ObsPy Catalog>, "UW.JUN.--.EHZ", ["LP"], filename="StHelens_LPs.csv")
+    """
+    # Developer's Note: A proper line in a tagger.csv file should look like this:
+    # 2019-09-09 00:39:51.95,COP HHZ VV CP,VT
+
+    from vdapseisutils.utils.obspyutils.inventoryutils import convertNSLCstr
+
+    # convert tags to a list the same size as catalog
+    if len(tags==1):
+        tags = tags*len(catalog) if len(tags!=1) else tags
+
+    csv = pd.DataFrame(dict({"time": [], "nslc": [], "tag": []}))
+    df = pd.DataFrame(catalog2txyzm(catalog, time_format="%Y-%m-%d %H:%M:%S.%f"))  # returns dictionary with time, lat, lon, depth, magnitude
+    df = df.drop(labels=["lat", "lon", "depth", "mag"], axis=1)
+    df["nslc"] = convertNSLCstr(nslc, order="nslc", neworder="scnl", sep=".", newsep=" ")   # Make space delimmited in SCNL order
+    df["tag"] = tags
+    csv = pd.concat([csv, df], ignore_index=False)
+
+    csv = csv.reindex(columns=['time', 'nslc', 'tag'])
+    csv.to_csv(filename, index=False, header=False)
+
+
+# rename times2swarm?
+def createSwarmTags(times, nslc, tag, filename="swarm_tagger.csv"):
+    import pandas as pd
+
+    # create a sample nslc
+    if len(nslc) == 1:
+        nslc = nslc*len(times)
+
+    # create a sample tag
+    if len(tag) == 1:
+        tag = tag*len(times)
+
+    # create a pandas DataFrame with the times, nslc, and tag
+    df = pd.DataFrame({'time': times, 'nslc': nslc, 'tag': tag})
+
+    # convert the 'time' column to the correct format
+    df['time'] = pd.to_datetime(df['time'])
+
+    # set the 'time' column as the index
+    df.set_index('time', inplace=True)
+
+    # write the DataFrame to a CSV file
+    df.to_csv(filename, header=False)
 
 if __name__ == '__main__':
     example()
