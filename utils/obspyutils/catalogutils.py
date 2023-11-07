@@ -292,7 +292,7 @@ def read_hyp2000_log(logfile):
                     m = float(parts[6])
                     longitude = dms2dd((d, m, 0))
 
-                    depth = float(parts[7])
+                    depth = float(parts[7])*1000  # convert km to m for ObsPy Catalog
                     mag = float(parts[8])
 
                     nphases = int(parts[9])
@@ -319,9 +319,9 @@ def read_hyp2000_log(logfile):
 # Catalog to Text-based files
 ########################################################################################################################
 
-def catalog2basics(args, kwargs, **to_csv_kwargs):
+def catalog2basics(args, **kwargs):
     print("CATALOG2BASICS has been replaced by CATALOG2TXYZM, BUT IT MAY STILL WORK.")
-    catalog2txyzm(args, kwargs, to_csv_kwargs)
+    catalog2txyzm(args, kwargs)
 
 def catalog2txyzm(cat, depth_unit="km", z_dir="depth", time_format="UTCDateTime", verbose=False, filename=False, **to_csv_kwargs):
     """Returns time(UTCDateTime), lat, lon, depth(kilometers), and mag from ObsPy Catalog object
