@@ -450,7 +450,7 @@ def catalog2swarm(catalog, nslc, tags=["default"], filename="swarm_tagger.csv"):
     from vdapseisutils.utils.obspyutils.inventoryutils import convertNSLCstr
 
     # convert tags to a list the same size as catalog
-    if len(tags==1):
+    if len(tags)==1:
         tags = tags*len(catalog) if len(tags!=1) else tags
 
     csv = pd.DataFrame(dict({"time": [], "nslc": [], "tag": []}))
