@@ -451,7 +451,7 @@ def catalog2swarm(catalog, nslc, tags=["default"], filename="swarm_tagger.csv"):
 
     # convert tags to a list the same size as catalog
     if len(tags)==1:
-        tags = tags*len(catalog) if len(tags!=1) else tags
+        tags = tags*len(catalog)
 
     csv = pd.DataFrame(dict({"time": [], "nslc": [], "tag": []}))
     df = pd.DataFrame(catalog2txyzm(catalog, time_format="%Y-%m-%d %H:%M:%S.%f"))  # returns dictionary with time, lat, lon, depth, magnitude
