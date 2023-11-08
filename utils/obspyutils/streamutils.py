@@ -41,9 +41,10 @@ def preprocess(st, resample=None, taper=5, filter_type=None, filter_kwargs=None,
 
 
 def removeWinstonGaps(st, winston_gap_value=winston_gap_value, fill_value=0):
-    for m in range(len(st)):
-        st[m].data = np.where(st[m].data == winston_gap_value, fill_value, st[m].data) # replace -2**31 (Winston NaN token) w 0  
-    return st
+    st2 = st.copy()
+    for m in range(len(st2)):
+        st[m].data = np.where(st2[m].data == winston_gap_value, fill_value, st2[m].data) # replace -2**31 (Winston NaN token) w 0
+    return st2
 
 def replaceGapValue(st, gap_value=np.nan, fill_value=0 ):
     for m in range(len(st)):
