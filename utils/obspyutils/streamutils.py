@@ -39,17 +39,24 @@ def preprocess(st, resample=None, taper=5, filter_type=None, filter_kwargs=None,
 
     return st
 
-
 def removeWinstonGaps(st, winston_gap_value=winston_gap_value, fill_value=0):
     st2 = st.copy()  # so that input stream is left untouched
     for m in range(len(st2)):
-        st[m].data = np.where(st2[m].data == winston_gap_value, fill_value, st2[m].data) # replace -2**31 (Winston NaN token) w 0
+        st2[m].data = np.where(st2[m].data == winston_gap_value, fill_value, st2[m].data) # replace -2**31 (Winston NaN token) w 0
     return st2
 
 def replaceGapValue(st, gap_value=np.nan, fill_value=0 ):
     for m in range(len(st)):
         st[m].data = np.where(st[m].data == gap_value, fill_value, st[m].data) # replace -2**31 (Winston NaN token) w 0  
     return st
+
+def clip(st, clip_threshold):
+    # CLIP Clips Stream data to +/- clip_threshold
+    st2 = st.copy()
+    for tr in st2:
+        tr.data[np.where(tr.data > clip_threshold)] = clip_threshold
+        tr.data[np.where(tr.data < clip_threshold * -1)] = clip_threshold * -1
+    return st2
 
 def sortStreamByNSLClist(st_in, nslc_list, verbose=False):
     from obspy import Stream
