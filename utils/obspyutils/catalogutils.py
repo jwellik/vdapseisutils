@@ -321,7 +321,7 @@ def read_hyp2000_log(logfile):
 
 def catalog2basics(args, **kwargs):
     print("CATALOG2BASICS has been replaced by CATALOG2TXYZM, BUT IT MAY STILL WORK.")
-    catalog2txyzm(args, kwargs)
+    return catalog2txyzm(args, kwargs)
 
 def catalog2txyzm(cat, depth_unit="km", z_dir="depth", time_format="UTCDateTime", verbose=False, filename=False, **to_csv_kwargs):
     """Returns time(UTCDateTime), lat, lon, depth(kilometers), and mag from ObsPy Catalog object
