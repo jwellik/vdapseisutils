@@ -320,7 +320,6 @@ def read_hyp2000_log(logfile):
 ########################################################################################################################
 
 def catalog2basics(args, **kwargs):
-    print("CATALOG2BASICS has been replaced by CATALOG2TXYZM, BUT IT MAY STILL WORK.")
     return catalog2txyzm(args, kwargs)
 
 def catalog2txyzm(cat, depth_unit="km", z_dir="depth", time_format="UTCDateTime", verbose=False, filename=False, **to_csv_kwargs):
