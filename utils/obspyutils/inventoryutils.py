@@ -351,6 +351,52 @@ def write_nll_GTSRCE(inventory, loc_type="LATLON", verbose=True):
 
     return lines
 
-########################################################################################################################
-# Earthworm
-########################################################################################################################
+def write_nll_LOCSRCE(inventory, L=None):
+    """NLL_STA_LIST Creates lines for NonLinLoc sta_list.in
+
+    :param invdf:
+    :return:
+    """
+
+    """
+    LOCSRCE   AA-IS  LATLON  52.2117 -174.2036         0     0.006
+    LOCSRCE   AA1    LATLON        0         0         0         0
+    LOCSRCE   AAA    LATLON  43.2717   76.9467         0       0.8
+    LOCSRCE   AAB    LATLON        0         0         0         0
+    LOCSRCE   AAC    LATLON  50.7833    6.0833         0     0.179
+    LOCSRCE   AADN   LATLON    22.11     31.55         0       0.2
+    LOCSRCE   AAE    LATLON   9.0292   38.7656         0     2.442
+    LOCSRCE   AAGR   LATLON -33.0852  -68.8284         0     1.159
+    LOCSRCE   AAHD   LATLON  23.7463   32.7528         0         0
+    LOCSRCE   AAI    LATLON   -3.687  128.1945         0      0.08
+    LOCSRCE   AAK    LATLON   42.639    74.494         0     1.645
+    LOCSRCE   AALM   LATLON    36.83   -2.4017         0      0.01
+    LOCSRCE   AAM    LATLON  42.3012  -83.6567         0     0.172
+    LOCSRCE   AAMC   LATLON   42.278   -83.736         0      0.25
+    LOCSRCE   AAP    LATLON    10.42   121.944         0      0.05
+    LOCSRCE   AAPN   LATLON  37.3077    -4.121         0      1.16
+    LOCSRCE   AAR    LATLON  46.1333    25.895         0     1.101
+    LOCSRCE   AARM   LATLON  39.2762 -121.0255         0      0.93
+    LOCSRCE   AAS    LATLON   -62.16  -58.4625         0     0.015
+    LOCSRCE   AASM   LATLON    38.43 -121.1085         0     0.065
+    """
+
+    invdf = inventory2df(inventory)
+
+    # Open generic trig.sta template
+    text_file = open("generic_sta_list.in", "r")
+    template = text_file.read()  # read whole file to a string
+    text_file.close()  # close file
+
+    station_line = "LOCSRCE   {sta:<4}   LATLON {lat:>8} {lon:>9}         0     1.000\n"
+    station_lines = ""
+    for idx, row in invdf.iterrows():
+        net, sta, loc, cha = row["nslc"].split(".")
+        loc = L if L is not None else loc
+        lat = "{:6.4f}".format(row["latitude"])
+        lon = "{:7.4f}".format(row["longitude"])
+        station_lines += station_line.format(sta=sta, lat=lat, lon=lon)
+
+    print(station_lines)
+    print()
+    return station_lines
