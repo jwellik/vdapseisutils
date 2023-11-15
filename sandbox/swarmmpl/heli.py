@@ -194,6 +194,10 @@ class Helicorder(object):
         self.fillcolor_pos, self.fillcolor_neg = \
             kwargs.get('fillcolors', (None, None))
 
+
+        self.one_bar_range = kwargs.get('one_bar_range', None)  # Not currently used
+        self.clip_threshold = kwargs.get('clip_threshold', None)
+
         # ^^^
         ##############################################################
 
@@ -201,7 +205,12 @@ class Helicorder(object):
 
         ##############################################################
 
-        # Merge and trim to pad.
+        # Experiment with setting clip_threshold
+        for tr in self.stream:
+            tr.data[np.where(tr.data > self.clip_threshold)] = self.clip_threshold
+            tr.data[np.where(tr.data < self.clip_threshold*-1)] = self.clip_threshold*-1
+
+        # Merge and trim to pad.eggg
         self.stream.merge()
         if len(self.stream) != 1:
             msg = "All traces need to be of the same id for a dayplot"
@@ -475,7 +484,7 @@ class Helicorder(object):
                 markersize=markersize, linewidth=self.linewidth)
 
         for pick in getattr(event, 'picks', []):
-            # check that network/station/location matches
+            # check that observatory/station/location matches
             if pick.waveform_id.get_seed_string().split(".")[:-1] != \
                seed_id.split(".")[:-1]:
                 continue
