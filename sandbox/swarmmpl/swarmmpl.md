@@ -29,7 +29,7 @@ spectra_settings =
 class Helicorder:
     ...
 
-class Clipboard:
+class ClipboardClass:
     ...
 
 
