@@ -49,6 +49,7 @@ PROCESS:
 # [x] I don't like the way NSLC labels are added; hard to read if too many traces or small figure
 # TODO Make swarmg and swarmw methods
 # TODO I don't love the results from AutoDateLocator
+# TODO Switch the arrangement of subplots to utilize subfigures
 # [x] Eliminate waveform plot redundancy
 # [x] axvline uses datetime or relative
 # [x] Remove __define_t_ticks
