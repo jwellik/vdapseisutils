@@ -22,13 +22,13 @@ def main():
 
     # Read events
     print("Loading catalogs...")
-    cat_ew = read_ew_arcfiles_as_catalog("../data/arc_hood")  # Read Hyp2000 Arc files from Earthworm
+    # cat_ew = read_ew_arcfiles_as_catalog("../data/arc_hood")  # Read Hyp2000 Arc files from Earthworm
     cat_nll = read_events("../data/hood_nll.sum.grid0.loc.hyp")[0:-1]  # Read Hypocenter summary from NonLinLoc
 
     # Output files
     cat_data = catalog2txyzm(cat_nll, filename="../data/hood_nll.sum.grid0.loc.csv")  # Save basic catalog data as a text file
     print(cat_data)
-    catalog2swarm([cat_nll], "VV.NIE.LM.HHZ", ["default"], filename="../data/hood_nll.sum.grid0.loc.swarm.csv")  # Save as a Swarm tagger file
+    catalog2swarm(cat_nll, "VV.NIE.LM.HHZ", ["default"], filename="../data/hood_nll.sum.grid0.loc.swarm.csv")  # Save as a Swarm tagger file
 
     # Plot catalogs
     print("Plotting catalogs...")
@@ -42,7 +42,7 @@ def main():
                     zoom=10,
                     )
     fig = plt.figure(FigureClass=VolcanoMap, **plot_params)
-    fig.plot_catalog(cat_ew, s=1.5, c="blue")  # , label="Hyp2000"
+    # fig.plot_catalog(cat_ew, s=1.5, c="blue")  # , label="Hyp2000"
     fig.plot_catalog(cat_nll, s=1.5, c="red")  # , label="NLL"
     fig.add_legend()
     fig.info()
