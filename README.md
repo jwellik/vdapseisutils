@@ -32,6 +32,7 @@ $ conda create -n vseis399 python=3.9 obspy pandas cartopy pygmt bokeh
 ```
 
 ## Usage
+This package is still in development. If you have trouble with these codes, let me know.
 ```
 $ cd /home/jwellik/PYTHON
 $ mv vdapseisutils-main vdapseisutils
@@ -41,7 +42,7 @@ $ python
 >>> import sys
 >>> sys.path.append("/home/jwellik/PYTHON")  # Add all codes in the repository to your path
 >>> from vdapseisutils.gallery import VolcanoMap_Hood_earthquakes
->>> VolcanoMap_VolcanoMap-Hood_earthquakes.main()  # Make sure your terminal has graphics forwarding
+>>> VolcanoMap_Hood_earthquakes.main()  # Make sure your terminal has graphics forwarding
 ```
 This will run a script that reads .arc files from Wy'East/Mt Hood, Oregon and plots them on a map and cross sections. Look at the [Gallery](https://github.com/jwellik/vdapseisutils/tree/main/gallery) for more examlpes and detailed usage.
 
