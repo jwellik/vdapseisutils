@@ -106,7 +106,7 @@ def setNSLC(st, nslc_string, sep='.'):
     network, station, location, channel = str2nslc(nslc_string)
 
     for i in range(len(st)):
-        st[i].stats.network = network
+        st[i].stats.observatory = network
         st[i].stats.station = station
         st[i].stats.location = location
         st[i].stats.channel = channel
@@ -115,7 +115,7 @@ def setNSLC(st, nslc_string, sep='.'):
 
 
 def getNSLCstr(tr, order='nslc', sep='.'):
-    network = tr.stats.network
+    network = tr.stats.observatory
     station = tr.stats.station
     location = tr.stats.location
     channel = tr.stats.channel
@@ -172,7 +172,6 @@ def write_swarm(inventory, filename=None, verbose=True):
         cha = convertNSLCstr(cha, order='nslc', sep='.', neworder='scnl', newsep=' ')
         cha_str = swarm_format.format(cha, coords['longitude'], coords['latitude'], coords['elevation'])
         channel_strings.append(cha_str)
-        if verbose: print(cha_str)
 
     if filename:
         with open(filename, 'w') as f:
@@ -181,7 +180,9 @@ def write_swarm(inventory, filename=None, verbose=True):
                 f.write('\n')
 
     if verbose:
+        print("# LatLon.config for Swarm")
         [print(line) for line in channel_strings]
+        print()
 
 def read_swarm(latlonconfig, local_depth_default=0):
     """READ_SWARM Reads Swarm-formatted LatLon.config file of stations
