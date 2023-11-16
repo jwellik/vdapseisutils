@@ -145,11 +145,6 @@ def LOCSRCE(inventory, L=None, verbose=True):
 
     invdf = inventory2df(inventory)
 
-    # Open generic trig.sta template
-    text_file = open("generic_sta_list.in", "r")
-    template = text_file.read()  # read whole file to a string
-    text_file.close()  # close file
-
     station_line = "LOCSRCE   {sta:<4}   LATLON {lat:>8} {lon:>9}         0     1.000\n"
     station_lines = ""
     for idx, row in invdf.iterrows():
@@ -159,7 +154,8 @@ def LOCSRCE(inventory, L=None, verbose=True):
         lon = "{:7.4f}".format(row["longitude"])
         station_lines += station_line.format(sta=sta, lat=lat, lon=lon)
 
-    if verbose: print("# NonLinLoc LOCSRCE commands")
-    if verbose: print(station_lines)
-    if verbose: print()
+    if verbose:
+        print("# NonLinLoc LOCSRCE commands")
+        print(station_lines)
+        print()
     return station_lines
