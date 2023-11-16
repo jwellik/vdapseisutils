@@ -43,8 +43,10 @@ def EQSTA(inventory, verbose=True):
 
     lines = "\n".join(set(lines.split("\n")))
 
-    if verbose: print(lines)
-
+    if verbose:
+        print("# NonLinLoc EQSTA commands")
+        print(lines)
+        print()
     return lines
 
 def GTSRCE(inventory, loc_type="LATLON", verbose=True):
@@ -106,11 +108,12 @@ def GTSRCE(inventory, loc_type="LATLON", verbose=True):
 
     lines = "\n".join(set(lines.split("\n")))
 
+    if verbose: print("# NonLinLoc GTSRCE commands")
     if verbose: print(lines)
-
+    if verbose: print()
     return lines
 
-def LOCSRCE(inventory, L=None):
+def LOCSRCE(inventory, L=None, verbose=True):
     """NLL_STA_LIST Creates lines for NonLinLoc sta_list.in
 
     :param invdf:
@@ -156,6 +159,7 @@ def LOCSRCE(inventory, L=None):
         lon = "{:7.4f}".format(row["longitude"])
         station_lines += station_line.format(sta=sta, lat=lat, lon=lon)
 
-    print(station_lines)
-    print()
+    if verbose: print("# NonLinLoc LOCSRCE commands")
+    if verbose: print(station_lines)
+    if verbose: print()
     return station_lines

@@ -105,6 +105,7 @@ def carl_StationFile(inventory, source="", name="", L=None, verbose=True):
         loc = L if L is not None else loc
         station_lines += station_line.format(sta=sta, cha=cha, net=net, loc=loc, ttime=10)
 
+    print("# Earthworm configuration lines for carl modules")
     print(station_lines)
     print()
     return station_lines
@@ -155,6 +156,7 @@ def hinv_site_file(inventory, L=None):
                                              Ilondeg=londeg, Jlonmin=lonmin, Kew=ew,
                                              Lelev=elev)
 
+    print("# Earthworm configuration lines for HypoInverse .hinv station file")
     print(station_lines)
     print()
     return station_lines
@@ -196,6 +198,7 @@ def pickew_StaFile(inventory, L=None):
         station_lines += station_line.format(pick_flag=1, pin_numb=pin_numb,
                                              sta=sta, net=net, cha=cha, loc=loc)
 
+    print("# Earthworm configuration lines for pick_ew station file")
     print(station_lines)
     print()
     return station_lines
@@ -241,6 +244,7 @@ def pickfp_StaFile(inventory, L=None):
         station_lines += station_line.format(pick_flag=1, pin_numb=pin_numb,
                                              sta=sta, net=net, cha=cha, loc=loc)
 
+    print("# Earthworm configuration lines for pick_fp station file")
     print(station_lines)
     print()
     return station_lines
