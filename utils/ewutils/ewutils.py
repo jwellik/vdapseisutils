@@ -105,7 +105,7 @@ def carl_StationFile(inventory, source="", name="", L=None, verbose=True):
         loc = L if L is not None else loc
         station_lines += station_line.format(sta=sta, cha=cha, net=net, loc=loc, ttime=10)
 
-    print("# Earthworm configuration lines for carl modules")
+    print("# Earthworm configuration lines for carl modules (trig.sta)")
     print(station_lines)
     print()
     return station_lines
