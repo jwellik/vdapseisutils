@@ -17,7 +17,7 @@ def inventory2df(inventory):
         for sta in net.stations:
             for cha in sta.channels:
                 d = dict()
-                d["nslc"] = [net.code+"."+sta.code+".."+cha.location_code+cha.code]
+                d["nslc"] = "{}.{}.{}.{}".format(net.code, sta.code, cha.location_code, cha.code)
                 d["latitude"] = [sta.latitude]
                 d["longitude"] = [sta.longitude]
                 d["elevation"] = [sta.elevation]
@@ -157,7 +157,7 @@ def str2bulk(nslc_list, t1, t2):
 # Swarm
 ########################################################################################################################
 
-def write_swarm(inventory, filename=None, verbose=True):
+def write_swarm(inventory, verbose=True, outfile=None):
     """WRITE_SWARM Writes inventory as CSV formatted channel,latitude,longitude,elevation"""
 
     # from vdapseisutils.waveformutils.nslcutils import convertNSLCstr
@@ -173,8 +173,8 @@ def write_swarm(inventory, filename=None, verbose=True):
         cha_str = swarm_format.format(cha, coords['longitude'], coords['latitude'], coords['elevation'])
         channel_strings.append(cha_str)
 
-    if filename:
-        with open(filename, 'w') as f:
+    if outfile:
+        with open(outfile, 'w') as f:
             for line in channel_strings:
                 f.write(line)
                 f.write('\n')
