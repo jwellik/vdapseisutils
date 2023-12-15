@@ -141,7 +141,7 @@ class hypoSta:
     '''
     def __str__(self,st=None):
         st = st or sys.stderr            
-        st.write('SEED String: %s.%s.%s.%s\n' % (self.network, self.station, self.location, self.channel))
+        st.write('SEED String: %s.%s.%s.%s\n' % (self.observatory, self.station, self.location, self.channel))
         st.write('Component Code: %s\n' % (self.compCode))
         st.write('Distance to earthquake: %0.1f\n' % (self.delta))
         st.write('Azimuth to earthquake: %d, Emergence Angle: %d\n' % (self.azimuth, self.emergenceAngle))
@@ -634,8 +634,8 @@ class hypoCatalog:
 
                        pick = Pick()
                        oevt.picks.append(pick)  # JJW Is this where this goes?
-                       pick.waveform_id = WaveformStreamID(network_code=nowPick.network, station_code=nowPick.station,
-                                              location_code=nowPick.location, channel_code=nowPick.channel)
+                       pick.waveform_id = WaveformStreamID(network_code=nowPick.observatory, station_code=nowPick.station,
+                                                           location_code=nowPick.location, channel_code=nowPick.channel)
 
                        # if nowPick.pRes:  # returns False if the value is 0.0 (not ideal)
                        if "P" in nowPick.pRemark:
@@ -739,7 +739,7 @@ class hypoCatalog:
             secs=etime.second+etime.microsecond*1.e-6
             localtstr=etime.astimezone(tZone).strftime('%a %b %d, %Y %H:%M:%S %Z')
             f.write('<event id="%s"'%e.dbid)
-            f.write(' network-code="%s"'%e.domain)
+            f.write(' observatory-code="%s"'%e.domain)
             f.write(' time-stamp="%s" '%now.strftime('%Y/%m/%d_%H:%M:%S'))
             f.write('version="%d">\n'%e.ver)
             f.write('<param name="year" value="%4d"/>\n'%etime.year)
@@ -798,7 +798,7 @@ class hypoCatalog:
             secs=etime.second+etime.microsecond*1.e-6
             localtstr=etime.astimezone(tZone).strftime('%a %b %d, %Y %H:%M:%S %Z')
             f.write('<event id="%s"'%e.dbid)
-            f.write(' network-code="%s"'%e.domain)
+            f.write(' observatory-code="%s"'%e.domain)
             f.write(' time-stamp="%s" '%now.strftime('%Y/%m/%d_%H:%M:%S'))
             f.write('version="%d">'%e.ver)
             f.write('<param name="year" value="%4d"/>'%etime.year)

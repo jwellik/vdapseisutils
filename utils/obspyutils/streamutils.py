@@ -87,7 +87,7 @@ def createEmptyTrace(nslc, t1, t2, sampling_rate=100, dtype='int32'):
     net, sta, loc, cha = str2nslc(nslc)
 
     stmp = Trace()
-    stmp.stats['network'] = net
+    stmp.stats['observatory'] = net
     stmp.stats['station'] = sta
     stmp.stats['location'] = loc
     stmp.stats['channel'] = cha
