@@ -1,8 +1,9 @@
+from vdapseisutils.utils.ewutils.ewutils import print_and_write
 from vdapseisutils.utils.obspyutils.inventoryutils import inventory2df
 from vdapseisutils.utils.geoutils import dd2dm
 
 
-def EQSTA(inventory, verbose=True):
+def EQSTA(inventory, verbose=True, outfile=None):
     # EQSTA Print lines for EQSTA commands in NonLinLoc's control file
     # By default, it creates a line for P & S for each station with 0.0 as the calculated and reported error.
     #
@@ -43,13 +44,10 @@ def EQSTA(inventory, verbose=True):
 
     lines = "\n".join(set(lines.split("\n")))
 
-    if verbose:
-        print("# NonLinLoc EQSTA commands")
-        print(lines)
-        print()
+    print_and_write(lines, header="# NonLinLoc EQSTA command lines\n", verbose=verbose, outfile=outfile)
     return lines
 
-def GTSRCE(inventory, loc_type="LATLON", verbose=True):
+def GTSRCE(inventory, loc_type="LATLON", verbose=True, outfile=None):
     # GTSRCE Creates GTSRCE lines for NonLinLoc's control file
     #
     # Here is the documentation from NonLinLoc's sample control file:
@@ -108,12 +106,10 @@ def GTSRCE(inventory, loc_type="LATLON", verbose=True):
 
     lines = "\n".join(set(lines.split("\n")))
 
-    if verbose: print("# NonLinLoc GTSRCE commands")
-    if verbose: print(lines)
-    if verbose: print()
+    print_and_write(lines, header="# NonLinLoc GTSRCE commands\n", verbose=verbose, outfile=outfile)
     return lines
 
-def LOCSRCE(inventory, L=None, verbose=True):
+def LOCSRCE(inventory, L=None, verbose=True, outfile=None):
     """NLL_STA_LIST Creates lines for NonLinLoc sta_list.in
 
     :param invdf:
@@ -154,8 +150,5 @@ def LOCSRCE(inventory, L=None, verbose=True):
         lon = "{:7.4f}".format(row["longitude"])
         station_lines += station_line.format(sta=sta, lat=lat, lon=lon)
 
-    if verbose:
-        print("# NonLinLoc LOCSRCE commands")
-        print(station_lines)
-        print()
+    print_and_write(station_lines, header="# NonLinLoc LOCSRCE commands\n", verbose=verbose, outfile=outfile)
     return station_lines

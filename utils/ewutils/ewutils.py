@@ -1,21 +1,58 @@
+import os
+import datetime
 import numpy as np
+
 from vdapseisutils.utils.obspyutils.inventoryutils import inventory2df
 from vdapseisutils.utils.geoutils import dd2dms
 
+
+########################################################################################################################
+### UTILS
+
+# Used by both ewutils and nllutils
+def print_and_write(data_lines, header="", source="", name="", verbose=True, outfile=None):
+    """Completes header and concatenates it to the data lines"""
+
+    # Populate header and concatenate to data
+    header = header.format(source=source, name=name, datetime=datetime.datetime.now())  # This is safe to do if header, name, etc aren't included
+    template = "{header}{data_lines}".format(header=header, data_lines=data_lines)
+
+    # print and write
+    if verbose:
+        print(template)
+        print()
+    if outfile:
+        os.makedirs(os.path.dirname(outfile), exist_ok=True)  # ensure that the file and abspath exist
+        with open(outfile, "w") as f:
+            f.write(template)
+
+
 ########################################################################################################################
 ### VELOCITY MODELS
+# TODO Replace default values with Jeremy's default stratovolcano model
 
-def lay(depth, Vp_top):
+def lay(depth, Vp_top, verbose=True, outfile=None):
     """Prints Earthworm layer commands"""
 
-    for d, v in zip(depth, Vp_top):
-        print("lay {:>6.4f}  {:>6.4f}".format(d, v))
-    print()
+    header = ["# Earthworm 'lay' commands for ew_binder.d"]
 
+    # Store the layer commands in a list
+    layer_commands = []
+    for d, v in zip(depth, Vp_top):
+        layer_commands.append("lay {:>6.4f}  {:>6.4f}".format(d, v))
+
+    # # Print the layer commands to the console or a file
+    # if verbose:
+    #     for command in header + layer_commands:
+    #         print(command)
+    # if outfile:
+    #     with open(outfile, 'w') as f:
+    #         for command in header + layer_commands:
+    #             f.write(command + '\n')
+    print_and_write(layer_commands, verbose=verbose, outfile=outfile)
 
 def velocityd(depth=[0.0, 4.0, 9.0, 16.0, 20.0, 25.0, 41.0], velocity=[5.40, 6.38, 6.59, 6.73, 6.86, 6.95, 7.80],
-              header="# Generic Velocity Model",
-              ):
+              verbose=True, outfile=None):
 
     template = "{layer_lines}"  # There is no header to this file
 
@@ -30,9 +67,8 @@ def velocityd(depth=[0.0, 4.0, 9.0, 16.0, 20.0, 25.0, 41.0], velocity=[5.40, 6.3
     """
 
     layer_line = "lay  {:>4.1f} {:>4.2f}\n"
-    layer_lines = "#"+header+"\n"
+    layer_lines = ""
     for d, v in zip(depth, velocity):
-
         layer_line.format(d, v)
         layer_lines += layer_line.format(d, v)
 
@@ -41,15 +77,12 @@ def velocityd(depth=[0.0, 4.0, 9.0, 16.0, 20.0, 25.0, 41.0], velocity=[5.40, 6.3
     template = template.format(layer_lines=layer_lines)
 
     # Print and Save
-    print(template)
-    print()
-
+    print_and_write(template, header="", verbose=verbose, outfile=outfile)
     return template
 
-
 def velocitycrh(depth=[0.0, 4.0, 9.0, 16.0, 20.0, 25.0, 41.0], velocity=[5.40, 6.38, 6.59, 6.73, 6.86, 6.95, 7.80],
-              header="# Generic Velocity Model",
-              ):
+              verbose=True, outfile=None,):
+
     template = "{layer_lines}"  # There is no header to this file
 
     """
@@ -63,28 +96,24 @@ def velocitycrh(depth=[0.0, 4.0, 9.0, 16.0, 20.0, 25.0, 41.0], velocity=[5.40, 6
      6.4 15.0
     """
 
-    layer_line = " {:>4.2f} {:>4.1f}\n"
-    layer_lines = ""
-    layer_lines += header + "\n"
-    for d, v in zip(velocity, depth):
+    layer_line = " {:>4.2f} {:>4.1f}\n"  # Format for one line of velocity data
+    layer_lines = ""  # initialize list of lines as empty string
 
+    for d, v in zip(velocity, depth):
         layer_line.format(d, v)
         layer_lines += layer_line.format(d, v)
 
     # Fill template
-    # name = filename if name is None else name
     template = template.format(layer_lines=layer_lines)
 
-    print(template)
-    print()
-
+    print_and_write(template, header="", verbose=verbose, outfile=outfile)
     return template
 
 ########################################################################################################################
 ### STATION INVENTORIES
 
 # CARLSTATRIG carl_StationFile (trig.sta)
-def carl_StationFile(inventory, source="", name="", L=None, verbose=True):
+def carl_StationFile(inventory, source="", name="", L=None, verbose=True, outfile=None):
     """
 
     :param invdf:
@@ -97,21 +126,23 @@ def carl_StationFile(inventory, source="", name="", L=None, verbose=True):
 
     invdf = inventory2df(inventory)
 
+    template = "{station_lines}"
+
     # Create station lines
-    station_line = "  station   {sta:<7} {cha:<7} {net:<9} {loc:<8}   {ttime:<12}\n"
-    station_lines = ""
+    station_line = "  station   {sta:<7} {cha:<7} {net:<9} {loc:<8}   {ttime:<12}\n"  # One line of station data
+    station_lines = ""  # initialize list of stations as empty
+
+    # Populate each line of station data
     for idx, row in invdf.iterrows():
         net, sta, loc, cha = row["nslc"].split(".")
         loc = L if L is not None else loc
         station_lines += station_line.format(sta=sta, cha=cha, net=net, loc=loc, ttime=10)
 
-    print("# Earthworm configuration lines for carl modules (trig.sta)")
-    print(station_lines)
-    print()
+    print_and_write(station_lines, header="# Earthworm configuration lines for carl modules (trig.sta)\n", verbose=verbose, outfile=outfile)
     return station_lines
 
 # HYPOINVERSE hinv_site_file (sta.hinv)
-def hinv_site_file(inventory, L=None):
+def hinv_site_file(inventory, L=None, source="", name="", verbose=True, outfile=None):
     # Create station lines
     # Hypoinverse station file docs: http://folkworm.ceri.memphis.edu/ew-doc/USER_GUIDE/hypoinv_sta.html
     #           1         2         3         4         5         6         7         8
@@ -156,13 +187,28 @@ def hinv_site_file(inventory, L=None):
                                              Ilondeg=londeg, Jlonmin=lonmin, Kew=ew,
                                              Lelev=elev)
 
-    print("# Earthworm configuration lines for HypoInverse .hinv station file")
-    print(station_lines)
-    print()
+    print_and_write(station_lines, header="# HypoInverse Station File (sta.hinv)\n", verbose=verbose, outfile=outfile)
+
     return station_lines
 
 # PICKEW pickew_StaFile pick_ew.sta
-def pickew_StaFile(inventory, L=None):
+pick_ew_header = """#
+#   AUTO GENERATED by VDAPSEISUTILS
+#   - Name    : {name}
+#   - Source  : {source}
+#   - Created : {datetime}
+#
+#                     Station file for PICK_EW
+#
+#   http://folkworm.ceri.memphis.edu/ew-doc/cmd/pick_ew_cmd.html#station
+#
+#                 MinBigZC    RawDataFilt    LtaFilt         DeadSta          PreEvent
+#  Station/  MinSmallZC   MaxMint        StaFilt       RmavFilt           AltCoda
+#  Comp/Net  Itr1   MinPeakSize   CharFuncFilt  EventThresh          CodaTerm         Erefs
+#  --------------------------------------------------------------------------------------
+"""
+
+def pickew_StaFile(inventory, L=None, source="", name="", verbose=True, outfile=None):
     # http://folkworm.ceri.memphis.edu/ew-doc/cmd/pick_ew_cmd.html#station
 
     """
@@ -182,50 +228,43 @@ def pickew_StaFile(inventory, L=None):
          1   501  GASB  BHZ BK 00 3  40  3  20  500  0 0.854  3.  .4  .015 5.  .9961  1200.  409.59  .8  1.5  50000. 23689428
     """
 
-    invdf = inventory2df(inventory)
-
     # Create station lines (SCNL)
     channel_identification = "    {pick_flag:1}  {pin_numb:< 4}  {sta:<5} {cha:3} {net:2} {loc:2} "
-    event_termination = " 3  40  3  20  500  0 "
-    waveform_filtering = "0.854  3.  .4  .015 5.  .9961  1200.  409.59  .8  1.5  50000. 2048"
-    station_line = channel_identification + event_termination + waveform_filtering + "\n"
-    station_lines = ""
-    pin_numb = 0
-    for idx, row in invdf.iterrows():
+    event_termination = " 3  40  3  20  500  0 "  # defaults
+    waveform_filtering = "0.854  3.  .4  .015 5.  .9961  1200.  409.59  .8  1.5  50000. 2048"  # defaults
+    pin_numb = 0  # initialize pin_numb as 0, will grow iteratively w each line
+
+    station_line = channel_identification + event_termination + waveform_filtering + "\n"  # line for 1 station
+    station_lines = ""  # initialize list of lines as empty
+
+    invdf = inventory2df(inventory)
+    for _, row in invdf.iterrows():
         pin_numb += 1
         net, sta, loc, cha = row["nslc"].split(".")
         loc = L if L is not None else loc
         station_lines += station_line.format(pick_flag=1, pin_numb=pin_numb,
                                              sta=sta, net=net, cha=cha, loc=loc)
 
-    print("# Earthworm configuration lines for pick_ew station file")
-    print(station_lines)
-    print()
+    print_and_write(station_lines, header=pick_ew_header, source=source, name=name, verbose=verbose, outfile=outfile)
     return station_lines
 
 # PICKFP pick_fp.sta
-def pickfp_StaFile(inventory, L=None):
-    # http://folkworm.ceri.memphis.edu/ew-doc/cmd/pick_fp_cmd.html#station
+pick_fp_header = """#
+#   AUTO GENERATED by VDAPSEISUTILS
+#   - Name    : {name}
+#   - Source  : {source}
+#   - Created : {datetime}
+#
+#                     Station file for PICK_FP
+#
+#   http://folkworm.ceri.memphis.edu/ew-doc/cmd/pick_FP_cmd.html#station
+#
+# Pick  Pin     Sta/Comp           longTermWindow  tUpEvent
+# Flag  Numb    Net/Loc       filterWindow  threshold2
+# ----  ----    --------      -----------------------------
+"""
 
-    """
-    # Pick  Pin     Sta/Comp           longTermWindow  tUpEvent
-    # Flag  Numb    Net/Loc       filterWindow  threshold2
-    # ----  ----    --------      -----------------------------
-        1    00  AVG3 C00 IN LF   -1  -1   8.6  17.2   -1
-        1    01  AVG3 C03 IN LF   -1  -1   8.6  17.2   -1
-        1    02  BEL3 C00 IN LF   -1  -1   8.6  17.2   -1
-        1    03  BEL3 C03 IN LF   -1  -1   8.6  17.2   -1
-        1    04  SCL3 C00 IN LF   -1  -1   8.6  17.2   -1
-        1    05  SCL3 C03 IN LF   -1  -1   8.6  17.2   -1
-        1    06  STN3 C00 IN LF   -1  -1   8.6  17.2   -1
-        1    07  STN3 C03 IN LF   -1  -1   8.6  17.2   -1
-        1    08  PGN3 C00 IN LF   -1  -1   8.6  17.2   -1
-        1    09  PGN3 C03 IN LF   -1  -1   8.6  17.2   -1
-        1    10  VDP3 C00 IN LF   -1  -1   8.6  17.2   -1
-        1    11  VDP3 C03 IN LF   -1  -1   8.6  17.2   -1
-        1    12  CMP3 C03 IN --   -1  -1   8.6  17.2   -1
-    ----------------------------------------------------
-    """
+def pickfp_StaFile(inventory, L=None, source="", name="", verbose=True, outfile=None):
 
     invdf = inventory2df(inventory)
 
@@ -234,8 +273,10 @@ def pickfp_StaFile(inventory, L=None):
     # event_termination = " 3  40  3  20  500  0 "
     # waveform_filtering = "0.854  3.  .4  .015 5.  .9961  1200.  409.59  .8  1.5  50000. 2048"
     tuning_parameters = "-1  -1   8.6  17.2   -1"
+
     station_line = channel_identification + tuning_parameters + "\n"
     station_lines = ""
+
     pin_numb = 0
     for idx, row in invdf.iterrows():
         pin_numb += 1
@@ -244,7 +285,7 @@ def pickfp_StaFile(inventory, L=None):
         station_lines += station_line.format(pick_flag=1, pin_numb=pin_numb,
                                              sta=sta, net=net, cha=cha, loc=loc)
 
-    print("# Earthworm configuration lines for pick_fp station file")
-    print(station_lines)
-    print()
+    print_and_write(station_lines, header=pick_fp_header, source=source, name=name, verbose=verbose, outfile=outfile)
     return station_lines
+
+
