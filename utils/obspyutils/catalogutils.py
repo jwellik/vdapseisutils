@@ -241,7 +241,6 @@ def read_ew_arcfiles_as_catalog(path):
             arc = hypoinverse.hypoCatalog()
             arc.readArcFile(arcfile)
             cat.append(arc.writeObspyCatalog()[0])
-            # cat[0].write("/home/jwellik/Downloads/test.xml", format="QUAKEML")
             print("SUCCESS", end="\n")
         except:
             print("FAILED.", end="\n")

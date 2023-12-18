@@ -20,17 +20,23 @@ def parseData(sumline, startind, totalLength, numDec):
     data = sumline[startind:startind+totalLength]
 #    print blankStr
 #    print data
-    if data != blankStr and data:
-        if numDec == 0:
-            nowData = int(data)
-        elif numDec == 1:
-            nowData = float(data)/10
-        elif numDec == 2:
-            nowData = float(data)/100
-        elif numDec == 3:
-            nowData = float(data)/1000
-        elif numDec == 4:
-            nowData = float(data)/10000
+
+    try:
+        if data != blankStr and data:
+            if numDec == 0:
+                nowData = int(data)
+            elif numDec == 1:
+                nowData = float(data)/10
+            elif numDec == 2:
+                nowData = float(data)/100
+            elif numDec == 3:
+                nowData = float(data)/1000
+            elif numDec == 4:
+                nowData = float(data)/10000
+    except:
+        # print("ERROR: ({}) {}".format(startind, sumline[startind:startind+totalLength]))
+        nowData = np.nan
+
     return nowData
 
 class hypoSta:
@@ -311,7 +317,7 @@ class hypoSum:
         if latmin == None:
             latmin = 0        
         self.lat = latdeg+latmin
-        if sumline[18]=='S':
+        if sumline[18] == 'S':
             self.lat = -self.lat
         londeg = parseData(sumline, 23, 3, 0)
         lonmin = parseData(sumline, 27, 4, 2)/60
@@ -337,7 +343,7 @@ class hypoSum:
         self.errAzInt = parseData(sumline, 61, 3, 0)
         self.errDipInt = parseData(sumline, 64, 2, 0)
         self.magCoda = parseData(sumline, 70, 3, 2)   #coda magnitude
-        self.locRemark = sumline[73:76];
+        self.locRemark = sumline[73:76]
         self.errSmall = parseData(sumline, 76, 4, 2)  # Smallest error (km)
         self.auxRemarkAnalyst = sumline[80]
         self.fix = sumline[81]
@@ -442,6 +448,7 @@ class hypoCatalog:
                     newdat.append(e)
             self.data=newdat
         return
+
     def purgeByRectangle(self, minlat, maxlat, minlon, maxlon):
         '''
         Purge catalog class for data outside of rectangle
@@ -453,8 +460,9 @@ class hypoCatalog:
             isin = e.inRectangle(minlat, maxlat, minlon, maxlon)
             if isin:
                 newdat.append(e)
-        self.data=newdat
+        self.data = newdat
         return
+
     def readSumFile(self, filename):
         fid = open( filename, encoding="windows-1254" )
         allLines = fid.readlines()
@@ -475,6 +483,7 @@ class hypoCatalog:
                 self.endtime=e.originTime
             self.data.append(e)
         return   
+
     def readArcFile(self, filename):
         fid = open( filename, "r" )
         allLines = fid.readlines()
@@ -488,22 +497,22 @@ class hypoCatalog:
                         e.parseSumLine(line.rstrip())
                 elif line[0:4].strip()=='':   #end of event marker
                     if self.starttime:
-                        if e.originTime<self.starttime:
-                            self.starttime=e.originTime
+                        if e.originTime < self.starttime:
+                            self.starttime = e.originTime
                     else:
-                        self.starttime=e.originTime
+                        self.starttime = e.originTime
                     if self.endtime:
-                        if e.originTime>self.endtime:\
-                            self.endtime=e.originTime
+                        if e.originTime > self.endtime:\
+                            self.endtime = e.originTime
                     else:
-                        self.endtime=e.originTime
+                        self.endtime = e.originTime
                     self.data.append(e)             #append to catalog
-                    e=None
+                    e = None
                 else:                         #station line
                     ec = hypoSta()
                     ec.parseStaLine(line.rstrip())
                     stastring = '%s.%s.%s.%s' % (ec.network, ec.station, ec.location, ec.channel)
-                    e.picks[stastring]=ec
+                    e.picks[stastring] = ec
         return
 
     def sortByOriginTime(self,reverse=False):
@@ -603,14 +612,14 @@ class hypoCatalog:
                      o.depth_errors.depth_fixed = True
              o.time = nowEvent.originTime
              if nowEvent.fix == 'O':
-                 o.time_fixed=True
+                 o.time_fixed = True
              else:
-                 o.time_fixed =False
+                 o.time_fixed = False
              if nowEvent.fix == 'X' or nowEvent.fix == 'O':
                  o.epicenter_fixed=True
              else:
-                 o.epicenter_fixed=False
-             o.origin_type=str("hypocenter")
+                 o.epicenter_fixed = False
+             o.origin_type = str("hypocenter")
              o.region = str(nowEvent.locRemark)
              ou.horizontal_uncertainty = nowEvent.herr * 1e3
              ou.azimuth_max_horizontal_uncertainty = nowEvent.errAz
@@ -627,14 +636,14 @@ class hypoCatalog:
              if nowEvent.picks:
                   allPicks = nowEvent.picks
                   # for key,nowPick in allPicks.iteritems():  # iteritems() got omitted in Python3
-                  for key,nowPick in allPicks.items():
+                  for key, nowPick in allPicks.items():
 
                        arrival = Arrival()
                        o.arrivals.append(arrival)
 
                        pick = Pick()
                        oevt.picks.append(pick)  # JJW Is this where this goes?
-                       pick.waveform_id = WaveformStreamID(network_code=nowPick.observatory, station_code=nowPick.station,
+                       pick.waveform_id = WaveformStreamID(network_code=nowPick.network, station_code=nowPick.station,
                                                            location_code=nowPick.location, channel_code=nowPick.channel)
 
                        # if nowPick.pRes:  # returns False if the value is 0.0 (not ideal)
