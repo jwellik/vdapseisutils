@@ -1,10 +1,19 @@
+import os
+import vdapseisutils
 import matplotlib.pyplot as plt
 import pandas as pd
 
 
+def default_velocity(model="vdap_stratovolcano"):
+    if model == "vdap_stratovolcano":
+        file = os.path.join(os.path.dirname(vdapseisutils.__file__), "data/Stratovolcano_1DmeanLayer_JDP.csv")
+    else:
+        file = os.path.join(os.path.dirname(vdapseisutils.__file__), "data/Stratovolcano_1DmeanLayer_JDP.csv")
+    return read_csv(file)
+
+
 def read_csv(csvfile, **kwargs):
     """READ_CSV Uses Pandas.read_csv to parse the velocity model"""
-
     return pd.read_csv(csvfile, **kwargs)
 
 
