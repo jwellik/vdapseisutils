@@ -2,6 +2,7 @@ import os
 import datetime
 import numpy as np
 
+from vdapseisutils.sandbox import velocity as vmodels
 from vdapseisutils.utils.obspyutils.inventoryutils import inventory2df
 from vdapseisutils.utils.geoutils import dd2dms
 
@@ -29,7 +30,6 @@ def print_and_write(data_lines, header="", source="", name="", verbose=True, out
 
 ########################################################################################################################
 ### VELOCITY MODELS
-# TODO Replace default values with Jeremy's default stratovolcano model
 
 def lay(depth, Vp_top, verbose=True, outfile=None):
     """Prints Earthworm layer commands"""
@@ -51,11 +51,8 @@ def lay(depth, Vp_top, verbose=True, outfile=None):
     #             f.write(command + '\n')
     print_and_write(layer_commands, verbose=verbose, outfile=outfile)
 
-def velocityd(depth=[0.0, 4.0, 9.0, 16.0, 20.0, 25.0, 41.0], velocity=[5.40, 6.38, 6.59, 6.73, 6.86, 6.95, 7.80],
+def velocityd(depth=None, velocity=None,
               verbose=True, outfile=None):
-
-    template = "{layer_lines}"  # There is no header to this file
-
     """
     lay   0.0  5.40
     lay   4.0  6.38
@@ -63,28 +60,31 @@ def velocityd(depth=[0.0, 4.0, 9.0, 16.0, 20.0, 25.0, 41.0], velocity=[5.40, 6.3
     lay  16.0  6.73
     lay  20.0  6.86
     lay  25.0  6.95
-    lay  41.0  7.80 
+    lay  41.0  7.80
     """
+
+    if (depth is None) or (velocity is None):
+        df = vmodels.default_velocity()
+        velocity = df["Vp"]
+        depth = df["LayerDepth"]
+
+    template = "{layer_lines}"  # There is no header to this file
 
     layer_line = "lay  {:>4.1f} {:>4.2f}\n"
     layer_lines = ""
     for d, v in zip(depth, velocity):
-        layer_line.format(d, v)
+        # layer_line.format(d, v)
         layer_lines += layer_line.format(d, v)
 
     # Fill template
-    # name = filename if name is None else name
     template = template.format(layer_lines=layer_lines)
 
-    # Print and Save
+    # Print and save
     print_and_write(template, header="", verbose=verbose, outfile=outfile)
     return template
 
-def velocitycrh(depth=[0.0, 4.0, 9.0, 16.0, 20.0, 25.0, 41.0], velocity=[5.40, 6.38, 6.59, 6.73, 6.86, 6.95, 7.80],
+def velocitycrh(depth=None, velocity=None,
               verbose=True, outfile=None,):
-
-    template = "{layer_lines}"  # There is no header to this file
-
     """
     R0 Rabaul Generic
      1.7  0.0
@@ -96,12 +96,18 @@ def velocitycrh(depth=[0.0, 4.0, 9.0, 16.0, 20.0, 25.0, 41.0], velocity=[5.40, 6
      6.4 15.0
     """
 
+    if (depth is None) or (velocity is None):
+        df = vmodels.default_velocity()
+        vel = df["Vp"]
+        depth = df["LayerDepth"]
+
+    template = "{layer_lines}"  # There is no header to this file
     layer_line = " {:>4.2f} {:>4.1f}\n"  # Format for one line of velocity data
     layer_lines = ""  # initialize list of lines as empty string
 
-    for d, v in zip(velocity, depth):
-        layer_line.format(d, v)
-        layer_lines += layer_line.format(d, v)
+    for d, v in zip(depth, velocity):
+        # layer_line.format(v, d)
+        layer_lines += layer_line.format(v, d)
 
     # Fill template
     template = template.format(layer_lines=layer_lines)
@@ -166,6 +172,7 @@ hypo_inverse_header="""#
 # http://folkworm.ceri.memphis.edu/ew-doc/USER_GUIDE/hypoinv_sta.html
 """
 # TODO Use hypo_inverse_header
+# TODO Actually HypoInverse site files can't have a header. Earthworm produces an error reading that line (maybe it's not fatal)
 
 def hinv_site_file(inventory, L=None, source="", name="", verbose=True, outfile=None):
     # Create station lines
@@ -213,7 +220,7 @@ def hinv_site_file(inventory, L=None, source="", name="", verbose=True, outfile=
                                              Ilondeg=londeg, Jlonmin=lonmin, Kew=ew,
                                              Lelev=elev, Xloc=loc)
 
-    print_and_write(station_lines, header="# HypoInverse Station File (sta.hinv)\n", verbose=verbose, outfile=outfile)
+    print_and_write(station_lines, header="", verbose=verbose, outfile=outfile)
 
     return station_lines
 
@@ -314,4 +321,78 @@ def pickfp_StaFile(inventory, L=None, source="", name="", verbose=True, outfile=
     print_and_write(station_lines, header=pick_fp_header, source=source, name=name, verbose=verbose, outfile=outfile)
     return station_lines
 
+# BINDER - Read from template
 
+def binder_ew(template="./params_templates/binder_ew.d", site_file="utils/sta.hinv", velocityd="utils/velocity_model.d",
+              lat=0.0, lon=0.0, radius=50, gridz=[0, 100],
+              dspace=3.0, rstack=100, tstack=0.6, stack=100, thresh=16, focus=100,
+              grid_wt=[4, 4, 4, 4],
+              no_P_on_Horiz=True, no_S_on_Z=True,
+              name=None,
+              verbose=True, outfile=None):
+
+    module_path = os.path.dirname(__file__)
+    template_file = os.path.join(module_path, template)
+    del template
+    with open(template_file, "r") as f:
+        template = f.read()
+
+    # Define gassociation grid, set stacking parameters
+    # determine grdlat minlat maxlat
+    # determine grdlon minlon maxlon
+    # determine grdz   minz   maxz
+    from vdapseisutils.utils.geoutils import radial_extent2map_extent
+    map_extent = radial_extent2map_extent(lat, lon, 100)
+    minlon, maxlon, minlat, maxlat = map_extent
+    minz, maxz = gridz
+
+    # Set rstack
+    # Set tstack
+    # Set stack
+    # Set thresh
+    # Set focus
+
+    # Writ grid_wt lines (loop through grid_wt)
+    #  grid_wt 0  4
+    #  grid_wt 1  4
+    #  grid_wt 2  4
+    #  grid_wt 3  4
+    grid_wt_lines = ""
+    for i, wt in enumerate(grid_wt):
+        grid_wt_lines += f" grid_wt {i}  {wt}\n"
+
+    # no_P_on_Horiz - Uncomment or comment
+    # no_S_on_Z     - Uncomment or comment
+    if no_P_on_Horiz:
+        no_P_on_Horiz = "no_P_on_Horiz"
+    else:
+        no_P_on_Horiz = "# no_P_on_Horiz"
+    if no_S_on_Z:
+        no_S_on_Z = "no_S_on_Z"
+    else:
+        no_S_on_Z = "# no_S_on_Z"
+
+    template = template.format(name=name, datetime=datetime.datetime.now(), site_file=site_file, velocityd=velocityd,
+                    dspace=dspace, minlat=minlat, maxlat=maxlat, minlon=minlon, maxlon=maxlon, minz=minz, maxz=maxz,
+                    rstack=rstack, tstack=tstack, stack=stack, thresh=thresh, focus=focus,
+                    grid_wt_lines=grid_wt_lines,
+                    no_P_on_Horiz=no_P_on_Horiz, no_S_on_Z=no_S_on_Z)
+
+    # print and write
+    if verbose:
+        print(template)
+        print()
+    if outfile:
+        os.makedirs(os.path.dirname(outfile), exist_ok=True)  # ensure that the file and abspath exist
+        with open(outfile, "w") as f:
+            f.write(template)
+
+    return template
+
+
+def carlsubtrig(template="./params_templates/carlsubtrig.d", StationFile="utils/trig.sta", subnets=None):
+    pass
+
+
+def fir(tempalte="./params_tempaltes/carlsubtrig.d", inventory=None):
+    pass
