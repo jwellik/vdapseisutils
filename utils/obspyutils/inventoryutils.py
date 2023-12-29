@@ -152,7 +152,6 @@ def str2bulk(nslc_list, t1, t2):
 
     return bulk
 
-
 ########################################################################################################################
 # Swarm
 ########################################################################################################################
@@ -237,3 +236,37 @@ def read_swarm(latlonconfig, local_depth_default=0):
         # print()
 
     return pd.DataFrame.from_records(data)
+
+########################################################################################################################
+# Misc.
+########################################################################################################################
+
+def read_sage_txt(file, fill_channel="BHZ", fill_location="--", fill_depth=0):
+
+    from obspy import Inventory
+    from obspy.core.inventory import Network, Station, Channel
+
+    # Read the data into a DataFrame
+    df = pd.read_csv(file, delimiter='|', comment='#', skip_blank_lines=True)
+
+    # Rename columns if needed
+    df.columns = ["Network", "Station", "Latitude", "Longitude", "Elevation", "Sitename", "StartTime", "EndTime"]
+
+    networks = []
+    for network, group in df.groupby("Network"):
+        net = Network(network)
+
+        stations = []
+        for index, row in group.iterrows():
+            # net = Network(row["Network"])
+            sta = Station(row["Station"], row["Latitude"], row["Longitude"], row["Elevation"])
+            cha = Channel(fill_channel, fill_location, row["Latitude"], row["Longitude"], row["Elevation"], fill_depth)
+            sta.channels = [cha]
+            stations.append(sta)
+
+        net.stations = stations
+        networks.append(net)
+
+    inv = Inventory(networks)
+
+    return inv
