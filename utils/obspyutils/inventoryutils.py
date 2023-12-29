@@ -242,6 +242,7 @@ def read_swarm(latlonconfig, local_depth_default=0):
 ########################################################################################################################
 
 def read_sage_txt(file, fill_channel="BHZ", fill_location="--", fill_depth=0):
+    """READ_SAGE_TEXT Reads text output from http://ds.iris.edu/gmap"""
 
     from obspy import Inventory
     from obspy.core.inventory import Network, Station, Channel
