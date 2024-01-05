@@ -399,8 +399,7 @@ class ClipboardClass(plt.Figure):
                 xlabel = "Time (s)"
 
         # set xlim
-        i = 0
-        for sf in self.subfigs:
+        for i, sf in enumerate(self.subfigs):
             [ax.set_xlim(self.data_extent[i]) for ax in sf.axes]
 
         # Set all x axis ticks and ticklabels
@@ -415,7 +414,7 @@ class ClipboardClass(plt.Figure):
                 # so no need to do anything fancy here
                 pass
 
-        # if sharex, put axes tick labels on top of top plot, remove middle axes
+        # if sync_waves, put axes tick labels on top of top plot, remove middle axes
         if self.sync_waves:
             if len(self.get_axes()) >= 2:  # if len>=2 bc 1 st will produce 2 axes
                 self.get_axes()[0] = self.get_axes()[0].xaxis.tick_top()  # Put axis on top for top plot
