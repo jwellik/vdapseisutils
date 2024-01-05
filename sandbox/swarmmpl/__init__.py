@@ -1,3 +1,3 @@
-from vdapseisutils.sandbox.swarmmpl2.clipboard import Clipboard
-from vdapseisutils.sandbox.swarmmpl2.heli import Helicorder
-from vdapseisutils.sandbox.swarmmpl2.colors import *
+from vdapseisutils.sandbox.swarmmpl.clipboard import Clipboard
+from vdapseisutils.sandbox.swarmmpl.heli import Helicorder
+from vdapseisutils.sandbox.swarmmpl.colors import *
