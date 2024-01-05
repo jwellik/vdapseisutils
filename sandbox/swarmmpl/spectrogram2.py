@@ -5,78 +5,78 @@ import matplotlib.pyplot as plt
 from obspy.imaging.spectrogram import _nearest_pow_2
 from vdapseisutils.sandbox.swarmmpl import colors as vdap_colors
 
-#
-# def spectrogram(tr, samp_rate=None, wlen=6, overlap=0.5, dbscale=True, log_power=False,
-#                 tick_type="datetime", cmap=vdap_colors.inferno_u,
-#                 ax=None):
-#
-#     print(">>> swarmmpl.spectrogram.spectrogram")
-#
-#     if not ax:
-#         fig, ax = plt.subplots(1, 1, figsize=(10.0, 6.0))
-#
-#
-#     # Set sample rate, if necessary
-#     if samp_rate:
-#         tr.resample(float(samp_rate))
-#     else:
-#         samp_rate = tr.stats.sampling_rate
-#
-#     # data and sample rates
-#     fs = tr.stats.sampling_rate
-#     signal = tr.data
-#
-#     # Define the start date and time
-#     start_date = tr.stats.starttime
-#
-#     # Determine variables
-#     if not wlen:
-#         wlen = 128 / samp_rate
-#
-#     npts = len(signal)
-#
-#     nfft = int(_nearest_pow_2(wlen * samp_rate))
-#
-#     # stole this ValueError from ObsPy
-#     if npts < nfft:
-#         msg = (f'Input signal too short ({npts} samples, window length '
-#               f'{wlen} seconds, nfft {nfft} samples, sampling rate '
-#               f'{samp_rate} Hz)')
-#         raise ValueError(msg)
-#
-#     nlap = int(nfft * float(overlap))
-#
-#     signal = signal - signal.mean()
-#
-#     # times is returned in seconds after the start of the signal
-#     frequencies, times, Sxx = scipy_spectrogram(signal, fs=fs, nperseg=nfft, noverlap=nlap, scaling='spectrum')
-#
-#     # db scale and remove zero/offset for amplitude
-#     dbscale = True
-#     if dbscale:
-#         Sxx = 10 * np.log10(Sxx[1:, :])
-#     else:
-#         Sxx = np.sqrt(Sxx[1:, :])
-#     frequencies = frequencies[1:]
-#
-#     # Convert time values to datetime objects
-#     if tick_type == "datetime":
-#         times_g = [start_date + timedelta(seconds=t) for t in times]  # time vector for g_kwargs (g)
-#     else:  # "relative"
-#         times_g = times
-#
-#     # Plot the g_kwargs with dates on the x-axis
-#     ax.pcolormesh(times_g, frequencies, Sxx, shading='auto', cmap=cmap)  # plot g_kwargs
-#     if log_power:
-#         ax[1].set_yscale('log')  # Use a logarithmic scale for the y-axis
-#
-#     data = {"frequencies": frequencies, "times": times_g, "power": Sxx}
-#
-#     return ax, data
+
+def spectrogram(tr, samp_rate=None, wlen=6, overlap=0.5, dbscale=True, log_power=False,
+                tick_type="datetime", cmap=vdap_colors.inferno_u,
+                ax=None):
+
+    print(">>> swarmmpl.spectrogram.spectrogram")
+
+    if not ax:
+        fig, ax = plt.subplots(1, 1, figsize=(10.0, 6.0))
+
+
+    # Set sample rate, if necessary
+    if samp_rate:
+        tr.resample(float(samp_rate))
+    else:
+        samp_rate = tr.stats.sampling_rate
+
+    # data and sample rates
+    fs = tr.stats.sampling_rate
+    signal = tr.data
+
+    # Define the start date and time
+    start_date = tr.stats.starttime
+
+    # Determine variables
+    if not wlen:
+        wlen = 128 / samp_rate
+
+    npts = len(signal)
+
+    nfft = int(_nearest_pow_2(wlen * samp_rate))
+
+    # stole this ValueError from ObsPy
+    if npts < nfft:
+        msg = (f'Input signal too short ({npts} samples, window length '
+              f'{wlen} seconds, nfft {nfft} samples, sampling rate '
+              f'{samp_rate} Hz)')
+        raise ValueError(msg)
+
+    nlap = int(nfft * float(overlap))
+
+    signal = signal - signal.mean()
+
+    # times is returned in seconds after the start of the signal
+    frequencies, times, Sxx = scipy_spectrogram(signal, fs=fs, nperseg=nfft, noverlap=nlap, scaling='spectrum')
+
+    # db scale and remove zero/offset for amplitude
+    dbscale = True
+    if dbscale:
+        Sxx = 10 * np.log10(Sxx[1:, :])
+    else:
+        Sxx = np.sqrt(Sxx[1:, :])
+    frequencies = frequencies[1:]
+
+    # Convert time values to datetime objects
+    if tick_type == "datetime":
+        times_g = [start_date + timedelta(seconds=t) for t in times]  # time vector for g_kwargs (g)
+    else:  # "relative"
+        times_g = times
+
+    # Plot the g_kwargs with dates on the x-axis
+    ax.pcolormesh(times_g, frequencies, Sxx, shading='auto', cmap=cmap)  # plot g_kwargs
+    if log_power:
+        ax[1].set_yscale('log')  # Use a logarithmic scale for the y-axis
+
+    data = {"frequencies": frequencies, "times": times_g, "power": Sxx}
+
+    return ax, data
 
 
 def swarmg(tr, samp_rate=None, wlen=6.0, overlap=0.5, dbscale=True, log_power=False,
-                  cmap=vdap_colors.inferno_u, tick_type="datetime", relative_offset=0, ax=None):
+                  cmap=vdap_colors.inferno_u, tick_type = "datetime", relative_offset=0, ax=None):
 
     import numpy as np
     import matplotlib.pyplot as plt

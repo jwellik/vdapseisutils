@@ -11,6 +11,20 @@ https://matplotlib.org/stable/gallery/ticks/date_concise_formatter.html
 "offset_formats" are the big dates on the bottom right of the axis
 https://docs.obspy.org/_modules/obspy/imaging/spectrogram.html#spectrogram
 
+
+TIME
+----------
+In order to make traces line up for waveforms and spectrograms no matter the extent of the data or gaps, both waveforms
+and spectrograms are plotted against an x-axis vector of datetime objects. For a Clipboard of n Traces, Clipboard keeps
+track of:
+time_extent | n-by-2 list | (minimum aboslute time, maximum absolute time) for each trace
+date_extent | n-by-2 list | xlim for each trace; could be datetime objects (for 'datetime') or values in seconds (for 'relative')
+
+NOTE: tr.times() returns a vector of 0:tr.stats.sampling_rate:... In other words, a vector of seconds from 0: for each data point.
+
+
+DEFAULT SETTINGS
+----------
 spectrogram_settings =
 {
 'min_frequency': 0.0, 'max_frequency': 25.0,  # 'ylim': [0.0, 25.0]
@@ -94,6 +108,141 @@ def t2axiscoords(times, textent, axextent, unit="datetime"):
     return x
 
 
+def plot_wave(tr, tick_type="datetime", relative_offset=0, ax=None, **kwargs):
+
+    if not ax:
+        fig, ax = plt.subplots(1, 1, figsize=(10.0, 6.0))
+
+    # Convert time values to datetime objects
+    if tick_type == "datetime":
+        times_w = [(tr.stats.starttime + timedelta(seconds=t)).datetime for t in tr.times()]  # time vector for the waveform (w)
+    else:  # "relative"
+        times_w = [relative_offset + t for t in tr.times()]
+    ax.plot(times_w, tr.data, **kwargs)
+
+    return ax
+
+
+def plot_spectrogram(tr, samp_rate=None, wlen=6.0, overlap=0.5, dbscale=True, log_power=False,
+                  cmap=vdap_colors.inferno_u, tick_type="datetime", relative_offset=0, ax=None,
+                     specgram_kwargs=None, pcolormesh_kwargs=None):
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from scipy.signal import spectrogram
+    from datetime import timedelta
+    import matplotlib.dates as mdates
+    from obspy.imaging.spectrogram import _nearest_pow_2
+
+    if samp_rate:
+        tr.resample(float(samp_rate))
+    else:
+        samp_rate = tr.stats.sampling_rate
+
+    # data and sample rates
+    fs = tr.stats.sampling_rate
+    signal = tr.data
+
+    # Define the start date and time
+    start_date = tr.stats.starttime.datetime
+
+    # Determine variables
+    if not wlen:
+        wlen = 128 / samp_rate
+
+    npts = len(signal)
+
+    nfft = int(_nearest_pow_2(wlen * samp_rate))
+
+    if npts < nfft:
+        msg = (f'Input signal too short ({npts} samples, window length '
+               f'{wlen} seconds, nfft {nfft} samples, sampling rate '
+               f'{samp_rate} Hz)')
+        raise ValueError(msg)
+
+    # if mult is not None:
+    #     mult = int(_nearest_pow_2(mult))
+    #     mult = mult * nfft
+    nlap = int(nfft * float(overlap))
+
+    signal = signal - signal.mean()
+
+    frequencies, times, Sxx = spectrogram(signal, fs=fs, nperseg=nfft, noverlap=nlap, scaling='spectrum')
+
+    # db scale and remove zero/offset for amplitude
+    if dbscale:
+        Sxx = 10 * np.log10(Sxx[1:, :])
+    else:
+        Sxx = np.sqrt(Sxx[1:, :])
+    frequencies = frequencies[1:]
+
+    # vmin, vmax = clip
+    # if vmin < 0 or vmax > 1 or vmin >= vmax:
+    #     msg = "Invalid parameters for clip option."
+    #     raise ValueError(msg)
+    # _range = float(Sxx.max() - Sxx.min())
+    # vmin = Sxx.min() + vmin * _range
+    # vmax = Sxx.min() + vmax * _range
+    # norm = Normalize(vmin, vmax, clip=True)
+
+    # Convert time values to datetime objects
+    if tick_type == "datetime":
+        times_g = [start_date + timedelta(seconds=t) for t in times]  # time vector for g_kwargs (g)
+    else:  # "relative"
+        times_g = [relative_offset + t for t in times]
+
+    # Plot the g_kwargs with dates on the x-axis
+    if not ax:
+        fig, ax = plt.subplots(1, 1, figsize=(10.0, 6.0))
+
+    ax.pcolormesh(times_g, frequencies, Sxx, shading='auto', cmap=cmap)  # plot g_kwargs
+    if log_power:
+        ax.set_yscale('log')  # Use a logarithmic scale for the y-axis
+    ax.set_ylim(0.1, samp_rate/2.0)  # Set the frequency range to 0.5 - 25 Hz
+
+    data = {"freq": frequencies, "times": times_g, "power": Sxx}
+
+    return ax, data
+
+
+def plot_trace(tr, mode="wg", tick_type="datetime", relative_offset=0, fig=None,
+               specgram={'samp_rate': None, 'wlen': 6.0, 'overlap': 0.5, 'dbsacle': True, 'log_power': False, 'kwargs': None},
+               colormesh={'cmap': vdap_colors.inferno_u, 'kwargs': None},
+               ):
+
+    if not fig:
+        nrows = 2 if mode == "wg" else 1
+        height_ratios = [1, 3] if mode == "wg" else [1]
+        fig = plt.figure(figsize=(10.0, 6.0))
+        gs = fig.add_gridspec(nrows=nrows, ncols=1, height_ratios=height_ratios)
+
+    if mode == "wg":
+        wax = 0
+        gax = 1
+    elif mode == "w":
+        wax = 0
+        gax = None
+    elif mode == "g":
+        wax = None
+        gax = 0
+    elif mode == "s":  # Not yet implemented
+        wax = None
+        gax = None
+
+    if wax:
+        fig.add_subplot(gs[wax])
+        fig.axes[wax] = plot_wave(tr, tick_type=tick_type, relative_offset=relative_offset, ax=fig.axes[wax])  # ? proper call to axes
+    if gax:
+        fig.add_subplot(gs[gax])
+        fig.axes[gax] = plot_spectrogram(tr, tick_type=tick_type, relative_offset=relative_offset, ax=fig.axes[gax])  # ? proper call to axes
+
+    # Remove space inbetween axes
+    # Auto-date Locator
+    # NSLC Labels
+
+    return fig
+
+
 class ClipboardClass(plt.Figure):
 
     def __init__(self, st=Stream(), mode="wg",
@@ -107,6 +256,7 @@ class ClipboardClass(plt.Figure):
         CLIPBOARD Creates subplots of waveforms or spectrograms for an ObsPy Stream object.
         X ticks can be plotted as datetimes or as "relative" seconds from the start of each Trace.
         Similarly, Traces can be synced by aboslute time or by the beginning of each Trace
+
         This class will not merge any Traces. Thus, it allows for different events from the station to be plotted
         alongside one another. Therefore, it is important to make sure all Streams are pre-processed before they are
         passed to ClipboardClass
@@ -167,7 +317,9 @@ class ClipboardClass(plt.Figure):
         # Make figure: I could put it in another method, but it's a lot of unnecessary parameter passing (for now)
 
         st = self.st.copy()
-        gs = self.add_gridspec(nrows=len(self.st) * self.nplots, ncols=1, height_ratios=self.wg_ratio * len(self.st))
+
+        # Create Figure with Subfigures - 1 per Trace
+        # [old] gs = self.add_gridspec(nrows=len(self.st) * self.nplots, ncols=1, height_ratios=self.wg_ratio * len(self.st))
 
         # Determine xlim for axes and relative offsets (for relative & sharex=True)
         starttimes = [tr.stats.starttime for tr in st]  # starttime for every trace
@@ -175,18 +327,28 @@ class ClipboardClass(plt.Figure):
         self.offset_sec = [tr.stats.starttime - min(starttimes) for tr in st]  # offset in seconds from mininmum start to trace start (only used for tick_type=relative)
 
         # time extent
+        # The absolute time range for each axis.
+        # sharex==True --> all axes are set to the min:max of all Streams
+        # sharex==False --> each axis is set to min:max of its own Stream
         if self.sharex:
-            self.time_extent = [(min(starttimes).datetime, max(endtimes).datetime)]  * len(st)  # maximum start:end extent across all traces
+            self.time_extent = [(min(starttimes).datetime, max(endtimes).datetime)] * len(st)  # maximum start:end extent across all traces
         else:
             self.time_extent = [(tr.stats.starttime.datetime, tr.stats.endtime.datetime) for tr in st]  # start:ends for each Trace
 
         # date_extent
+        # The xlim for each axis
+        # sharex==True
+        #    datetime==True --> same as time_extent
+        #    datetime==False --> all axes are set to [0, length of time_extent]
+        # sharex==False
+        #    datetime==True --> same as time_extent
+        #    datetime==False --> each axis is set to [0, length of its own Stream]
         if self.sharex:
             if self.tick_type == "datetime":
                 self.data_extent = self.time_extent
                 xlabel = "Time"
             else:
-                self.data_extent = [(0, max(endtimes)-min(starttimes))]  * len(st)  # length of maximum start:end extent in seconds
+                self.data_extent = [(0, max(endtimes)-min(starttimes))] * len(st)  # length of maximum start:end extent in seconds
                 xlabel = "Time (s)"
         else:
             if self.tick_type == "datetime":
@@ -199,84 +361,19 @@ class ClipboardClass(plt.Figure):
 
         # Plot the data
         for i, tr in enumerate(st):
+            # plot_trace(tr, mode=self.mode, tick_type=self.tick_type, fig=<next_figure>)
+            pass
 
-            # Assign indices for each axis for this trace
-            if self.mode == "wg":
-                waxn = i * self.nplots
-                gaxn = waxn+1
-                laxn = gaxn
-            elif self.mode == "g":
-                waxn = -1
-                gaxn = i * self.nplots
-                laxn = gaxn
-            elif self.mode == "w":
-                waxn = i * self.nplots
-                gaxn = -1
-                laxn = waxn
-
-            start_date = tr.stats.starttime
-
-            # Convert time values to datetime objects
-            if self.tick_type == "datetime":
-                times_w = [(start_date + timedelta(seconds=t)).datetime for t in tr.times()]  # time vector for the waveform (w)
-            else:  # "relative"
-                times_w = [self.offset_sec[i] + t for t in tr.times()]
-
-            # Waveform
-            if waxn > -1:
-                axn = waxn
-                self.add_subplot(gs[axn])
-                self.axes[axn].plot(times_w, tr.data, **self.w_ax)  # Just plot points, not time
-                self.axes[axn].yaxis.set_ticks_position("right")
-                self.axes[axn].set_xlim(self.data_extent[i])
-
-            # Spectrogram
-            if gaxn > -1:
-                axn = gaxn
-                # axn = axn+1 if self.mode == "wg" else axn  # increment axn by 1 if this is the second plot per trace
-                self.add_subplot(gs[axn])
-                self.axes[axn] = swarmg(tr, tick_type=self.tick_type, relative_offset=self.offset_sec[i], ax=self.axes[axn], **self.g_kwargs)
-                self.axes[axn].set_xlabel("")
-                self.axes[axn].set_ylabel("")
-                self.axes[axn].yaxis.set_ticks_position("right")
-                self.axes[axn].set_xlim(self.data_extent[i])
-
-            # NSLC Label - Horizontal label with two rows
-            s = getNSLCstr(tr)
-            idx = s.index(".",3)  # ? gets second instance of "." assuming NN.SS....
-            s1, s2 = s[:idx], s[idx + 1:]
-            self.axes[laxn].text(
-                -0.01, 0.67, s1 + "\n" + s2, transform=self.axes[laxn].transAxes, rotation='horizontal',
-                horizontalalignment="right", verticalalignment='center', fontsize=10,
-            )
-
-            # NSLC Label - Vertical label w 1 row
-            # self.subplots[axn].text(
-            #     -0.01, 0.5, getNSLCstr(tr), transform=self.subplots[axn].transAxes, rotation='vertical',
-            #     horizontalalignment='right', verticalalignment='center', fontsize=12,
-            # )
-
-        # Set all x axis ticks and ticklabels
-        for i, ax in enumerate(self.get_axes()):
-            if self.tick_type == "datetime":
-                loc = mdates.AutoDateLocator(minticks=4, maxticks=7)  # from matplotlib import dates as mdates
-                formatter = mdates.ConciseDateFormatter(loc)
-                ax.xaxis.set_major_locator(loc)
-                ax.xaxis.set_major_formatter(formatter)
-            else:
-                # self.tick_type=="relative" automatically produces xunits in seconds for both spectrograms and waveforms
-                # so no need to do anything fancy here
-                pass
 
         # if sharex, Put axes on top of top plot, Remove middle axes
         if self.sharex:
+            # Change get_axes() lines to loop over subfigures
             if len(self.get_axes()) >= 2:  # if len>=2 bc 1 st will produce 2 axes
                 self.get_axes()[0] = self.get_axes()[0].xaxis.tick_top()  # Put axis on top for top plot
                 for i in range(1, len(self.get_axes())-1):  # Remove middle axes (does not enter for loop if only 2 axes)
                     self.get_axes()[i].set_xticks([])       # Must remove ticks and ticklabels
                     self.get_axes()[i].set_xticklabels([])  # bc both have already been set earlier in code
         self.get_axes()[-1].set_xlabel(xlabel, fontsize=10)  # Set x axis label on last plot
-
 
     def axvline(self, t, *args, color="red", unit="datetime", **kwargs):
         """AXVLINE Adds a vertical line across all axes. Default color='red'"""
@@ -290,7 +387,6 @@ class ClipboardClass(plt.Figure):
                 x = t2axiscoords(t, self.time_extent[i], self.get_axes()[n].get_xlim(), unit=unit)  # convert times to x axis coordinates
                 [self.get_axes()[n].axvline(x_, *args, color=color, **kwargs) for x_ in x]  # axvline can not take a list
 
-
     def remove_labels(self):
         # if I get this to work, remove it from the _plot_clipboard routine
 
@@ -303,3 +399,4 @@ class ClipboardClass(plt.Figure):
             self.get_axes()[i].set_ylabel("")
             for text in self.get_axes()[i].texts:
                 text.remove()
+
