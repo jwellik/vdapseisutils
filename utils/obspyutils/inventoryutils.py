@@ -46,6 +46,8 @@ def write_simple_csv(inventory, filename='~/inventory.csv'):
 def str2nslc(station_code, order='nslc', sep='.'):
     """Convert any NSLC/SCNL/SCN str to its components"""
 
+    # station_code = station_code.strip()  # start by stripping leading and trailing spaces
+
     if order == 'nslc':
         n = 0
         s = 1
@@ -152,6 +154,20 @@ def str2bulk(nslc_list, t1, t2):
 
     return bulk
 
+
+def overwrite_loc_code(inventory, new_loc_code):
+    # Overwrites location code for every channel in an inventory.
+    # Default = "--".
+    # Change is made in place on inv (copy of inventory)
+
+    inv = inventory.copy()
+    for net in inv.networks:
+        for sta in net.stations:
+            for cha in sta.channels:
+                cha.location_code = new_loc_code
+    return inv
+
+
 ########################################################################################################################
 # Swarm
 ########################################################################################################################
@@ -202,6 +218,10 @@ def read_swarm(latlonconfig, local_depth_default=0):
     # Strips the newline character
     for line in Lines:
 
+        line = line.expandtabs()  # convert hidden tabs to spaces
+        line = line.replace("\n", "")  # remove end of line characters
+        line = line.strip()  # remove leading and trailing spaces from line
+
         d = dict({})
         count += 1
         # print("Line{}: {}".format(count, line.strip()))
@@ -229,11 +249,11 @@ def read_swarm(latlonconfig, local_depth_default=0):
         d["nslc"] = convertNSLCstr(scnl, order="scnl", sep=" ", neworder="nslc", newsep=".")
         d["local_depth"] = local_depth_default  # Add local_depth default
 
-        # print("::::")
-        # print(d)
-        # print("::::")
+        print("::::")
+        print(d)
+        print("::::")
         data.append(d)
-        # print()
+        print()
 
     return pd.DataFrame.from_records(data)
 
