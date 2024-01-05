@@ -109,6 +109,7 @@ def GTSRCE(inventory, loc_type="LATLON", verbose=True, outfile=None):
     print_and_write(lines, header="# NonLinLoc GTSRCE commands\n", verbose=verbose, outfile=outfile)
     return lines
 
+
 def LOCSRCE(inventory, L=None, verbose=True, outfile=None):
     """NLL_STA_LIST Creates lines for NonLinLoc sta_list.in
 

@@ -324,7 +324,7 @@ def pickfp_StaFile(inventory, L=None, source="", name="", verbose=True, outfile=
 # BINDER - Read from template
 
 def binder_ew(template="./params_templates/binder_ew.d", site_file="utils/sta.hinv", velocityd="utils/velocity_model.d",
-              lat=0.0, lon=0.0, radius=50, gridz=[0, 100],
+              lat=0.0, lon=0.0, radius=100, gridz=[0, 100],
               dspace=3.0, rstack=100, tstack=0.6, stack=100, thresh=16, focus=100,
               grid_wt=[4, 4, 4, 4],
               no_P_on_Horiz=True, no_S_on_Z=True,
@@ -342,7 +342,7 @@ def binder_ew(template="./params_templates/binder_ew.d", site_file="utils/sta.hi
     # determine grdlon minlon maxlon
     # determine grdz   minz   maxz
     from vdapseisutils.utils.geoutils import radial_extent2map_extent
-    map_extent = radial_extent2map_extent(lat, lon, 100)
+    map_extent = radial_extent2map_extent(lat, lon, radius)
     minlon, maxlon, minlat, maxlat = map_extent
     minz, maxz = gridz
 
