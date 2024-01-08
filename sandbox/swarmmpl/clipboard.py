@@ -68,7 +68,20 @@ PROCESS:
 # [x] axvline uses datetime or relative
 # [x] Remove __define_t_ticks
 # [x] Need more room for xaxis is sync_waves = False
-# TODO sync_waves isn't working
+# [x] sync_waves isn't working
+# [TODO] Handle datetime xlims better for datetime and relative
+# [TODO] Handle # of traces. What to do about single trace gappy data for spectrograms
+# [TODO] Allow set_tlim, set_alim, etc to be for specific Traces/figures
+
+"""
+TODO Create a custom Axis object or custom Figure object for TimeSeries
+
+stores axis_type = "datetime" | "relative"
+stores xlim_time = [t_start, t_end]  # xlim as datetime objects (t[0] and t[-1] of the original data)
+method to convert time to x-axis coordinates
+
+
+"""
 
 
 import numpy as np
@@ -122,6 +135,9 @@ def t2axiscoords(times, textent, axextent, unit="datetime"):
 
 def plot_trace(tr, mode="wg", tick_type="datetime", relative_offset=0, fig=None,
                wave_settings=wave_defaults, spectrogram_settings=spectrogram_defaults):
+    """PLOT_TRACE Plots a single Trace and returns a MatPlotLib Figure object"""
+
+    # TODO Add check to verify tr is a single Trace
 
     if not fig:
         fig = plt.figure(figsize=figsize_default)
@@ -162,11 +178,11 @@ def plot_trace(tr, mode="wg", tick_type="datetime", relative_offset=0, fig=None,
     )
 
     # fig.subplots_adjust(hspace=0.0)
-
     return fig
 
 
 def plot_wave(tr, tick_type="datetime", relative_offset=0, color="k", ax=None, **kwargs):
+    """PLOT_WAVE Plots waveform of single Trace. Returns a MatPlotLib Axes object"""
 
     if not ax:
         fig, ax = plt.subplots(1, 1, figsize=figsize_default)
@@ -184,6 +200,8 @@ def plot_wave(tr, tick_type="datetime", relative_offset=0, color="k", ax=None, *
 
 def plot_spectrogram(tr, samp_rate=None, wlen=6.0, overlap=0.5, dbscale=True, log_power=False,
                      cmap=vdap_colors.inferno_u, tick_type="datetime", relative_offset=0, ax=None):
+    """PLOT_WAVE Plots spectrogram of single Trace. Returns a MatPlotLib Axes object"""
+
 
     import numpy as np
     import matplotlib.pyplot as plt
@@ -266,7 +284,7 @@ def plot_spectrogram(tr, samp_rate=None, wlen=6.0, overlap=0.5, dbscale=True, lo
 class ClipboardClass(plt.Figure):
 
     def __init__(self, st=Stream(), mode="wg", figsize=None,
-                 tick_type="datetime", sync_waves=True,
+                 tick_type="datetime", sync_waves=True, force_length=True,
                  **kwargs,
                  ):
         """
@@ -285,29 +303,38 @@ class ClipboardClass(plt.Figure):
             defaults: {"samp_rate": 50, "wlen": 6, "overlap": 0.5, "dbscale": True, "log_power": False, "cmap": vdap_colors.inferno_u}
         :param tick_type: "datetime" | "relative" seconds after start of Trace
         :param sync_waves: True (plots are synced by aboslute time of Trace objects) | False
+        :param force_length: Forces all subplots to be the same length even if data limits are different
         :param kwargs:
         """
 
         # self.st = Stream(st.copy())  # Ensure object is Stream (converts Trace)
         self.st = st.copy()  # Stream object
+        self.n_traces = len(st)
 
         # Figure object
         self.figsize = figsize if figsize else (8.5, np.max([len(self.st)*2, 3]))
 
         # Plot type and Time
         self.mode = mode
-        self.tick_type = tick_type
-        self.sync_waves = sync_waves
+        # self.sync_waves = sync_waves
 
         # Plot settings
         self.spectrogram_settings = spectrogram_defaults
         self.wave_settings = wave_defaults
 
+        # Time axis information
+        self.taxis = dict()
+        self.taxis["tick_type"] = tick_type
+        self.taxis["sync_waves"] = sync_waves
+        self.taxis["force_length"] = force_length
+        self.taxis["time_lim"] = np.empty((self.n_traces, 2), dtype=object)  # n-by-2 list of xlims in datetime units, regardless of tick_type
+        self.taxis["xlim"] = np.empty((self.n_traces, 2), dtype=object)  # n-by-2 list of xlims in axis units, regardless of tick_type (should be what you get if you call ax.get_xlim)
+
         # Initialize the figure
         super().__init__(figsize=self.figsize, layout="constrained", **kwargs)
 
         # Create the subfigures
-        self.subfigs = self.subfigures(len(self.st), 1)
+        self.subfigs = self.subfigures(self.n_traces, 1)
         # [self.subfigs[i].set_facecolor('0.75') for i in range(0, len(self.subfigs))]
         self.suptitle('Clipboard', fontsize=fontsize_default)
         # self.set_constrained_layout(True)
@@ -319,8 +346,8 @@ class ClipboardClass(plt.Figure):
 
         i = 0
         for sf in self.subfigs:
-            plot_trace(st[i], mode=self.mode, fig=self.subfigs[i], wave_settings=self.wave_settings,
-                       spectrogram_settings=self.spectrogram_settings)
+            plot_trace(st[i], mode=self.mode, tick_type=self.taxis["tick_type"], fig=self.subfigs[i],
+                       wave_settings=self.wave_settings, spectrogram_settings=self.spectrogram_settings)
             i += 1
 
         self._set_axes()
@@ -375,36 +402,50 @@ class ClipboardClass(plt.Figure):
         endtimes = [tr.stats.endtime for tr in st]  # endtime for every trace
         self.offset_sec = [tr.stats.starttime - min(starttimes) for tr in st]  # offset in seconds from mininmum start to trace start (only used for tick_type=relative)
 
-        # time extent
-        if self.sync_waves:
-            self.time_extent = [(min(starttimes).datetime, max(endtimes).datetime)] * len(st)  # maximum start:end extent across all traces
+        # time_lim (define xlim in time units)
+        if self.taxis["sync_waves"]:
+            self.taxis["time_lim"] = [(min(starttimes).datetime, max(endtimes).datetime)] * len(st)  # maximum start:end extent across all traces
         else:
-            self.time_extent = [(tr.stats.starttime.datetime, tr.stats.endtime.datetime) for tr in st]  # start:ends for each Trace
+            self.taxis["time_lim"] = [(tr.stats.starttime.datetime, tr.stats.endtime.datetime) for tr in st]  # start:ends for each Trace
 
-        # date_extent
-        if self.sync_waves:
-            if self.tick_type == "datetime":
-                self.data_extent = self.time_extent
+        # xlim (define xlim in axis data units)
+        if self.taxis["sync_waves"]:
+            if self.taxis["tick_type"] == "datetime":
+                self.taxis["xlim"] = self.taxis["time_lim"]
                 xlabel = "Time"
             else:
-                self.data_extent = [(0, max(endtimes)-min(starttimes))] * len(st)  # length of maximum start:end extent in seconds
+                self.taxis["xlim"] = [(0, max(endtimes)-min(starttimes))] * len(st)  # length of maximum start:end extent in seconds
                 xlabel = "Time (s)"
         else:
-            if self.tick_type == "datetime":
-                self.data_extent = self.time_extent
+            if self.taxis["tick_type"] == "datetime":
+                self.taxis["xlim"] = self.time_extent
                 xlabel = "Time"
             else:
-                self.data_extent = [(0, tr.stats.endtime-tr.stats.starttime) for tr in st]  # length of maximum start:end extent in seconds
+                self.taxis["xlim"] = [(0, tr.stats.endtime-tr.stats.starttime) for tr in st]  # length of maximum start:end extent in seconds
                 self.offset_sec = [0.0] * len(self.st)  # no offsets
                 xlabel = "Time (s)"
 
-        # set xlim
+        # Adjust for force_length
+        if self.taxis["force_length"]:
+
+            # Find the maximum amount of time reprsented on x-axis
+            max_length = -1
+            for i, xlim in enumerate(self.taxis["xlim"]):
+                print(xlim)
+                max_length = xlim[1] - xlim[0] if xlim[1] - xlim[0] > max_length else max_length
+
+            # Reset time_lim and xlim accordingly
+            for i, xlim in enumerate(self.taxis["xlim"]):
+                self.taxis["xlim"][i] = (self.taxis["xlim"][i][0], self.taxis["xlim"][i][0] + max_length)  # reset xlim
+                self.taxis["time_lim"][i] = (self.taxis["time_lim"][i][0], self.taxis["time_lim"][i][0] + timedelta(seconds=max_length))  # reset tlim
+
+        # set xlim (Actually set the xlim on the plot axes)
         for i, sf in enumerate(self.subfigs):
-            [ax.set_xlim(self.data_extent[i]) for ax in sf.axes]
+            [ax.set_xlim(self.taxis["xlim"][i]) for ax in sf.axes]
 
         # Set all x axis ticks and ticklabels
         for i, ax in enumerate(self.get_axes()):
-            if self.tick_type == "datetime":
+            if self.taxis["tick_type"] == "datetime":
                 loc = mdates.AutoDateLocator(minticks=4, maxticks=7)  # from matplotlib import dates as mdates
                 formatter = mdates.ConciseDateFormatter(loc)
                 ax.xaxis.set_major_locator(loc)
@@ -415,7 +456,7 @@ class ClipboardClass(plt.Figure):
                 pass
 
         # if sync_waves, put axes tick labels on top of top plot, remove middle axes
-        if self.sync_waves:
+        if self.taxis["sync_waves"]:
             if len(self.get_axes()) >= 2:  # if len>=2 bc 1 st will produce 2 axes
                 self.get_axes()[0] = self.get_axes()[0].xaxis.tick_top()  # Put axis on top for top plot
                 for i in range(1, len(self.get_axes())-1):  # Remove middle axes (does not enter for loop if only 2 axes)
@@ -441,6 +482,7 @@ class ClipboardClass(plt.Figure):
             for sf in self.subfigs:  # loop through all subfigures
                 sf.axes[n].set_ylim(flim)
 
+    # Power spectral range (corresponds to color range of spectrogram)
     def set_prange(self, prange):
         if self.mode != "w":
             n = 1 if self.mode == "wg" else 0
