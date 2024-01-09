@@ -62,16 +62,20 @@ PROCESS:
 # [x] Slowly add back spectrogram kwargs
 # [x] I don't like the way NSLC labels are added; hard to read if too many traces or small figure
 # [x] Make swarmg and swarmw methods
-# TODO I don't love the results from AutoDateLocator
+# [x] I don't love the results from AutoDateLocator
 # [x] Switch the arrangement of subplots to utilize subfigures
 # [x] Eliminate waveform plot redundancy
 # [x] axvline uses datetime or relative
 # [x] Remove __define_t_ticks
 # [x] Need more room for xaxis is sync_waves = False
 # [x] sync_waves isn't working
-# [TODO] Handle datetime xlims better for datetime and relative
-# [TODO] Handle # of traces. What to do about single trace gappy data for spectrograms
-# [TODO] Allow set_tlim, set_alim, etc to be for specific Traces/figures
+# [x] Handle datetime xlims better for datetime and relative
+# [x] Handle # of traces. What to do about single trace gappy data for spectrograms?
+# TODO Allow set_tlim, set_alim, etc to be for specific Traces/figures
+# TODO scroll_trace(seconds)
+# TODO plot_catalog(Catalog)
+# TODO align_traces(datetime)
+# TODO Remove spaces between subplots
 
 """
 TODO Create a custom Axis object or custom Figure object for TimeSeries
@@ -86,6 +90,7 @@ method to convert time to x-axis coordinates
 
 import numpy as np
 from datetime import datetime, timedelta
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
@@ -194,6 +199,8 @@ def plot_wave(tr, tick_type="datetime", relative_offset=0, color="k", ax=None, *
         times_w = [relative_offset + t for t in tr.times()]
     ax.plot(times_w, tr.data, color=color, **kwargs)
     ax.yaxis.set_ticks_position("right")
+    ax.ticklabel_format(axis="y", style='sci', scilimits=(0,0))
+    # ax.yaxis.set_major_formatter(mpl.ticker.StrMethodFormatter("{:2.1f}"))
 
     return ax
 
@@ -332,12 +339,13 @@ class ClipboardClass(plt.Figure):
 
         # Initialize the figure
         super().__init__(figsize=self.figsize, layout="constrained", **kwargs)
+        # super().__init__(figsize=self.figsize, **kwargs)
 
         # Create the subfigures
         self.subfigs = self.subfigures(self.n_traces, 1)
         # [self.subfigs[i].set_facecolor('0.75') for i in range(0, len(self.subfigs))]
         self.suptitle('Clipboard', fontsize=fontsize_default)
-        # self.set_constrained_layout(True)
+        # self.set_constrained_layout_pads(w_pad=10, h_pad=10)
 
     # Plots, Annotations, Labels
     def plot(self):
@@ -363,7 +371,7 @@ class ClipboardClass(plt.Figure):
             i = 0
             for ax in sf.axes:
                 # n = i*self.nax+j
-                x = t2axiscoords(t, self.time_extent[i], ax.get_xlim(), unit=unit)  # convert times to x axis coordinates
+                x = t2axiscoords(t, self.taxis["time_lim"][i], ax.get_xlim(), unit=unit)  # convert times to x axis coordinates
                 [ax.axvline(x_, *args, color=color, **kwargs) for x_ in x]  # axvline can not take a list
                 i += 1
 
@@ -429,15 +437,28 @@ class ClipboardClass(plt.Figure):
         if self.taxis["force_length"]:
 
             # Find the maximum amount of time reprsented on x-axis
-            max_length = -1
-            for i, xlim in enumerate(self.taxis["xlim"]):
-                print(xlim)
-                max_length = xlim[1] - xlim[0] if xlim[1] - xlim[0] > max_length else max_length
+            # max_length_x = self.taxis["xlim"][0][1] - self.taxis["xlim"][0][0]  # max_length initialized as val of first axis
+            # max_length_t = self.taxis["time_lim"][0][1] - self.taxis["time_lim"][0][0]  # max_length initialized as val of first axis
+            # for i, xlim in enumerate(self.taxis["xlim"]):
+            #     print(xlim)
+            #     max_length_x = xlim[1] - xlim[0] if xlim[1] - xlim[0] > max_length_x else max_length_x
+            #     max_length_t = self.taxis["time_lim"][i][1] - self.taxis["time_lim"][i][1][0] if self.taxis["time_lim"][i][1][1] - self.taxis["time_lim"][i][1][0] > max_length_t else max_length_t
+
+            length_x = []
+            length_t = []
+            for xlim, tlim in zip(self.taxis["xlim"], self.taxis["time_lim"]):
+                length_x.append(xlim[1] - xlim[0])
+                length_t.append(tlim[1] - tlim[0])
+
+            max_length_x = max(length_x)
+            max_length_t = max(length_t)
 
             # Reset time_lim and xlim accordingly
             for i, xlim in enumerate(self.taxis["xlim"]):
-                self.taxis["xlim"][i] = (self.taxis["xlim"][i][0], self.taxis["xlim"][i][0] + max_length)  # reset xlim
-                self.taxis["time_lim"][i] = (self.taxis["time_lim"][i][0], self.taxis["time_lim"][i][0] + timedelta(seconds=max_length))  # reset tlim
+                self.taxis["xlim"][i] = (self.taxis["xlim"][i][0], self.taxis["xlim"][i][0] + max_length_x)  # reset xlim
+            for i, xlim in enumerate(self.taxis["time_lim"]):
+                self.taxis["time_lim"][i] = (self.taxis["time_lim"][i][0], self.taxis["time_lim"][i][0] + max_length_t)  # reset time_lim
+
 
         # set xlim (Actually set the xlim on the plot axes)
         for i, sf in enumerate(self.subfigs):
