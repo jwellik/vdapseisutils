@@ -72,10 +72,12 @@ PROCESS:
 # [x] Handle datetime xlims better for datetime and relative
 # [x] Handle # of traces. What to do about single trace gappy data for spectrograms?
 # TODO Allow set_tlim, set_alim, etc to be for specific Traces/figures
-# TODO scroll_trace(seconds)
+# [x] scroll_trace(seconds)
+# TODO tick_type="relative" always starts at 0?
 # TODO plot_catalog(Catalog)
 # TODO align_traces(datetime)
-# TODO Remove spaces between subplots
+# TODO Figure out best way to do layout (not using constrained layout?)
+# TODO scroll_traces() --> Turn axis labels back on
 
 """
 TODO Create a custom Axis object or custom Figure object for TimeSeries
@@ -337,8 +339,8 @@ class ClipboardClass(plt.Figure):
         self.taxis["xlim"] = np.empty((self.n_traces, 2), dtype=object)  # n-by-2 list of xlims in axis units, regardless of tick_type (should be what you get if you call ax.get_xlim)
 
         # Initialize the figure
-        # super().__init__(figsize=self.figsize, layout="constrained", **kwargs)
-        super().__init__(figsize=self.figsize, **kwargs)
+        # super().__init__(figsize=self.figsize, layout="constrained", **kwargs)  # constrained layout
+        super().__init__(figsize=self.figsize, **kwargs)  # unconstrained layout
 
         # Create the subfigures
         self.subfigs = self.subfigures(self.n_traces, 1)
@@ -416,7 +418,7 @@ class ClipboardClass(plt.Figure):
         # xlim (define xlim in axis data units)
         if self.taxis["sync_waves"]:
             if self.taxis["tick_type"] == "datetime":
-                self.taxis["xlim"] = self.taxis["time_lim"]
+                self.taxis["xlim"] = self.taxis["time_lim"].copy()
                 xlabel = "Time"
             else:
                 self.taxis["xlim"] = [(0, max(endtimes)-min(starttimes))] * len(st)  # length of maximum start:end extent in seconds
@@ -455,7 +457,6 @@ class ClipboardClass(plt.Figure):
                 self.taxis["xlim"][i] = (self.taxis["xlim"][i][0], self.taxis["xlim"][i][0] + max_length_x)  # reset xlim
             for i, xlim in enumerate(self.taxis["time_lim"]):
                 self.taxis["time_lim"][i] = (self.taxis["time_lim"][i][0], self.taxis["time_lim"][i][0] + max_length_t)  # reset time_lim
-
 
         # set xlim (Actually set the xlim on the plot axes)
         for i, sf in enumerate(self.subfigs):
@@ -506,6 +507,30 @@ class ClipboardClass(plt.Figure):
             n = 1 if self.mode == "wg" else 0
             for sf in self.subfigs:
                 pass  # Set the min:max for the color range
+
+    def scroll_traces(self, idx=None, seconds=None):
+        """SCROLL_TRACE Scross trace forward or backward (-) by S seconds. Inputs are lists"""
+
+        if not isinstance(idx, list) or not isinstance(seconds, list):
+            raise ValueError("Trace index and Scroll seconds must be provided as lists of the same size.")
+        if len(idx) != len(seconds):
+            raise ValueError("Trace index and Scroll seconds must be provided as lists of the same size.")
+
+        # multiply by -1 bc if you want to move the trace one direction, you need to move the axis the other direction
+        seconds = list(np.array(seconds) * -1)
+
+        offset_t = [timedelta(seconds=float(s)) for s in seconds]
+        offset_x = seconds
+        if self.taxis["tick_type"] == "datetime":
+            offset_x = offset_t
+
+        for i, x, t in zip(idx, offset_x, offset_t):
+            self.taxis["xlim"][i] = (self.taxis["xlim"][i][0] + x, self.taxis["xlim"][i][1] + x)
+            self.taxis["time_lim"][i] = (self.taxis["time_lim"][i][0] + t, self.taxis["time_lim"][i][1] + t)
+
+        # set xlim (Actually set the xlim on the plot axes) -- resets all axes xlims, not just updated ones, should be fine
+        for i, sf in enumerate(self.subfigs):
+            [ax.set_xlim(self.taxis["xlim"][i]) for ax in sf.axes]
 
 
 def Clipboard(st=Stream(), **kwargs):
