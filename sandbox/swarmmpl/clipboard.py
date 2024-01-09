@@ -146,7 +146,6 @@ def plot_trace(tr, mode="wg", tick_type="datetime", relative_offset=0, fig=None,
 
     if not fig:
         fig = plt.figure(figsize=figsize_default)
-    # Remove empty space between subplots
 
     if mode == "wg":
         nrows = 2
@@ -164,7 +163,7 @@ def plot_trace(tr, mode="wg", tick_type="datetime", relative_offset=0, fig=None,
         waxn = None
         gaxn = 0
 
-    gs = fig.add_gridspec(nrows, 1, height_ratios=height_ratios)
+    gs = fig.add_gridspec(nrows, 1, height_ratios=height_ratios, hspace=0.0)
     for i in range(nrows):
         fig.add_subplot(gs[i])
 
@@ -182,7 +181,7 @@ def plot_trace(tr, mode="wg", tick_type="datetime", relative_offset=0, fig=None,
         horizontalalignment="right", verticalalignment='center', fontsize=fontsize_default,
     )
 
-    # fig.subplots_adjust(hspace=0.0)
+    # fig.subplots_adjust(hspace=None)  # Remove horizontal space between subplots
     return fig
 
 
@@ -338,14 +337,12 @@ class ClipboardClass(plt.Figure):
         self.taxis["xlim"] = np.empty((self.n_traces, 2), dtype=object)  # n-by-2 list of xlims in axis units, regardless of tick_type (should be what you get if you call ax.get_xlim)
 
         # Initialize the figure
-        super().__init__(figsize=self.figsize, layout="constrained", **kwargs)
-        # super().__init__(figsize=self.figsize, **kwargs)
+        # super().__init__(figsize=self.figsize, layout="constrained", **kwargs)
+        super().__init__(figsize=self.figsize, **kwargs)
 
         # Create the subfigures
         self.subfigs = self.subfigures(self.n_traces, 1)
-        # [self.subfigs[i].set_facecolor('0.75') for i in range(0, len(self.subfigs))]
         self.suptitle('Clipboard', fontsize=fontsize_default)
-        # self.set_constrained_layout_pads(w_pad=10, h_pad=10)
 
     # Plots, Annotations, Labels
     def plot(self):
