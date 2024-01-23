@@ -1,4 +1,5 @@
 # UTILS for Station Metadata based on ObsPy's Iventory class
+import os
 import pandas as pd
 
 
@@ -199,14 +200,15 @@ def write_swarm(inventory, verbose=True, outfile=None):
         [print(line) for line in channel_strings]
         print()
 
-def read_swarm(latlonconfig, local_depth_default=0):
+def read_swarm(latlonconfig, local_depth_default=0, verbose=False):
     """READ_SWARM Reads Swarm-formatted LatLon.config file of stations
 
     input: Swarm/LatLon.config file
-    output: ObsPy Inventory class
+    output: Pandas DataFrame
     """
 
-    print("Reading Swarm LatLon.config")
+    if verbose:
+        print("Reading Swarm LatLon.config: " + os.path.abspath(latlonconfig))
 
     # Using readlines()
     file1 = open(latlonconfig, 'r')
@@ -224,20 +226,15 @@ def read_swarm(latlonconfig, local_depth_default=0):
 
         d = dict({})
         count += 1
-        # print("Line{}: {}".format(count, line.strip()))
 
         name_deets = line.split("=")
         scnl = name_deets[0]
         deets = name_deets[1].replace("\n", "")
-        # print(" scnl  : {}".format(scnl))
-        # print(" deets : {}".format(deets))
         params = deets.split(";")
         for p in params:
             key_val = p.split(":")
-            # print(key_val)
             key = key_val[0].replace(" ", "")
             value = key_val[1].replace(" ", "").replace("\n", "")
-            # print(" ({}:{})".format(key, value))
             if key == "Latitude":
                 d["latitude"] = float(value)
             elif key == "Longitude":
@@ -249,11 +246,9 @@ def read_swarm(latlonconfig, local_depth_default=0):
         d["nslc"] = convertNSLCstr(scnl, order="scnl", sep=" ", neworder="nslc", newsep=".")
         d["local_depth"] = local_depth_default  # Add local_depth default
 
-        print("::::")
-        print(d)
-        print("::::")
+        if verbose:
+            print(">>> ", d)
         data.append(d)
-        print()
 
     return pd.DataFrame.from_records(data)
 
