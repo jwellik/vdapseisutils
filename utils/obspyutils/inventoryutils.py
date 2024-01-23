@@ -1,6 +1,8 @@
 # UTILS for Station Metadata based on ObsPy's Iventory class
 import os
+import numpy as np
 import pandas as pd
+from obspy.core.inventory import Inventory, Network, Station, Channel
 
 
 ########################################################################################################################
@@ -28,6 +30,36 @@ def inventory2df(inventory):
 
     return stationdf
 
+def df2inventory(df):
+    """DF2INVENTORY Converts DataFrame of station data to ObsPy Inventory object
+
+    Requires a Pandas DataFrame with required (and optional) columns 'nslc', 'latitude', 'longitude', 'elevation', ('local_depth')
+    Station always has the lat, lon, elev of its first channel. This probably isn't great.
+    """
+
+    inv = Inventory(networks=[], source="Swarm-LatLon.config")
+
+    # assuming your DataFrame is named df
+    df[['network', 'station', 'location', 'channel']] = df['nslc'].str.split('.', expand=True)  # convert 'nslc' to 'network' 'station' 'location' 'channel' columns
+    for n, group in df.groupby('network'):
+        print(f"Network: {n}")
+        net = Network(code=n, stations=[])
+        for s, station_group in group.groupby('station'):
+            print(f"  Station: {s}")
+            elev = station_group.iloc[0]["elevation"] if not np.isnan(station_group.iloc[0]["elevation"]) else 0
+            sta = Station(code=s, latitude=station_group.iloc[0]["latitude"], longitude=station_group.iloc[0]["longitude"],
+                          elevation=elev)
+            for i, channel_group in station_group.iterrows():
+                print("    Channel: {}".format(channel_group["channel"]))
+                elev = channel_group["elevation"] if not np.isnan(channel_group["elevation"]) else 0
+                cha = Channel(code=channel_group["channel"], location_code=channel_group["location"],
+                              latitude=channel_group["latitude"], longitude=channel_group["longitude"],
+                              elevation=elev, depth=channel_group["local_depth"])
+                sta.channels.append(cha)
+            net.stations.append(sta)
+        inv.networks.append(net)
+
+    return inv
 
 def write_simple_csv(inventory, filename='~/inventory.csv'):
     """Writes inventory as CSV formatted channel,latitude,longitude,elevation"""
@@ -200,7 +232,7 @@ def write_swarm(inventory, verbose=True, outfile=None):
         [print(line) for line in channel_strings]
         print()
 
-def read_swarm(latlonconfig, local_depth_default=0, verbose=False):
+def read_swarm(latlonconfig, local_depth_default=0, format="DataFrame", verbose=False):
     """READ_SWARM Reads Swarm-formatted LatLon.config file of stations
 
     input: Swarm/LatLon.config file
@@ -250,7 +282,14 @@ def read_swarm(latlonconfig, local_depth_default=0, verbose=False):
             print(">>> ", d)
         data.append(d)
 
-    return pd.DataFrame.from_records(data)
+    if format.lower() == "DataFrame".lower():
+        output = pd.DataFrame.from_records(data)  # Convert to DataFrame
+    elif format.lower() == "Inventory".lower():
+        output = df2inventory(pd.DataFrame.from_records(data))  # Convert to DataFrame, then to Inventory
+    else:
+        raise Exception("format {} not understood. Options are 'DataFrame' or 'Inventory'".format(format))
+
+    return output
 
 ########################################################################################################################
 # Misc.
