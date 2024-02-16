@@ -3,9 +3,21 @@ import datetime
 import numpy as np
 import pandas as pd
 from obspy import UTCDateTime
+import datetime
+from matplotlib import dates as mdates
+from pandas import Timestamp as pdTimestamp
+from numpy import datetime64 as npdatetime64
+
+# Examples
+A = UTCDateTime(1980, 5, 18)  # 1980-05-18T00:00:00.000000Z <obspy.core.utcdatetime.UTCDateTime>
+B = datetime.datetime(1980, 5, 18)  # datetime.datetime(1980, 5, 18, 0, 0) <datetime.datetime>
+C = mdates.datestr2num("1980/05/18")  # 3790 <numpy.float64>
+D = pdTimestamp("1980/05/18")  #  Timestamp('1980-05-18 00:00:00') <pandas._libs.tslibs.timestamps.Timestamp>
+E = npdatetime64("1980-05-18")  # numpy.datetime64('1980-05-18') <numpy.datetime64>
+F = "1980/05/18"  # '1980/05/18' <str>
 
 
-def convert_timeformat(input, from_format, to_format):
+def convert_timeformat_dep(input, from_format, to_format):
 
     output = []
 
@@ -31,6 +43,39 @@ def convert_timeformat(input, from_format, to_format):
 
     return output
 
+def convert_timeformat(input, format="UTCDateTime"):
+
+    output = []
+    if isinstance(input, list):
+        pass
+    else:
+        input = [input]
+
+    # First, convert strings to UTCDateTime objects
+    if isinstance(input[0], str):
+        input = [UTCDateTime(t) for t in input]
+
+    # Input is ObsPy UTCDateTime
+    if isinstance(input[0], UTCDateTime):
+        if format.lower() == "UTCDateTime".lower():
+            output = [UTCDateTime(t) for t in input]
+        elif format.lower() == "pdTimestamp".lower():  # Pandas Timestamp
+            output = [pd.Timestamp(UTCDateTime(t)) for t in input]
+        elif format.lower() == "matplotlib".lower():  # Matplotlib date
+            output = [d.matplotlib_date for d in input]
+        elif format.lower() == "datetime".lower():  # Python Datetime object
+            output = [UTCDateTime(t).datetime for t in input]
+        elif format.lower() == "timestamp".lower():  # returns UTC timestamp in seconds
+            output = [UTCDateTime(t).timestamp for t in input]
+        elif format.lower() == "datetime64".lower():  # returns UTC timestamp in seconds
+            output = [np.datetime64(UTCDateTime(t)) for t in input]
+        else:
+            raise Exception("Output time format ({}) not understood.".format(output))
+
+    else:
+        raise Exception("Input time format ({}) not understood or supported.".format(type(input)))
+
+    return output
 
 def interval_range(start, stop, freq="1D", dtype="UTCDateTime", **kwargs):
     """INTERVAL_RANGE Wrapper for pd.interval_range() that always returns dates as dytpe as list of 2 element tuples
@@ -109,8 +154,8 @@ def time_range_dev(start, end, freq="1D", dur="freq", buffer=[0, 0], dtype="UTCD
     dur = freq if dur == "freq" else dur
     starts = pd.date_range(start.datetime, end.datetime, freq=freq, **kwargs)
     ends = starts + pd.Timedelta(dur)
-    starts = convert_timeformat(starts, "UTCDateTime", dtype) + buffer[0]
-    ends = convert_timeformat(ends, "UTCDateTime", dtype) + buffer[0]
+    starts = convert_timeformat(starts, output=dtype) + buffer[0]
+    ends = convert_timeformat(ends, output=dtype) + buffer[0]
 
     return starts, ends
 
