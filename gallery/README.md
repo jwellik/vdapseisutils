@@ -1,5 +1,5 @@
 ## VolcanoFigure
-VolcanoFigure creates a map, two cross sections, and a time series plot. It is designed to make square maps around a volcano for the purpose of plotting earthquake location data. Maps, cross sections, and time series plots can be made individually as well. Hillshade data taken from GMT is automatically added. The method returns a MatPlotLib Figure object so that the user can further customize the plot. See [Mapping_tutorial.py](https://github.com/jwellik/vdapseisutils/blob/main/gallery/Mapping_tutorial.py) for full usage details. 
+VolcanoFigure creates a map, two cross sections, and a time series plot. It is designed to make square maps around a volcano for the purpose of plotting earthquake location data. Maps, cross sections, and time series plots can be made individually as well. Hillshade is data taken from GMT is automatically added. The method returns a MatPlotLib Figure object so that the user can further customize the plot. See [Mapping_tutorial.py](https://github.com/jwellik/vdapseisutils/blob/main/gallery/Mapping_tutorial.py) for full usage details. 
 
 Run the example like so:
 ```
