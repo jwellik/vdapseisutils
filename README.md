@@ -28,7 +28,7 @@ VDAPSEISUTILS runs on Python 3.9. The suite of codes in this repository is compr
 These dependencies can be easily installed via [Anaconda](https://www.continuum.io/) on the command line. I *highly* recommend using a virtual environment so that your environment does not conflict with any other Python packages you may be using. This can be done with the following commands:
 ```
 $ conda config --add channels conda-forge
-$ conda create -n vseis399 python=3.9 obspy pandas cartopy pygmt bokeh
+$ conda create -n vseis399 python=3.9 obspy pandas cartopy pygmt bokeh timezonefinder
 ```
 
 ## Usage
