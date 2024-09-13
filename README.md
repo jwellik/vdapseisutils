@@ -28,7 +28,7 @@ VDAPSEISUTILS runs on Python 3.9. The suite of codes in this repository is compr
 These dependencies can be easily installed via [Anaconda](https://www.continuum.io/) on the command line. I *highly* recommend using a virtual environment so that your environment does not conflict with any other Python packages you may be using. This can be done with the following commands:
 ```
 $ conda config --add channels conda-forge
-$ conda create -n vseis399 python=3.9 obspy pandas cartopy pygmt bokeh timezonefinder
+$ conda create -n seismology312 python=3.12 obspy pandas cartopy pygmt bokeh timezonefinder
 ```
 
 ## Usage
@@ -37,12 +37,12 @@ This package is still in development. If you have trouble with these codes, let 
 $ cd /home/jwellik/PYTHON
 $ mv vdapseisutils-main vdapseisutils
 $ cd /home/jwellik/PYTHON/vdapseisutils/gallery
-$ conda activate vseis399
+$ conda activate seismology312
 $ python
 >>> import sys
 >>> sys.path.append("/home/jwellik/PYTHON")  # Add all codes in the repository to your path
->>> from vdapseisutils.gallery import VolcanoMap_Hood_earthquakes
->>> VolcanoMap_Hood_earthquakes.main()  # Make sure your terminal has graphics forwarding
+>>> from vdapseisutils.gallery import Mapping_tutorial.py
+>>> Mapping_tutorial.main()  # Make sure your terminal has graphics forwarding
 ```
 This will run a script that reads .arc files from Wy'East/Mt Hood, Oregon and plots them on a map and cross sections. Look at the [Gallery](https://github.com/jwellik/vdapseisutils/tree/main/gallery) for more examlpes and detailed usage.
 
