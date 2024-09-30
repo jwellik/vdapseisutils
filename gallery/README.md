@@ -13,11 +13,11 @@ $ python
 >>> from vdapseisutils.gallery import Mapping_tutorial
 >>> Mapping_tutporial.main()  # Make sure your terminal has graphics forwarding
 ```
-
-Here is a selection of figures produced:
 <img src="https://github.com/jwellik/vdapseisutils/blob/main/gallery/output/Mapping_tutorial/VolcanoFigure_Hood.png" width=600 alt="VolcanoFigure (Hood)" /><br>
 A VolcanoFigure with mostly default settings.
 <br><br>
+## Maps, Cross Sections, and Time Series
+Maps, cross sections, and time series plots can also be created individually. The methods also return MatPlotLib figures. Here are example outputs:<br><br>
 <img src="https://github.com/jwellik/vdapseisutils/blob/main/gallery/output/Mapping_tutorial/Bathymetry_BanuaWuhu_regional.png" width=600 alt="Map (Banua Wuhu)" /><br>
 Just a map, with a location map added in the top right corner. (Banua Wuhu, Indonesia)
 <br><br>
