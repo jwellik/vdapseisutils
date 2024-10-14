@@ -31,6 +31,16 @@ $ conda config --add channels conda-forge
 $ conda create -n vseis399 python=3.9 obspy pandas cartopy pygmt bokeh
 ```
 
+More packages to use for seismology312:
+```angular2html
+seismology312:
+
+conda install -c conda-forge numpy scipy pandas pytables scikit-learn
+conda install -c conda-forge matplotlib bokeh
+conda install -c conda-forge obspy pygmt cartopy
+conda install -c conda-forge timezonefinder
+```
+
 ## Usage
 This package is still in development. If you have trouble with these codes, let me know.
 ```
