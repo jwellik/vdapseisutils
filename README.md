@@ -22,13 +22,18 @@ This package is not quite ready yet for installation with pip. Instead, download
 
 Download the [zip file](https://github.com/jwellik/vdapseisutils/archive/main.zip) or use `git` to clone the entire repository to a working directory (e.g., mine is `/home/jwellik/PYTHON/vdapseisutils`).
 
-VDAPSEISUTILS runs on Python 3.9. The suite of codes in this repository is comprehensive. Thus, many dependencies are required to run all of them.  
-[numpy](http://www.numpy.org/) | [scipy](http://www.scipy.org/) | [matplotlib](http://www.matplotlib.org/) | [obspy](http://www.obspy.org/) | [pytables](http://www.pytables.org/) | [pandas](http://pandas.pydata.org/) | [bokeh](http://bokeh.pydata.org/) | [cartopy](http://scitools.org.uk/cartopy/)
+VDAPSEISUTILS runs on Python 3.12. The suite of codes in this repository is comprehensive. Thus, many dependencies are required to run all of them. Common packages include: 
 
-These dependencies can be easily installed via [Anaconda](https://www.continuum.io/) on the command line. I *highly* recommend using a virtual environment so that your environment does not conflict with any other Python packages you may be using. This can be done with the following commands:
+[numpy](http://www.numpy.org/) | [scipy](http://www.scipy.org/) | [matplotlib](http://www.matplotlib.org/) | [obspy](http://www.obspy.org/) | [pytables](http://www.pytables.org/) | [pandas](http://pandas.pydata.org/) | [bokeh](http://bokeh.pydata.org/) | [cartopy](http://scitools.org.uk/cartopy/) | [timezonefinder](https://pypi.org/project/timezonefinder/)
+
+Other git repositories are also installed as dependencies:
+- Claudio Satriano's [nllgrid](https://github.com/claudiodsf/nllgrid)
+
+All of these dependencies can be easily installed via [Anaconda](https://www.continuum.io/) on the command line. I *highly* recommend using a virtual environment so that your environment does not conflict with any other Python packages you may be using. This can be done with the following commands:
 ```
 $ conda config --add channels conda-forge
-$ conda create -n vseis399 python=3.9 obspy pandas cartopy pygmt bokeh
+$ conda create -n seismology312 python=3.12 obspy pandas cartopy pygmt bokeh timezonefinder
+$ conda install -c conda-forge nllgrid
 ```
 
 More packages to use for seismology312:
@@ -47,12 +52,12 @@ This package is still in development. If you have trouble with these codes, let 
 $ cd /home/jwellik/PYTHON
 $ mv vdapseisutils-main vdapseisutils
 $ cd /home/jwellik/PYTHON/vdapseisutils/gallery
-$ conda activate vseis399
+$ conda activate seismology312
 $ python
 >>> import sys
 >>> sys.path.append("/home/jwellik/PYTHON")  # Add all codes in the repository to your path
->>> from vdapseisutils.gallery import VolcanoMap_Hood_earthquakes
->>> VolcanoMap_Hood_earthquakes.main()  # Make sure your terminal has graphics forwarding
+>>> from vdapseisutils.gallery import Mapping_tutorial.py
+>>> Mapping_tutorial.main()  # Make sure your terminal has graphics forwarding
 ```
 This will run a script that reads .arc files from Wy'East/Mt Hood, Oregon and plots them on a map and cross sections. Look at the [Gallery](https://github.com/jwellik/vdapseisutils/tree/main/gallery) for more examlpes and detailed usage.
 
