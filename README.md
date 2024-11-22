@@ -24,7 +24,7 @@ Download the [zip file](https://github.com/jwellik/vdapseisutils/archive/main.zi
 
 VDAPSEISUTILS runs on Python 3.12. The suite of codes in this repository is comprehensive. Thus, many dependencies are required to run all of them. Common packages include: 
 
-[numpy](http://www.numpy.org/) | [scipy](http://www.scipy.org/) | [matplotlib](http://www.matplotlib.org/) | [obspy](http://www.obspy.org/) | [pytables](http://www.pytables.org/) | [pandas](http://pandas.pydata.org/) | [bokeh](http://bokeh.pydata.org/) | [cartopy](http://scitools.org.uk/cartopy/) | [timezonefinder](https://pypi.org/project/timezonefinder/)
+[numpy](http://www.numpy.org/) | [scipy](http://www.scipy.org/) | [matplotlib](http://www.matplotlib.org/) | [obspy](http://www.obspy.org/) | [pytables](http://www.pytables.org/) | [pandas](http://pandas.pydata.org/) | [bokeh](http://bokeh.pydata.org/) | [cartopy](http://scitools.org.uk/cartopy/) | [timezonefinder](https://pypi.org/project/timezonefinder/) | [unidecode](https://anaconda.org/conda-forge/unidecode)
 
 Other git repositories are also installed as dependencies:
 - Claudio Satriano's [nllgrid](https://github.com/claudiodsf/nllgrid)
@@ -32,7 +32,7 @@ Other git repositories are also installed as dependencies:
 All of these dependencies can be easily installed via [Anaconda](https://www.continuum.io/) on the command line. I *highly* recommend using a virtual environment so that your environment does not conflict with any other Python packages you may be using. This can be done with the following commands:
 ```
 $ conda config --add channels conda-forge
-$ conda create -n seismology312 python=3.12 obspy pandas cartopy pygmt bokeh timezonefinder
+$ conda create -n seismology312 python=3.12 obspy pandas cartopy pygmt bokeh timezonefinder unidecode
 $ conda install -c conda-forge nllgrid
 ```
 
