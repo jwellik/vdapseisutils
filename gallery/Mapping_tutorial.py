@@ -70,7 +70,7 @@ def map_usvolcs():
     plt.show()
 
     print("Map: Kīlauea")
-    fig2 = plt.figure(figsize=(16, 8))
+    fig2 = plt.figure(figsize=(8, 4))
     fig2 = Map(map_extent=kilauea["map_extent"], fig=fig2)
     fig2.add_hillshade()
     fig2.plot_catalog(cat_kilauea)
@@ -191,7 +191,7 @@ def volcano_figure():
     fig2.savefig("./output/Mapping_tutorial/VolcanoFigure_Hood.png")
     plt.show()
 
-    print("Make plots using VolcanoFigure: Gamalama")
+    print("Make plots using VolcanoFigure: Ruang")
 
     volc = ruang
 
@@ -237,14 +237,26 @@ def bathymetry_map_xsection():
     plt.savefig("./output/Mapping_tutorial/Bathymetry_BanuaWuhu_regional.png")
     plt.show()
 
+    # Regional Map
+    fig = plt.figure(figsize=(16/2, 8/2))  # width, height
+    spec = fig.add_gridspec(6, 2)  # rows, columns (height, width)
+    fig_m = fig.add_subfigure(spec[0:6, 0:1], zorder=0)  #
+    fig_m = Map(map_extent=volc["map_extent"], fig=fig_m)
+    fig_m.add_locationmap(volc["coords"][0], volc["coords"][1])
+    fig_m.add_hillshade(resolution="15s")
+    fig_m.plot(volc["coords"][0], volc["coords"][1], "^r")
+    [fig_m.plot(p[0][0], p[0][1], "ok") for p in volc["points"]]
+    plt.savefig("./output/Mapping_tutorial/Bathymetry_BanuaWuhu_regional.png")
+
     # Multiple Cross-Sections to various points
     i = 0
     for p in volc["points"]:
-        xs = CrossSection(points=[volc["coords"], p[0]], depth_extent=(-5, 2), resolution=50.0)
+        fig_i = fig.add_subfigure(spec[i, 1:2], zorder=0)  #
+        xs = CrossSection(points=[volc["coords"], p[0]], depth_extent=(-5, 2), resolution=50.0, fig=fig_i)
         xs.suptitle("Banua Wuhu to {}".format(p[1]))
         plt.savefig("./output/Mapping_tutorial/CrossSection_BanuaWuhu_{:02d}.png".format(i))
-        plt.show()
         i += 1
+    plt.show()
 
     print("Done.")
 

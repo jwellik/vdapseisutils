@@ -1,0 +1,29 @@
+NLLOC "./loc/hood.20210611.091352.grid0" "LOCATED" "Location completed."
+PUBLIC_ID None
+SIGNATURE "Jay Wellik - Volcano Disaster Assistance Program   obs:./obs/20210611-091351.obs   NLLoc:v7.00.13(17Jan2022)   run:30Dec2022 00h26m32"
+COMMENT "Hood, USA (initial test)"
+GRID  101 101 56  -50 -50 -5.46  1 1 1 PROB_DENSITY
+SEARCH OCTREE nInitial 4400 nEvaluated 20008 smallestNodeSide 0.312500/0.312500/0.312500 oct_tree_integral 1.070809e+02 scatter_volume 1.070809e+02
+HYPOCENTER  x -1.09375 y -0.46875 z 1.25875  OT 52.3832  ix -1 iy -1 iz -1 MAXIMUM_LIKELIHOOD
+GEOGRAPHIC  OT 2021 06 11  09 13 52.383183  Lat 45.369788 Long -121.708986 Depth 1.258750
+QUALITY  Pmax 6.78079e+11 MFmin 10.1139 MFmax 10.2541 RMS 0.0397545 Nphs 6 Gap 91.0468 Dist 2.89715 Mamp -9.90 0 Mdur -9.90 0
+VPVSRATIO  VpVsRatio -1  Npair 0  Diff -2e+30
+STATISTICS  ExpectX 1.795143 Y 28.360701 Z 30.570032  CovXX 26.8192 XY 21.1104 XZ 15.1392 YY 177.686 YZ 119.503 ZZ 141.978 EllAz1  99.9807 Dip1  2.81204 Len1  9.17731 Az2  13.2674 Dip2  -49.4121 Len2  11.7861 Len3  3.162201e+01
+STAT_GEOG  ExpectLat 45.628766 Long -121.671940 Depth 30.570032
+TRANSFORM  AZIMUTHAL_EQUIDIST RefEllipsoid WGS-84  LatOrig 45.374000  LongOrig -121.695000  RotCW 0.000000
+QML_OriginQuality  assocPhCt 8  usedPhCt 6  assocStaCt -1  usedStaCt 6  depthPhCt -1  stdErr 0.0397545  azGap 91.0468  secAzGap 151.828  gtLevel -  minDist 2.89715 maxDist 10.9791 medDist 5.96864
+QML_OriginUncertainty  horUnc -1  minHorUnc 7.41743  maxHorUnc 20.38  azMaxHorUnc 7.81727
+QML_ConfidenceEllipsoid  semiMajorAxisLength 31.622  semiMinorAxisLength 9.17731  semiIntermediateAxisLength 11.7861  majorAxisPlunge 40.4483  majorAxisAzimuth 7.58078  majorAxisRotation 22.2109
+FOCALMECH  Hyp  45.369788 -121.708986 1.258750 Mech  0 0 0 mf  0 nObs -1
+PHASE ID Ins Cmp On Pha  FM Date     HrMn   Sec     Err  ErrMag    Coda      Amp       Per  >   TTpred    Res       Weight    StaLoc(X  Y         Z)        SDist    SAzim  RAz  RDip RQual    Tcorr 
+YOCR   ?    Z    ? P      ? 20210611 0913   52.8800 GAU -6.00e-02 -1.00e+00 -1.00e+00 -1.00e+00 >    0.6734    0.0016    1.1860   -3.7954    0.5776   -1.9140    2.8972 291.17 291.2 137.6 10    -0.1782
+BRSP   ?    Z    ? P      ? 20210611 0913   52.7800 GAU -3.30e-01 -1.00e+00 -1.00e+00 -1.00e+00 >    0.7623   -0.4517    0.1890   -1.0497    3.0669   -2.0800    3.5360   0.71   0.7 133.4 10     0.0862
+LSON   ?    Z    ? P      u 20210611 0913   53.2400 GAU  1.00e-02 -1.00e+00 -1.00e+00 -1.00e+00 >    0.9207    0.0043    1.3452    3.7397   -1.6019   -1.8810    4.9645 103.19 103.2 122.3 10    -0.0682
+HOOD   ?    Z    ? P      u 20210611 0913   53.5300 GAU  2.00e-02 -1.00e+00 -1.00e+00 -1.00e+00 >    1.1761   -0.0212    1.2792    3.4492   -5.7585   -1.5120    6.9728 139.34 139.3 111.7 10    -0.0080
+VLL    ?    Z    ? P      u 20210611 0913   54.1700 GAU -1.50e-01 -1.00e+00 -1.00e+00 -1.00e+00 >    1.7105    0.0365    0.7627    1.1437    9.9264   -1.1950   10.6332  12.15  12.1 103.0 10     0.0398
+TDH    ?    Z    ? P      u 20210611 0913   54.1500 GAU -4.00e-02 -1.00e+00 -1.00e+00 -1.00e+00 >    1.7759    0.0218    1.2379   -7.5532   -9.3465   -1.5390   10.9791 216.04 216.0 104.3 10    -0.0308
+HIYU   ?    Z    ? P      u 20210611 0913   54.3800 GAU  9.00e-02 -1.00e+00 -1.00e+00 -1.00e+00 >    0.0000    0.0000    0.0000 -100000000000000000000.0000 -100000000000000000000.0000 -100000000000000000000.0000    0.0000   0.00 359.0  -1.0  0     0.0862
+SHRK   ?    Z    ? P      ? 20210611 0913   55.5700 GAU  1.40e-01 -1.00e+00 -1.00e+00 -1.00e+00 >    0.0000    0.0000    0.0000 -100000000000000000000.0000 -100000000000000000000.0000 -100000000000000000000.0000    0.0000   0.00 359.0  -1.0  0     0.2060
+END_PHASE
+END_NLLOC
+

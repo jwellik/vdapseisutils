@@ -1,1 +1,0 @@
-from vdapseisutils.utils.scutils.scutils import *

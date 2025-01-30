@@ -1,0 +1,76 @@
+
+#Average Phase Residuals (CalcResidual)  RMS_Max: 9999.000000  NRdgs_Min: -1  Gap_Max: 9999.000000  P_Res_Max: 1.000000  S_Res_Max: 1.000000  Ell_Len3_Max: 9999.900000  Hypo_Depth_Min: -9999.900000  Hypo_Depth_Max: 9999.900000  Hypo_Dist_Max: 1000000000000000019884624838656.000000
+#         ID      Phase   Nres      AveRes       StdDev       ResMin       ResMax     ignored
+LOCDELAY  BRSP P 27       0.014035     0.245675     -0.451671    0.713381     0
+LOCDELAY  HOOD P 43       0.004016     0.148804     -0.101717    0.956511     0
+LOCDELAY  HOOD S 1        0.007871     -1.000000    0.007871     0.007871     0
+LOCDELAY  LSON P 45       -0.026045    0.139273     -0.693588    0.166631     0
+LOCDELAY  LSON S 1        -0.002855    -1.000000    -0.002855    -0.002855    0
+LOCDELAY  PALM P 20       0.080816     0.274176     -0.233680    0.900209     0
+LOCDELAY  PALM S 1        -0.003264    -1.000000    -0.003264    -0.003264    0
+LOCDELAY  TDH P 40       -0.016387    0.078705     -0.345659    0.108010     0
+LOCDELAY  TDH S 1        0.005876     -1.000000    0.005876     0.005876     0
+LOCDELAY  TIMB P 35       0.025644     0.284954     -0.789523    0.916014     0
+LOCDELAY  TIMB S 1        0.003897     -1.000000    0.003897     0.003897     0
+LOCDELAY  VFP P 40       0.004318     0.034730     -0.055001    0.187177     0
+LOCDELAY  VFP S 1        -0.004806    -1.000000    -0.004806    -0.004806    0
+LOCDELAY  VLL P 15       0.062178     0.229148     -0.530943    0.546254     0
+LOCDELAY  YOCR P 42       -0.096749    0.196024     -0.900384    0.165271     0
+LOCDELAY  YOCR S 1        -0.012992    -1.000000    -0.012992    -0.012992    0
+
+#Total Phase Corrections (CalcResidual + InputDelay)  RMS_Max: 9999.000000  NRdgs_Min: -1  Gap_Max: 9999.000000  P_Res_Max: 1.000000  S_Res_Max: 1.000000  Ell_Len3_Max: 9999.900000  Hypo_Depth_Min: -9999.900000  Hypo_Depth_Max: 9999.900000  Hypo_Dist_Max: 1000000000000000019884624838656.000000
+#         ID      Phase   Nres      TotCorr      StdDev
+LOCDELAY  BRSP P 27       0.100242     0.245675    
+LOCDELAY  HOOD P 43       -0.004031    0.148804    
+LOCDELAY  HOOD S 1        -0.004554    -1.000000   
+LOCDELAY  LSON P 45       -0.094252    0.139273    
+LOCDELAY  LSON S 1        0.001359     -1.000000   
+LOCDELAY  PALM P 20       0.286865     0.274176    
+LOCDELAY  PALM S 1        -0.001741    -1.000000   
+LOCDELAY  TDH P 40       -0.047228    0.078705    
+LOCDELAY  TDH S 1        0.047663     -1.000000   
+LOCDELAY  TIMB P 35       0.058701     0.284954    
+LOCDELAY  TIMB S 1        -0.010652    -1.000000   
+LOCDELAY  VFP P 40       0.012204     0.034730    
+LOCDELAY  VFP S 1        0.135838     -1.000000   
+LOCDELAY  VLL P 15       0.101996     0.229148    
+LOCDELAY  YOCR P 42       -0.274971    0.196024    
+LOCDELAY  YOCR S 1        0.021073     -1.000000   
+
+#Average Phase Residuals PDF (CalcPDFResidual)  RMS_Max: 9999.000000  NRdgs_Min: -1  Gap_Max: 9999.000000  P_Res_Max: 1.000000  S_Res_Max: 1.000000  Ell_Len3_Max: 9999.900000  Hypo_Depth_Min: -9999.900000  Hypo_Depth_Max: 9999.900000  Hypo_Dist_Max: 1000000000000000019884624838656.000000
+#         ID      Phase   Nres      AveRes       StdDev       ResMin       ResMax     ignored
+LOCDELAY  BRSP P 0        0.000000     -1.000000    -0.451671    0.713381     0
+LOCDELAY  HOOD P 0        0.000000     -1.000000    -0.101717    0.956511     0
+LOCDELAY  HOOD S 0        0.000000     -1.000000    0.007871     0.007871     0
+LOCDELAY  LSON P 0        0.000000     -1.000000    -0.693588    0.166631     0
+LOCDELAY  LSON S 0        0.000000     -1.000000    -0.002855    -0.002855    0
+LOCDELAY  PALM P 0        0.000000     -1.000000    -0.233680    0.900209     0
+LOCDELAY  PALM S 0        0.000000     -1.000000    -0.003264    -0.003264    0
+LOCDELAY  TDH P 0        0.000000     -1.000000    -0.345659    0.108010     0
+LOCDELAY  TDH S 0        0.000000     -1.000000    0.005876     0.005876     0
+LOCDELAY  TIMB P 0        0.000000     -1.000000    -0.789523    0.916014     0
+LOCDELAY  TIMB S 0        0.000000     -1.000000    0.003897     0.003897     0
+LOCDELAY  VFP P 0        0.000000     -1.000000    -0.055001    0.187177     0
+LOCDELAY  VFP S 0        0.000000     -1.000000    -0.004806    -0.004806    0
+LOCDELAY  VLL P 0        0.000000     -1.000000    -0.530943    0.546254     0
+LOCDELAY  YOCR P 0        0.000000     -1.000000    -0.900384    0.165271     0
+LOCDELAY  YOCR S 0        0.000000     -1.000000    -0.012992    -0.012992    0
+
+#Total Phase Corrections PDF (CalcPDFResidual + InputDelay)  RMS_Max: 9999.000000  NRdgs_Min: -1  Gap_Max: 9999.000000  P_Res_Max: 1.000000  S_Res_Max: 1.000000  Ell_Len3_Max: 9999.900000  Hypo_Depth_Min: -9999.900000  Hypo_Depth_Max: 9999.900000  Hypo_Dist_Max: 1000000000000000019884624838656.000000
+#         ID      Phase   Nres      TotCorr      StdDev
+LOCDELAY  BRSP P 0        0.086207     -1.000000   
+LOCDELAY  HOOD P 0        -0.008047    -1.000000   
+LOCDELAY  HOOD S 0        -0.012425    -1.000000   
+LOCDELAY  LSON P 0        -0.068207    -1.000000   
+LOCDELAY  LSON S 0        0.004214     -1.000000   
+LOCDELAY  PALM P 0        0.206049     -1.000000   
+LOCDELAY  PALM S 0        0.001523     -1.000000   
+LOCDELAY  TDH P 0        -0.030841    -1.000000   
+LOCDELAY  TDH S 0        0.041787     -1.000000   
+LOCDELAY  TIMB P 0        0.033057     -1.000000   
+LOCDELAY  TIMB S 0        -0.014549    -1.000000   
+LOCDELAY  VFP P 0        0.007886     -1.000000   
+LOCDELAY  VFP S 0        0.140644     -1.000000   
+LOCDELAY  VLL P 0        0.039818     -1.000000   
+LOCDELAY  YOCR P 0        -0.178222    -1.000000   
+LOCDELAY  YOCR S 0        0.034065     -1.000000   
