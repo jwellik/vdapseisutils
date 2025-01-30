@@ -1,6 +1,6 @@
 <img src="https://github.com/jwellik/vdapseisutils/blob/main/img/vseis-logo.png" width=1510 alt="VDAP" />
 
-NOTE: THIS PACKAGE IS CURRENTLY BEING RESTRUCTURED SO THAT IT IS PIP-INSTALLABLE. PLEASE BE PATIENT.
+NOTE: THIS PACKAGE IS CURRENTLY BEING RESTRUCTURED SO THAT IT IS PIP-INSTALLABLE. PLEASE BE PATIENT. THE GALLERY EXAMPLES MAY NOT WORK DURING THIS TRANSITION.
 
 ## Overview
 VDAPSEISUTILS is a set of (mostly) Python code that provides easy methods for common tasks in operational volcano seismology.
