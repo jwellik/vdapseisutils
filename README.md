@@ -32,18 +32,11 @@ Other git repositories are also installed as dependencies:
 All of these dependencies can be easily installed via [Anaconda](https://www.continuum.io/) on the command line. I *highly* recommend using a virtual environment so that your environment does not conflict with any other Python packages you may be using. This can be done with the following commands:
 ```
 $ conda config --add channels conda-forge
-$ conda create -n seismology312 python=3.12 obspy pandas cartopy pygmt bokeh timezonefinder
+$ conda create -n seismology312 python=3.12 obspy pandas cartopy pygmt bokeh
+$ conda install -c conda-forge timezonefinder unidecode geopy
 $ conda install -c conda-forge nllgrid
-```
-
-More packages to use for seismology312:
-```angular2html
-seismology312:
-
-conda install -c conda-forge numpy scipy pandas pytables scikit-learn
-conda install -c conda-forge matplotlib bokeh
-conda install -c conda-forge obspy pygmt cartopy
-conda install -c conda-forge timezonefinder
+$ cd <path to vdapseisutils>
+$ pip install .
 ```
 
 ## Usage
