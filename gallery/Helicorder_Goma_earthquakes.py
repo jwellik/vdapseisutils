@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from obspy.clients.fdsn import Client
 from obspy import UTCDateTime
 from vdapseisutils.sandbox.swarmmpl import Helicorder, greyscale_hex
-
+#from vdapseisutils import Helicorder
 
 def format_datetime_yticklabels(datetime_list):
     """Formats the first datetime of each day as %Y/%m/%d and the rest as %H:%M"""
