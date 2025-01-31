@@ -33,6 +33,7 @@ All of these dependencies can be easily installed via [Anaconda](https://www.con
 ```
 $ conda config --add channels conda-forge
 $ conda create -n seismology312 python=3.12 obspy pandas cartopy pygmt bokeh
+$ conda activate seismology312
 $ conda install -c conda-forge timezonefinder unidecode geopy
 $ conda install -c conda-forge nllgrid
 $ cd <path to vdapseisutils>
