@@ -8,7 +8,8 @@ KIHOLO BAY EARTHQUAKE
 import obspy
 from obspy import UTCDateTime
 import matplotlib.pyplot as plt
-from vdapseisutils.sandbox.maps.maps import Map, CrossSection, TimeSeries, VolcanoFigure
+#from vdapseisutils.sandbox.maps.maps import Map, CrossSection, TimeSeries, VolcanoFigure
+from vdapseisutils import Map, CrossSection, TimeSeries, VolcanoFigure
 
 radial_extent = 10  # kilometers
 maxdepth = 20  # kilometers
