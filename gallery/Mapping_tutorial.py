@@ -62,7 +62,9 @@ print("Done.")
 
 def map_usvolcs():
 
-    print("Map: Rainier, Washginton")
+    print("Map")
+
+    print(">> Raininer")
     fig = Map(origin=(rainier["coords"][0], rainier["coords"][1]), radial_extent_km=15.0)
     fig.add_hillshade(resolution="01s")
     fig.suptitle("Rainier, Washington")
@@ -70,7 +72,7 @@ def map_usvolcs():
     fig.savefig("./output/Mapping_tutorial/Map_Rainier.png")
     plt.show()
 
-    print("Map: Kīlauea")
+    print(">> Kīlauea")
     fig2 = plt.figure(figsize=(8, 4))
     fig2 = Map(map_extent=kilauea["map_extent"], fig=fig2)
     fig2.add_hillshade()
@@ -86,40 +88,52 @@ def map_usvolcs():
 
 def xsection_usvolcs():
 
-    # # Compare the profile of three types of volcanoes
+    print("CrossSection: US Volcanoes")
 
     fig = plt.figure(figsize=(8, 10))
     subfigs = fig.subfigures(5, 1)
 
+    print(">> Mauna Kea")
     subfigs[0].suptitle("Mauna Kea (Shield Volcano)")
-    subfigs[0] = CrossSection(origin=(mauna_kea["coords"][0:2]), radius_km=25.0, azimuth=290, depth_extent=(-2, 5), fig=subfigs[0])
+    subfigs[0] = CrossSection(origin=(mauna_kea["coords"][0:2]), radius_km=25.0, azimuth=290, depth_extent=(-2, 5),
+                              resolution=500.0, fig=subfigs[0])
     subfigs[0].info()
 
+    print(">> Rainier")
     subfigs[1].suptitle("Rainier (Composite Stratovolcano)")
-    subfigs[1] = CrossSection(origin=(rainier["coords"][0:2]), radius_km=25.0, depth_extent=(-2, 5), fig=subfigs[1])
+    subfigs[1] = CrossSection(origin=(rainier["coords"][0:2]), radius_km=25.0, depth_extent=(-2, 5),
+                              resolution=500.0, fig=subfigs[1])
     subfigs[1].info()
 
+    print(">> Pavlof")
     subfigs[2].suptitle("Pavlof (Stratvolcano)")
-    subfigs[2] = CrossSection(origin=(pavlof["coords"][0:2]), radius_km=25.0, azimuth=0, depth_extent=(-2, 5), fig=subfigs[2])
+    subfigs[2] = CrossSection(origin=(pavlof["coords"][0:2]), radius_km=25.0, azimuth=0, depth_extent=(-2, 5),
+                              resolution=500.0, fig=subfigs[2])
     subfigs[2].info()
 
     # Providing no location iformation draws a cross section near Mount St Helens, by default
+    print(">> St Helens")
     subfigs[3].suptitle("Mount St. Helens: West to East")
-    subfigs[3] = CrossSection(depth_extent=(-2, 5), radius_km=25.0, resolution=50.0, fig=subfigs[3])
+    subfigs[3] = CrossSection(depth_extent=(-2, 5), radius_km=25.0, resolution=200.0, fig=subfigs[3])
     subfigs[3].info()
 
+    print(">> Crater Lake")
     subfigs[4].suptitle("Crater Lake - West to East")
-    subfigs[4] = CrossSection(points=[(42.967831, -122.349195), (42.895858, -121.845056)], depth_extent=(-2, 5), resolution=50.0, fig=subfigs[4])
+    subfigs[4] = CrossSection(points=[(42.967831, -122.349195), (42.895858, -121.845056)], depth_extent=(-2, 5), fig=subfigs[4])
     subfigs[4].info()
 
     fig.savefig("./output/Mapping_tutorial/CrossSection_USvolcs.png")
     plt.show()
 
+    print("Done.")
+    print()
+
 
 def timeseries_msas_swarm():
 
-    print("Earthquake Timeseries")
+    print("Timeseries")
 
+    print(">> Mainshock-Aftershock Sequences & Swarms")
     # # Mainshocks, Aftershocks, and Swarms
     fig = plt.figure(figsize=(8, 6))
     subfigs = fig.subfigures(3, 1)
@@ -141,6 +155,7 @@ def timeseries_msas_swarm():
 
 
     ## Mount St Helens 1980 Eruption and Earthquake Depths
+    print(">> St Helens 1980 Unrest")
     fig = TimeSeries()
     fig.suptitle("Earthquake depth: Mount St Helens 1980")
     fig.axvline(UTCDateTime("1980/03/27"), color="b")  # First phreatic eruption
@@ -155,9 +170,9 @@ def timeseries_msas_swarm():
 
 def map_xsction_kilauea():
 
-    print("Map and Cross Section: Kilauea")
+    print("Map and CrossSection")
 
-    print("Map: Kīlauea")
+    print(">> Kīlauea")
     fig = Map(map_extent=kilauea["map_extent"])
     fig.add_hillshade()
     fig.plot_catalog(cat_kilauea)
@@ -177,8 +192,9 @@ def volcano_figure():
     creates a Figure object with subfigures for each plot.
     """
 
-    print("Make plots using VolcanoFigure: Mt Hood")
+    print("VolcanoFigure")
 
+    print(">> Mt Hood")
     volc = hood
     cat = cat_hood_msas
 
@@ -192,8 +208,7 @@ def volcano_figure():
     fig2.savefig("./output/Mapping_tutorial/VolcanoFigure_Hood.png")
     plt.show()
 
-    print("Make plots using VolcanoFigure: Ruang")
-
+    print(">> Ruang, Indonesia")
     volc = ruang
 
     fig2 = plt.figure(figsize=(8, 8), dpi=300)  # width, height
@@ -211,8 +226,7 @@ def volcano_figure():
 
 def bathymetry_map_xsection():
 
-    print(">>> Plot from components (Banua Wuhu)...")
-
+    print(">>> Plot from components (Banua Wuhu, Indonesia)...")
 
     volc = banua_wuhu
 
@@ -253,13 +267,14 @@ def bathymetry_map_xsection():
     i = 0
     for p in volc["points"]:
         fig_i = fig.add_subfigure(spec[i, 1:2], zorder=0)  #
-        xs = CrossSection(points=[volc["coords"], p[0]], depth_extent=(-5, 2), resolution=50.0, fig=fig_i)
+        xs = CrossSection(points=[volc["coords"], p[0]], depth_extent=(-5, 2), resolution=500.0, fig=fig_i)
         xs.suptitle("Banua Wuhu to {}".format(p[1]))
         plt.savefig("./output/Mapping_tutorial/CrossSection_BanuaWuhu_{:02d}.png".format(i))
         i += 1
     plt.show()
 
     print("Done.")
+    print()
 
 
 if __name__ == '__main__':
