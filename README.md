@@ -39,19 +39,3 @@ $ conda install -c conda-forge nllgrid
 $ cd <path to vdapseisutils>
 $ pip install .
 ```
-
-## Usage
-This package is still in development. If you have trouble with these codes, let me know.
-```
-$ cd /home/jwellik/PYTHON
-$ mv vdapseisutils-main vdapseisutils
-$ cd /home/jwellik/PYTHON/vdapseisutils/gallery
-$ conda activate seismology312
-$ python
->>> import sys
->>> sys.path.append("/home/jwellik/PYTHON")  # Add all codes in the repository to your path
->>> from vdapseisutils.gallery import Mapping_tutorial.py
->>> Mapping_tutorial.main()  # Make sure your terminal has graphics forwarding
-```
-This will run a script that reads .arc files from Wy'East/Mt Hood, Oregon and plots them on a map and cross sections. Look at the [Gallery](https://github.com/jwellik/vdapseisutils/tree/main/gallery) for more examlpes and detailed usage.
-
