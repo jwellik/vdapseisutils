@@ -16,6 +16,7 @@ TODO yticklabels - extend to right axis
 TODO Default behavior & Swarm behavior
 TODO Suptitle needs slight alpha background
 [x] Force interval to be 15, 30, 60, or divisible by 60
+TODO Clip threshold
 """
 
 import numpy as np
@@ -194,6 +195,38 @@ class Helicorder(plt.Figure):
         ax.plot(x_pos, y_pos, marker=marker, color=color,
                 markersize=markersize, markeredgecolor=markeredgecolor,
                 linewidth=linewidth, **kwargs)
+
+    def highlight(self, start_end_times, color="yellow", alpha=0.5, **kwargs):
+        """
+
+        :param start_end_times: list of start and time tuples
+        :param color:
+        :param alpha:
+        :param kwargs:
+        :return:
+        """
+
+        import matplotlib.patches as patches
+
+        for times in start_end_times:
+
+            x0, y0 = self._time2xy(times[0])
+            x1, y1 = self._time2xy(times[1])
+
+            yvals = np.arange(y0, y1 - 1, -1)  # create array of y values
+            xvals0 = np.zeros(np.shape(yvals))  # create array of zeros
+            xvals1 = np.zeros(np.shape(yvals)) + self.width * self._dpi
+            xvals0[0] = x0
+            xvals1[-1] = x1
+            widths = xvals1 - xvals0
+
+            for x, y, w in zip(xvals0, yvals, widths):
+                # Add -0.5 + 0.05 to y so that y value is just a little above bottom of line
+                # make height=0.9 so that it doesn't take up quite the whole line
+                print(x, y, w)
+                rect = patches.Rectangle((x, y - 0.5 + 0.05), w, 0.9, edgecolor=color, facecolor=color, alpha=alpha)
+                self.axes[0].add_patch(rect)
+
 
     def _time2xy(self, time):
         """JJW: Stolen from ObsPy source code (https://docs.obspy.org/_modules/obspy/imaging/waveform.html#WaveformPlotting.plot_day)"""
