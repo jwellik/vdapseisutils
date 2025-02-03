@@ -32,11 +32,10 @@ def main():
     h = Helicorder(st)
     plt.show()
 
-
     print("Creating Helicorder... (60 minute interval)")
     h = Helicorder(st, interval=60, color=swarm_colors_hex,  # define the helicorder specs
                    # show_y_UTC_label=True, right_vertical_labels=True,
-                   title="Earthquakes at Goma (" + st[0].id + ")",
+                   title="Earthquakes in Goma (" + st[0].id + ")",
                    )
     h.plot_tags(UTCDateTime("2021/05/20 01:36:30"), color="yellow", markersize=8)  # plot a single time
     h.plot_tags(UTCDateTime("2021/05/20 17:19:35"), marker="|", markeredgecolor="blue", markersize=15)  # plot a single time as a P arrival
@@ -45,9 +44,9 @@ def main():
     h.plot_tags([UTCDateTime("2021/05/20 08:31:00"), "2021/05/20 02:08:00"], color="yellow", marker="*", markersize=15)  # plot a list of times given in any format
     plt.show()  # show the helicorder
 
-
     print("Creating plot... (Strange interval)")
-    h = Helicorder(st, interval=43)
+    h = Helicorder(st, interval=43, color=greyscale_hex,  # define the helicorder specs
+                   )
     plt.show()  # show the helicorder
 
     print("Done.")
