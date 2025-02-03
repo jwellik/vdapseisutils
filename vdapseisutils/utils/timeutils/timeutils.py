@@ -7,7 +7,7 @@ from pandas import Timestamp as pdTimestamp
 from numpy import datetime64 as npdatetime64
 
 # Examples
-A = UTCDateTime(1980, 5, 18)  # 1980-05-18T00:00:00.000000Z <obspy.core.utcdatetime.UTCDateTime>
+A = UTCDateTime(1980, 5, 18)  # 1980-05-18T00:00:00.000000Z <obspy.swarmmpl.utcdatetime.UTCDateTime>
 B = datetime.datetime(1980, 5, 18)  # datetime.datetime(1980, 5, 18, 0, 0) <datetime.datetime>
 C = mdates.datestr2num("1980/05/18")  # 3790 <numpy.float64>
 D = pdTimestamp("1980/05/18")  #  Timestamp('1980-05-18 00:00:00') <pandas._libs.tslibs.timestamps.Timestamp>

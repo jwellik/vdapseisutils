@@ -2,7 +2,7 @@ from obspy import UTCDateTime
 from obspy.geodetics.base import kilometers2degrees as km2d
 from obspy.core.event.base import WaveformStreamID as ObsPyStreamID
 from obspy.clients.fdsn import Client
-# from vdapseisutils.core.datasource.nslcutils import WaveformStreamID
+# from vdapseisutils.swarmmpl.datasource.nslcutils import WaveformStreamID
 from vdapseisutils.utils.obspyutils.inventoryutils import inventory2df, df2inventory, overwrite_loc_code
 
 

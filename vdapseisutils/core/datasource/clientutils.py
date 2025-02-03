@@ -20,9 +20,9 @@ def _safe_merge(st, fill_value):
     Aaron Wech.
 
     Args:
-        st (:class:`~obspy.core.stream.Stream`): Input Stream (modified in-place!)
+        st (:class:`~obspy.swarmmpl.stream.Stream`): Input Stream (modified in-place!)
         fill_value (int, float, str, or None): Passed on to
-            :meth:`obspy.core.st.Stream.merge`
+            :meth:`obspy.swarmmpl.st.Stream.merge`
     """
 
     import numpy as np
