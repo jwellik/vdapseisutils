@@ -1,0 +1,16 @@
+# Custom Matplotlib Settings for SWARMMPL
+svg.fonttype : none
+# font.family : sans-serif
+# font.sans-serif : Arial, Helvetica, DejaVu Sans
+axes.titlesize : 16
+font.size : 12                  # used for all unspecified text boxes (subtitles, annotations)
+# axes.subtitlesize : 12        # subtitles don't actually exist in mpl
+axes.labelsize : 10
+xtick.labelsize : 10
+ytick.labelsize : 10
+lines.linewidth : 1
+# annotation.fontsize : 10      # does not exist in rcparams
+axes.labelcolor : grey          # Affects axis labels
+xtick.color : grey              # Affects x-axis tick labels
+ytick.color : grey              # Affects y-axis tick labels
+savefig.dpi : 300
