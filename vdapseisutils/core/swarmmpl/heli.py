@@ -196,7 +196,7 @@ class Helicorder(plt.Figure):
                 markersize=markersize, markeredgecolor=markeredgecolor,
                 linewidth=linewidth, **kwargs)
 
-    def highlight(self, start_end_times, color="yellow", alpha=0.5, **kwargs):
+    def highlight(self, start_end_times, color="yellow", alpha=0.7, **kwargs):
         """
 
         :param start_end_times: list of start and time tuples
@@ -223,8 +223,7 @@ class Helicorder(plt.Figure):
             for x, y, w in zip(xvals0, yvals, widths):
                 # Add -0.5 + 0.05 to y so that y value is just a little above bottom of line
                 # make height=0.9 so that it doesn't take up quite the whole line
-                print(x, y, w)
-                rect = patches.Rectangle((x, y - 0.5 + 0.05), w, 0.9, edgecolor=color, facecolor=color, alpha=alpha)
+                rect = patches.Rectangle((x, y - 0.5 + 0.05), w, 0.9, edgecolor=color, facecolor=color, alpha=alpha, **kwargs)
                 self.axes[0].add_patch(rect)
 
 
@@ -244,11 +243,6 @@ class Helicorder(plt.Figure):
         # y_pos = self.extreme_values.shape[0] - int(event_frac) - 0.5
         y_pos = self.nlines - int(event_frac) - 0.5
         x_pos = (event_frac - int(event_frac)) * self.width * self._dpi
-
-        # print("{a} | {b} | {c} | {d} | {e} | ({f}, {g})".format(
-        #     a = time, b = self.line_len_minutes, c = self.interval,
-        #     d = int_frac, e = event_frac,
-        #     f = x_pos, g = y_pos))
 
         return x_pos, y_pos
 

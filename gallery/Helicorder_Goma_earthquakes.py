@@ -34,7 +34,6 @@ def main():
 
     print("Creating Helicorder... (60 minute interval)")
     h = Helicorder(st, interval=60, color=swarm_colors_hex,  # define the helicorder specs
-                   # show_y_UTC_label=True, right_vertical_labels=True,
                    title="Earthquakes in Goma (" + st[0].id + ")",
                    )
     h.plot_tags(UTCDateTime("2021/05/20 01:36:30"), color="yellow", markersize=8)  # plot a single time
