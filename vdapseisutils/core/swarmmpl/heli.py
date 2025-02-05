@@ -17,6 +17,7 @@ TODO Default behavior & Swarm behavior
 TODO Suptitle needs slight alpha background
 [x] Force interval to be 15, 30, 60, or divisible by 60
 TODO Clip threshold
+TODO Why isn't title getting added by default?
 """
 
 import numpy as np
