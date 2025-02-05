@@ -1,0 +1,565 @@
+<?xml version='1.0' encoding='utf-8'?>
+<q:quakeml xmlns:q="http://quakeml.org/xmlns/quakeml/1.2" xmlns:iris="http://service.iris.edu/fdsnws/event/1/" xmlns="http://quakeml.org/xmlns/bed/1.2" xmlns:xsi="http://www.w3.org/2000/10/XMLSchema-instance">
+  <eventParameters publicID="smi:service.iris.edu/fdsnws/event/1/query">
+    <event publicID="smi:service.iris.edu/fdsnws/event/1/query?eventid=11419659">
+      <preferredOriginID>smi:service.iris.edu/fdsnws/event/1/query?originid=45204487</preferredOriginID>
+      <preferredMagnitudeID>smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206376562</preferredMagnitudeID>
+      <type>earthquake</type>
+      <description iris:FEcode="429">
+        <text>MID-INDIAN RIDGE</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <origin publicID="smi:service.iris.edu/fdsnws/event/1/query?originid=45204487" iris:contributorOriginId="us6000eeuk" iris:contributor="us" iris:contributorEventId="us6000eeuk" iris:catalog="NEIC PDE">
+        <time>
+          <value>2021-05-20T22:25:39.247000Z</value>
+        </time>
+        <latitude>
+          <value>-33.4429</value>
+        </latitude>
+        <longitude>
+          <value>77.8786</value>
+        </longitude>
+        <depth>
+          <value>10000.0</value>
+        </depth>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </origin>
+      <magnitude publicID="smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206376562">
+        <mag>
+          <value>4.9</value>
+        </mag>
+        <type>mb</type>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </magnitude>
+    </event>
+    <event publicID="smi:service.iris.edu/fdsnws/event/1/query?eventid=11416806">
+      <preferredOriginID>smi:service.iris.edu/fdsnws/event/1/query?originid=45170687</preferredOriginID>
+      <preferredMagnitudeID>smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206403505</preferredMagnitudeID>
+      <type>earthquake</type>
+      <description iris:FEcode="192">
+        <text>NEW BRITAIN REGION, P.N.G.</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <origin publicID="smi:service.iris.edu/fdsnws/event/1/query?originid=45170687" iris:contributorOriginId="us7000e4wg" iris:contributor="us" iris:contributorEventId="us7000e4wg" iris:catalog="NEIC PDE">
+        <time>
+          <value>2021-05-20T21:42:27.628000Z</value>
+        </time>
+        <latitude>
+          <value>-5.3958</value>
+        </latitude>
+        <longitude>
+          <value>151.7541</value>
+        </longitude>
+        <depth>
+          <value>35000.0</value>
+        </depth>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </origin>
+      <magnitude publicID="smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206403505">
+        <mag>
+          <value>4.9</value>
+        </mag>
+        <type>mb</type>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </magnitude>
+    </event>
+    <event publicID="smi:service.iris.edu/fdsnws/event/1/query?eventid=11416797">
+      <preferredOriginID>smi:service.iris.edu/fdsnws/event/1/query?originid=45170597</preferredOriginID>
+      <preferredMagnitudeID>smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206403489</preferredMagnitudeID>
+      <type>earthquake</type>
+      <description iris:FEcode="173">
+        <text>TONGA ISLANDS</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <origin publicID="smi:service.iris.edu/fdsnws/event/1/query?originid=45170597" iris:contributorOriginId="us7000e4w5" iris:contributor="us" iris:contributorEventId="us7000e4w5" iris:catalog="NEIC PDE">
+        <time>
+          <value>2021-05-20T21:03:31.702000Z</value>
+        </time>
+        <latitude>
+          <value>-21.4864</value>
+        </latitude>
+        <longitude>
+          <value>-174.208</value>
+        </longitude>
+        <depth>
+          <value>10000.0</value>
+        </depth>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </origin>
+      <magnitude publicID="smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206403489">
+        <mag>
+          <value>4.8</value>
+        </mag>
+        <type>mb</type>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </magnitude>
+    </event>
+    <event publicID="smi:service.iris.edu/fdsnws/event/1/query?eventid=11416791">
+      <preferredOriginID>smi:service.iris.edu/fdsnws/event/1/query?originid=45170591</preferredOriginID>
+      <preferredMagnitudeID>smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206403484</preferredMagnitudeID>
+      <type>earthquake</type>
+      <description iris:FEcode="686">
+        <text>WEST CHILE RISE</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <origin publicID="smi:service.iris.edu/fdsnws/event/1/query?originid=45170591" iris:contributorOriginId="us7000e4w3" iris:contributor="us" iris:contributorEventId="us7000e4w3" iris:catalog="NEIC PDE">
+        <time>
+          <value>2021-05-20T21:01:27.740000Z</value>
+        </time>
+        <latitude>
+          <value>-36.7269</value>
+        </latitude>
+        <longitude>
+          <value>-96.3368</value>
+        </longitude>
+        <depth>
+          <value>10000.0</value>
+        </depth>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </origin>
+      <magnitude publicID="smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206403484">
+        <mag>
+          <value>5.0</value>
+        </mag>
+        <type>mb</type>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </magnitude>
+    </event>
+    <event publicID="smi:service.iris.edu/fdsnws/event/1/query?eventid=11416742">
+      <preferredOriginID>smi:service.iris.edu/fdsnws/event/1/query?originid=45170038</preferredOriginID>
+      <preferredMagnitudeID>smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206669166</preferredMagnitudeID>
+      <type>earthquake</type>
+      <description iris:FEcode="123">
+        <text>NORTHERN CHILE</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <origin publicID="smi:service.iris.edu/fdsnws/event/1/query?originid=45170038" iris:contributorOriginId="us7000e4ur" iris:contributor="us" iris:contributorEventId="usauto7000e4ur,us7000e4ur" iris:catalog="NEIC PDE">
+        <time>
+          <value>2021-05-20T18:27:54.629000Z</value>
+        </time>
+        <latitude>
+          <value>-22.209</value>
+        </latitude>
+        <longitude>
+          <value>-68.5197</value>
+        </longitude>
+        <depth>
+          <value>114750.0</value>
+        </depth>
+        <creationInfo>
+          <author>us,usauto</author>
+        </creationInfo>
+      </origin>
+      <magnitude publicID="smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206669166">
+        <mag>
+          <value>5.2</value>
+        </mag>
+        <type>Mww</type>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </magnitude>
+    </event>
+    <event publicID="smi:service.iris.edu/fdsnws/event/1/query?eventid=11416774">
+      <preferredOriginID>smi:service.iris.edu/fdsnws/event/1/query?originid=45170336</preferredOriginID>
+      <preferredMagnitudeID>smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206479046</preferredMagnitudeID>
+      <type>earthquake</type>
+      <description iris:FEcode="193">
+        <text>SOLOMON ISLANDS</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <origin publicID="smi:service.iris.edu/fdsnws/event/1/query?originid=45170336" iris:contributorOriginId="us7000e4uq" iris:contributor="us" iris:contributorEventId="us7000e4uq" iris:catalog="NEIC PDE">
+        <time>
+          <value>2021-05-20T18:19:00.787000Z</value>
+        </time>
+        <latitude>
+          <value>-9.9273</value>
+        </latitude>
+        <longitude>
+          <value>161.3642</value>
+        </longitude>
+        <depth>
+          <value>83490.0</value>
+        </depth>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </origin>
+      <magnitude publicID="smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206479046">
+        <mag>
+          <value>4.8</value>
+        </mag>
+        <type>mb</type>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </magnitude>
+    </event>
+    <event publicID="smi:service.iris.edu/fdsnws/event/1/query?eventid=11416765">
+      <preferredOriginID>smi:service.iris.edu/fdsnws/event/1/query?originid=45170236</preferredOriginID>
+      <preferredMagnitudeID>smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206478998</preferredMagnitudeID>
+      <type>earthquake</type>
+      <description iris:FEcode="192">
+        <text>NEW BRITAIN REGION, P.N.G.</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <origin publicID="smi:service.iris.edu/fdsnws/event/1/query?originid=45170236" iris:contributorOriginId="us7000e4u7" iris:contributor="us" iris:contributorEventId="us7000e4u7" iris:catalog="NEIC PDE">
+        <time>
+          <value>2021-05-20T17:15:39.488000Z</value>
+        </time>
+        <latitude>
+          <value>-6.234</value>
+        </latitude>
+        <longitude>
+          <value>151.2837</value>
+        </longitude>
+        <depth>
+          <value>10000.0</value>
+        </depth>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </origin>
+      <magnitude publicID="smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206478998">
+        <mag>
+          <value>4.9</value>
+        </mag>
+        <type>mb</type>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </magnitude>
+    </event>
+    <event publicID="smi:service.iris.edu/fdsnws/event/1/query?eventid=11416713">
+      <preferredOriginID>smi:service.iris.edu/fdsnws/event/1/query?originid=45169589</preferredOriginID>
+      <preferredMagnitudeID>smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206478949</preferredMagnitudeID>
+      <type>earthquake</type>
+      <description iris:FEcode="432">
+        <text>CROZET ISLANDS REGION</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <origin publicID="smi:service.iris.edu/fdsnws/event/1/query?originid=45169589" iris:contributorOriginId="us7000e4u0" iris:contributor="us" iris:contributorEventId="usauto7000e4u0,us7000e4u0" iris:catalog="NEIC PDE">
+        <time>
+          <value>2021-05-20T17:05:17.860000Z</value>
+        </time>
+        <latitude>
+          <value>-41.0452</value>
+        </latitude>
+        <longitude>
+          <value>44.2455</value>
+        </longitude>
+        <depth>
+          <value>10000.0</value>
+        </depth>
+        <creationInfo>
+          <author>us,usauto</author>
+        </creationInfo>
+      </origin>
+      <magnitude publicID="smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206478949">
+        <mag>
+          <value>5.7</value>
+        </mag>
+        <type>Mww</type>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </magnitude>
+    </event>
+    <event publicID="smi:service.iris.edu/fdsnws/event/1/query?eventid=11416762">
+      <preferredOriginID>smi:service.iris.edu/fdsnws/event/1/query?originid=45170190</preferredOriginID>
+      <preferredMagnitudeID>smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206416096</preferredMagnitudeID>
+      <type>earthquake</type>
+      <description iris:FEcode="248">
+        <text>PHILIPPINE ISLANDS REGION</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <origin publicID="smi:service.iris.edu/fdsnws/event/1/query?originid=45170190" iris:contributorOriginId="us7000e4tz" iris:contributor="us" iris:contributorEventId="us7000e4tz" iris:catalog="NEIC PDE">
+        <time>
+          <value>2021-05-20T17:00:54.249000Z</value>
+        </time>
+        <latitude>
+          <value>10.2141</value>
+        </latitude>
+        <longitude>
+          <value>126.138</value>
+        </longitude>
+        <depth>
+          <value>57240.0</value>
+        </depth>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </origin>
+      <magnitude publicID="smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206416096">
+        <mag>
+          <value>4.6</value>
+        </mag>
+        <type>mb</type>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </magnitude>
+    </event>
+    <event publicID="smi:service.iris.edu/fdsnws/event/1/query?eventid=11416686">
+      <preferredOriginID>smi:service.iris.edu/fdsnws/event/1/query?originid=45169387</preferredOriginID>
+      <preferredMagnitudeID>smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206668236</preferredMagnitudeID>
+      <type>earthquake</type>
+      <description iris:FEcode="280">
+        <text>BANDA SEA</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <origin publicID="smi:service.iris.edu/fdsnws/event/1/query?originid=45169387" iris:contributorOriginId="us7000e4sn" iris:contributor="us" iris:contributorEventId="us7000e4sn" iris:catalog="NEIC PDE">
+        <time>
+          <value>2021-05-20T15:27:10.445000Z</value>
+        </time>
+        <latitude>
+          <value>-7.4027</value>
+        </latitude>
+        <longitude>
+          <value>128.622</value>
+        </longitude>
+        <depth>
+          <value>163580.0</value>
+        </depth>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </origin>
+      <magnitude publicID="smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206668236">
+        <mag>
+          <value>4.9</value>
+        </mag>
+        <type>mb</type>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </magnitude>
+    </event>
+    <event publicID="smi:service.iris.edu/fdsnws/event/1/query?eventid=11416665">
+      <preferredOriginID>smi:service.iris.edu/fdsnws/event/1/query?originid=45168936</preferredOriginID>
+      <preferredMagnitudeID>smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206596226</preferredMagnitudeID>
+      <type>earthquake</type>
+      <description iris:FEcode="259">
+        <text>MINDANAO, PHILIPPINES</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <origin publicID="smi:service.iris.edu/fdsnws/event/1/query?originid=45168936" iris:contributorOriginId="us7000e4qj" iris:contributor="us" iris:contributorEventId="us7000e4qj" iris:catalog="NEIC PDE">
+        <time>
+          <value>2021-05-20T09:18:09.221000Z</value>
+        </time>
+        <latitude>
+          <value>5.8895</value>
+        </latitude>
+        <longitude>
+          <value>126.2085</value>
+        </longitude>
+        <depth>
+          <value>97730.0</value>
+        </depth>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </origin>
+      <magnitude publicID="smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206596226">
+        <mag>
+          <value>4.6</value>
+        </mag>
+        <type>mb</type>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </magnitude>
+    </event>
+    <event publicID="smi:service.iris.edu/fdsnws/event/1/query?eventid=11420373">
+      <preferredOriginID>smi:service.iris.edu/fdsnws/event/1/query?originid=45214486</preferredOriginID>
+      <preferredMagnitudeID>smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206396388</preferredMagnitudeID>
+      <type>earthquake</type>
+      <description iris:FEcode="266">
+        <text>NORTHERN MOLUCCA SEA</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <origin publicID="smi:service.iris.edu/fdsnws/event/1/query?originid=45214486" iris:contributorOriginId="us6000eeu2" iris:contributor="us" iris:contributorEventId="us6000eeu2" iris:catalog="NEIC PDE">
+        <time>
+          <value>2021-05-20T08:02:30.209000Z</value>
+        </time>
+        <latitude>
+          <value>1.0184</value>
+        </latitude>
+        <longitude>
+          <value>126.272</value>
+        </longitude>
+        <depth>
+          <value>11520.0</value>
+        </depth>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </origin>
+      <magnitude publicID="smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206396388">
+        <mag>
+          <value>4.6</value>
+        </mag>
+        <type>mb</type>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </magnitude>
+    </event>
+    <event publicID="smi:service.iris.edu/fdsnws/event/1/query?eventid=11422906">
+      <preferredOriginID>smi:service.iris.edu/fdsnws/event/1/query?originid=45257936</preferredOriginID>
+      <preferredMagnitudeID>smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206474359</preferredMagnitudeID>
+      <type>earthquake</type>
+      <description iris:FEcode="684">
+        <text>SOUTHERN EAST PACIFIC RISE</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <origin publicID="smi:service.iris.edu/fdsnws/event/1/query?originid=45257936" iris:contributorOriginId="us6000eeur" iris:contributor="us" iris:contributorEventId="us6000eeur" iris:catalog="NEIC PDE">
+        <time>
+          <value>2021-05-20T06:59:24.875000Z</value>
+        </time>
+        <latitude>
+          <value>-36.6068</value>
+        </latitude>
+        <longitude>
+          <value>-110.8595</value>
+        </longitude>
+        <depth>
+          <value>10000.0</value>
+        </depth>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </origin>
+      <magnitude publicID="smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206474359">
+        <mag>
+          <value>4.9</value>
+        </mag>
+        <type>mb</type>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </magnitude>
+    </event>
+    <event publicID="smi:service.iris.edu/fdsnws/event/1/query?eventid=11416580">
+      <preferredOriginID>smi:service.iris.edu/fdsnws/event/1/query?originid=45167736</preferredOriginID>
+      <preferredMagnitudeID>smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206474304</preferredMagnitudeID>
+      <type>earthquake</type>
+      <description iris:FEcode="173">
+        <text>TONGA ISLANDS</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <origin publicID="smi:service.iris.edu/fdsnws/event/1/query?originid=45167736" iris:contributorOriginId="us7000e4nd" iris:contributor="us" iris:contributorEventId="us7000e4nd" iris:catalog="NEIC PDE">
+        <time>
+          <value>2021-05-20T06:24:17.545000Z</value>
+        </time>
+        <latitude>
+          <value>-21.0329</value>
+        </latitude>
+        <longitude>
+          <value>-173.9245</value>
+        </longitude>
+        <depth>
+          <value>10000.0</value>
+        </depth>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </origin>
+      <magnitude publicID="smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206474304">
+        <mag>
+          <value>5.0</value>
+        </mag>
+        <type>Mww</type>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </magnitude>
+    </event>
+    <event publicID="smi:service.iris.edu/fdsnws/event/1/query?eventid=11422883">
+      <preferredOriginID>smi:service.iris.edu/fdsnws/event/1/query?originid=45257286</preferredOriginID>
+      <preferredMagnitudeID>smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206473882</preferredMagnitudeID>
+      <type>earthquake</type>
+      <description iris:FEcode="410">
+        <text>SOUTHERN MID-ATLANTIC RIDGE</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <origin publicID="smi:service.iris.edu/fdsnws/event/1/query?originid=45257286" iris:contributorOriginId="us6000eetz" iris:contributor="us" iris:contributorEventId="us6000eetz" iris:catalog="NEIC PDE">
+        <time>
+          <value>2021-05-20T06:15:26.264000Z</value>
+        </time>
+        <latitude>
+          <value>-14.0414</value>
+        </latitude>
+        <longitude>
+          <value>-13.9199</value>
+        </longitude>
+        <depth>
+          <value>10000.0</value>
+        </depth>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </origin>
+      <magnitude publicID="smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206473882">
+        <mag>
+          <value>4.7</value>
+        </mag>
+        <type>mb</type>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </magnitude>
+    </event>
+    <event publicID="smi:service.iris.edu/fdsnws/event/1/query?eventid=11426224">
+      <preferredOriginID>smi:service.iris.edu/fdsnws/event/1/query?originid=45301089</preferredOriginID>
+      <preferredMagnitudeID>smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206580858</preferredMagnitudeID>
+      <type>earthquake</type>
+      <description iris:FEcode="285">
+        <text>SUMBAWA REGION, INDONESIA</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <origin publicID="smi:service.iris.edu/fdsnws/event/1/query?originid=45301089" iris:contributorOriginId="us6000eetw" iris:contributor="us" iris:contributorEventId="us6000eetw" iris:catalog="NEIC PDE">
+        <time>
+          <value>2021-05-20T04:07:20.596000Z</value>
+        </time>
+        <latitude>
+          <value>-8.8421</value>
+        </latitude>
+        <longitude>
+          <value>118.3918</value>
+        </longitude>
+        <depth>
+          <value>92220.0</value>
+        </depth>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </origin>
+      <magnitude publicID="smi:service.iris.edu/fdsnws/event/1/query?magnitudeid=206580858">
+        <mag>
+          <value>4.8</value>
+        </mag>
+        <type>mb</type>
+        <creationInfo>
+          <author>us</author>
+        </creationInfo>
+      </magnitude>
+    </event>
+  </eventParameters>
+</q:quakeml>
