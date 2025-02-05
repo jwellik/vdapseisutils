@@ -3,6 +3,11 @@ Python scripts for swarmmpl earthquake catalogs at volcanoes.
 
 Author: Jay Wellik, jwellik@vdap.org
 Last updated: 2024 February 28
+
+TODO Address FutureWarning
+/home/jwellik/miniconda3/envs/seismology312/lib/python3.12/site-packages/shapely/ops.py:276: FutureWarning: This function is deprecated. See: https://pyproj4.github.io/pyproj/stable/gotchas.html#upgrading-to-pyproj-2-from-pyproj-1
+  shell = type(geom.exterior)(zip(*func(*zip(*geom.exterior.coords))))
+
 """
 
 import numpy as np
@@ -19,6 +24,9 @@ from vdapseisutils.utils.geoutils.geoutils import backazimuth
 from vdapseisutils.utils.timeutils import convert_timeformat
 from vdapseisutils.core.maps import elev_profile
 from vdapseisutils.utils.geoutils import sight_point_pyproj, radial_extent2map_extent, project2line
+
+from vdapseisutils.style import load_custom_rc
+load_custom_rc("swarmmplrc")
 
 # Plotting styles and formatters for maps and cross-sections
 plt.rcParams['svg.fonttype'] = 'none'
