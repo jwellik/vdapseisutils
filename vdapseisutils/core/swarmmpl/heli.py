@@ -34,7 +34,7 @@ import cartopy.feature as cfeature
 from obspy import UTCDateTime
 
 from vdapseisutils.utils.obspyutils.catalogutils import catalog2txyzm
-from vdapseisutils.style.colors import greyscale_hex, swarm_colors_hex
+from vdapseisutils.style.colors import greyscale, swarm_colors, earthworm_colors, obspy_dayplot
 from vdapseisutils.style import load_custom_rc
 load_custom_rc("swarmmplrc")
 
@@ -55,6 +55,7 @@ class Helicorder(plt.Figure):
     Additional functionality
     - returns a matplotlib Figure object
     - plot_catalog, plot_tags
+    - color: "greyscale" (default), "swarm", "earthworm", or "obspy"
 
     Different default behavior
     - plot_events(*args, **kwargs) (different default behavior)
@@ -65,7 +66,7 @@ class Helicorder(plt.Figure):
 
     name = "helicorder"
 
-    def __init__(self, st, interval=60, color=greyscale_hex,
+    def __init__(self, st, interval=60, color="greyscale",
                  one_bar_range=None, clip_threshold=None,
                  title=None,
                  utc_offset_left="UTC", utc_offset_right="UTC",
@@ -83,6 +84,18 @@ class Helicorder(plt.Figure):
         # Save Helicorder settings
         # self.stream = st.deep_copy()
         self.stream = st.copy()
+
+        # parse color
+        if color.lower() == "greyscale":
+            color = greyscale
+        elif color.lower() == "swarm":
+            color = swarm_colors
+        elif color.lower() == "earthworm":
+            color = earthworm_colors
+        elif color.lower() == "obspy":
+            color = obspy_dayplot
+        else:
+            color = color
 
         # Allow starttime/endtime in case you want it to be greater than extent of Stream
         self.starttime = kwargs.get('starttime', None)
