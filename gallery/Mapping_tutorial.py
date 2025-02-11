@@ -67,15 +67,17 @@ def map_usvolcs():
     print(">> Raininer")
     fig = Map(origin=(rainier["coords"][0], rainier["coords"][1]), radial_extent_km=15.0)
     fig.add_hillshade(resolution="01s")
+    fig.add_scalebar()
     fig.suptitle("Rainier, Washington")
     fig.info()
     fig.savefig("./output/Mapping_tutorial/Map_Rainier.png")
     plt.show()
 
     print(">> Kīlauea")
-    fig2 = plt.figure(figsize=(8, 4))
+    fig2 = plt.figure(figsize=(8, 4), dpi=300)
     fig2 = Map(map_extent=kilauea["map_extent"], fig=fig2)
     fig2.add_hillshade()
+    fig2.add_scalebar()
     fig2.plot_catalog(cat_kilauea)
     fig2.suptitle("Kīlauea")
     fig2.info()
@@ -231,22 +233,24 @@ def bathymetry_map_xsection():
     volc = banua_wuhu
 
     # Banua Wuhu
-    fig = plt.figure(figsize=(16/2, 12/2))  # width, height
+    fig = plt.figure(figsize=(16/2, 12/2), dpi=300)  # width, height
     spec = fig.add_gridspec(8, 8)  # rows, columns (height, width)
     fig_m = fig.add_subfigure(spec[0:8, 0:8])  #
     fig_m = Map(map_extent=[125.239416, 125.717357, 2.998957, 3.344241], fig=fig_m)
     fig_m.add_hillshade(resolution="01s", topo=True, bath=False)
+    fig_m.add_scalebar()
     fig_m.plot(volc["coords"][0], volc["coords"][1], "^r")
     plt.savefig("./output/Mapping_tutorial/Bathymetry_BanuaWuhu.png")
     plt.show()
 
     # Regional Map
-    fig = plt.figure(figsize=(16/2, 12/2))  # width, height
+    fig = plt.figure(figsize=(16/2, 12/2), dpi=300)  # width, height
     spec = fig.add_gridspec(8, 8)  # rows, columns (height, width)
     fig_m = fig.add_subfigure(spec[0:8, 0:8], zorder=0)  #
     fig_m = Map(map_extent=volc["map_extent"], fig=fig_m)
     fig_m.add_locationmap(volc["coords"][0], volc["coords"][1])
     fig_m.add_hillshade(resolution="15s")
+    fig_m.add_scalebar()
     fig_m.plot(volc["coords"][0], volc["coords"][1], "^r")
     [fig_m.plot(p[0][0], p[0][1], "ok") for p in volc["points"]]
     plt.savefig("./output/Mapping_tutorial/Bathymetry_BanuaWuhu_regional.png")
@@ -280,8 +284,8 @@ def bathymetry_map_xsection():
 if __name__ == '__main__':
     print('#'*80)
     map_usvolcs()
-    xsection_usvolcs()
-    timeseries_msas_swarm()
+    # xsection_usvolcs()
+    # timeseries_msas_swarm()
     volcano_figure()
     bathymetry_map_xsection()
     print("#"*80)

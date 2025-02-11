@@ -100,8 +100,6 @@ def add_hillshade_pygmt(ax, extent=[-180, 180, -90, 90],
     PyGMT's load_earth_relief(): https://www.pygmt.org/dev/api/generated/pygmt.datasets.load_earth_relief.html
     """
 
-    print("Make hillshade with vertical exaggeration...")
-
     import numpy as np
     import pygmt
 
@@ -146,6 +144,31 @@ def add_hillshade_pygmt(ax, extent=[-180, 180, -90, 90],
     ax.imshow(np.rot90(grid_final), extent=extent, transform=projection, cmap=cmap, alpha=alpha)
 
     return ax
+
+# Function to convert real-world distance to map units
+def get_scale_length(origin, distance_km):
+    """
+    Convert real-world distance in km to degrees at a given latitude.
+    Uses the WGS84 ellipsoid for accuracy.
+    """
+    from pyproj import Geod
+
+    lat, lon = origin
+    geod = Geod(ellps="WGS84")
+    end_lon, end_lat, _ = geod.fwd(lon, lat, 90, distance_km * 1000)  # Move eastward
+    return abs(end_lon - lon)  # Return the degree difference
+
+
+def choose_scale_bar_length(map_width_km, fraction=0.3):
+    """
+    Given the width of the map in km, return the scale bar length (in km) as the value
+    from ALLOWED_SCALES that is closest to fraction * map_width_km.
+    """
+    candidate = map_width_km * fraction
+    # Choose the allowed scale that minimizes the absolute difference from candidate.
+    ALLOWED_SCALES = [1, 5, 10, 20, 50, 100, 150, 200, 250, 500, 750, 1000, 5000, 10000]
+    scale = min(ALLOWED_SCALES, key=lambda x: abs(x - candidate))
+    return scale
 
 
 ##############################################################################################################s
@@ -416,6 +439,41 @@ class Map(plt.Figure):
         ax.gridlines()
         fig_loc.set_alpha(0.0)
         ax.set_alpha(0.0)
+
+    def add_scalebar(self, scale_length_km="auto"):
+        """ADD_SCALEBAR Uses Matplotlib's AnchoredSizeBar to make a scale bar in km
+        https://matplotlib.org/stable/api/_as_gen/mpl_toolkits.axes_grid1.anchored_artists.AnchoredSizeBar.html#
+
+        Scale bar length will be determined automatically if a length is not provided.
+        """
+
+        from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
+        import matplotlib.font_manager as fm
+        from vdapseisutils.utils.geoutils import backazimuth
+
+        # Get scalebar length in axes percentage
+        map_lonL, map_lonR, map_midlat = self.properties["map_extent"][0:3]
+        az, d = backazimuth((map_midlat, map_lonL), (map_midlat, map_lonR))  # azimuth & map width (meters)
+        map_width_km = d / 1000
+        if scale_length_km == "auto":
+            scale_length_km = choose_scale_bar_length(map_width_km, 0.30)  # auto determine scale bar km
+        scale_bar_length_ax = scale_length_km / map_width_km
+
+        # Add scale bar
+        scalebar = AnchoredSizeBar(self.figure.axes[0].transAxes,  # Define length as % of axis width
+                                   scale_bar_length_ax,  # Length in map units (degrees)
+                                   f"{scale_length_km} km",  # Label
+                                   'lower right',
+                                   pad=0.5,
+                                   color='black',
+                                   frameon=False,
+                                   size_vertical=0.01,  # Thickness of scale bar (as % of axis height)
+                                   fontproperties=fm.FontProperties(size=10))
+
+        self.figure.axes[0].add_artist(scalebar)
+
+        print("Done.")
+
 
     def plot(self, lat, lon, *args, transform=ccrs.Geodetic()):
         self.ax.plot(lon, lat, *args, transform=transform)
@@ -852,6 +910,7 @@ class VolcanoFigure(plt.Figure):
         self.fig_m = fig.add_subfigure(spec[0:1, 0:1])
         self.fig_m = Map(fig=self.fig_m, origin=origin, radial_extent_km=radial_extent_km)
         self.fig_m.add_hillshade()
+        self.fig_m.add_scalebar()
         lbwh = np.array([0.9, 4.0, 3.0, 3.0])
         self.fig_m.ax.set_position(lbwh / figscale)
 
