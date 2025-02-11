@@ -79,7 +79,8 @@ def add_hillshade_pygmt(ax, extent=[-180, 180, -90, 90],
                         data_source="igpp",
                         resolution="01d",
                         topo=True, bath=False, radiance=[315, 60],
-                        cmap="Greys_r", alpha=0.75):
+                        vertical_exag=1.5,
+                        cmap="Greys_r", alpha=0.50):
     """
     ADD_HILLSHADE_PYGMT Adds a hillshade to a Cartopy GeoAxes using data from PyGMT's load_earth_relief()
 
@@ -99,12 +100,15 @@ def add_hillshade_pygmt(ax, extent=[-180, 180, -90, 90],
     PyGMT's load_earth_relief(): https://www.pygmt.org/dev/api/generated/pygmt.datasets.load_earth_relief.html
     """
 
+    print("Make hillshade with vertical exaggeration...")
+
     import numpy as np
     import pygmt
 
     # Download PyGMT earth relief data, create hillshade
     srtm = pygmt.datasets.load_earth_relief(region=extent, data_source=data_source, resolution=resolution)
-    srtm_hs = pygmt.grdgradient(grid=srtm, radiance=radiance)
+    srtm.data = srtm.data * vertical_exag  # Multiply by vertical exaggeration
+    srtm_hs = pygmt.grdgradient(grid=srtm, radiance=radiance)   # Compute hillshade on the exaggerated DEM
     # srtm_hs = pygmt.grdgradient(grid=srtm, azimuth="0/90", normalize="t1")
     # srtm_hs = pygmt.grdgradient(grid=srtm, radiance=[315, 45])
 
@@ -132,11 +136,13 @@ def add_hillshade_pygmt(ax, extent=[-180, 180, -90, 90],
         grid_elev[grid_elev >= 0] = 0
 
     # Add hillshade
-    # grid_final = grid_hs.T[2]  # just the hillshade
-    matrix_min = np.min(grid_elev.T[2])
-    matrix_max = np.max(grid_elev.T[2])
-    grid_elev_norm = 2 * (grid_elev.T[2] - matrix_min) / (matrix_max - matrix_min) - 1  # normalize elevation data between -1 and 1
-    grid_final = grid_hs.T[2] * 0.75 + grid_elev_norm * 0.25  # hill-shade + DEM
+    # - just the hillshade
+    grid_final = grid_hs.T[2]
+    # - alternatively, hillshade + DEM
+    # matrix_min = np.min(grid_elev.T[2])
+    # matrix_max = np.max(grid_elev.T[2])
+    # grid_elev_norm = 2 * (grid_elev.T[2] - matrix_min) / (matrix_max - matrix_min) - 1  # normalize elevation data between -1 and 1
+    # grid_final = grid_hs.T[2] * 0.75 + grid_elev_norm * 0.25  # hill-shade + DEM
     ax.imshow(np.rot90(grid_final), extent=extent, transform=projection, cmap=cmap, alpha=alpha)
 
     return ax
@@ -376,7 +382,7 @@ class Map(plt.Figure):
         print(self.properties)
         print()
 
-    def add_hillshade(self, source="PyGMT", data_source="igpp", resolution="01s", topo=True, bath=False, radiance=[315, 60], alpha=0.75):
+    def add_hillshade(self, source="PyGMT", data_source="igpp", resolution="01s", topo=True, bath=False, radiance=[315, 60], alpha=0.50):
         if source.lower() == "pygmt":
             try:
                 self.ax = add_hillshade_pygmt(self.ax, extent=self.properties["map_extent"], data_source=data_source,
