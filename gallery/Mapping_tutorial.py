@@ -265,7 +265,7 @@ def bathymetry_map_xsection():
     fig_m.add_hillshade(resolution="15s")
     fig_m.plot(volc["coords"][0], volc["coords"][1], "^r")
     [fig_m.plot(p[0][0], p[0][1], "ok") for p in volc["points"]]
-    plt.savefig("./output/Mapping_tutorial/Bathymetry_BanuaWuhu_regional.png")
+    # plt.savefig("./output/Mapping_tutorial/Bathymetry_BanuaWuhu_regional.png")
 
     # Multiple Cross-Sections to various points
     i = 0
@@ -273,8 +273,8 @@ def bathymetry_map_xsection():
         fig_i = fig.add_subfigure(spec[i, 1:2], zorder=0)  #
         xs = CrossSection(points=[volc["coords"], p[0]], depth_extent=(-5, 2), resolution=500.0, fig=fig_i)
         xs.suptitle("Banua Wuhu to {}".format(p[1]))
-        plt.savefig("./output/Mapping_tutorial/CrossSection_BanuaWuhu_{:02d}.png".format(i))
         i += 1
+    plt.savefig("./output/Mapping_tutorial/Map_CrossSection_BanuaWuhu.png".format(i))
     plt.show()
 
     print("Done.")
@@ -284,8 +284,8 @@ def bathymetry_map_xsection():
 if __name__ == '__main__':
     print('#'*80)
     map_usvolcs()
-    # xsection_usvolcs()
-    # timeseries_msas_swarm()
+    xsection_usvolcs()
+    timeseries_msas_swarm()
     volcano_figure()
     bathymetry_map_xsection()
     print("#"*80)

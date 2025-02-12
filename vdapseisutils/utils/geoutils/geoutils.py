@@ -167,7 +167,7 @@ def backazimuth_pyproj(latlon1, latlon2, ellipse='WGS84'):
     return az12, dist
 
 
-def project2line(lats, lons, P1=(-90, 0), P2=(90, 0), unit="m"):
+def project2line_v1(lats, lons, P1=(-90, 0), P2=(90, 0), unit="m"):
     """
     PROJECT2LINE
 
@@ -223,3 +223,107 @@ def project2line(lats, lons, P1=(-90, 0), P2=(90, 0), unit="m"):
             print("Unit '{}' not understood. Options are 'm' or 'km'. Using 'm'.".format(unit))
 
     return DAA
+
+
+def project2line_v2(lats, lons, P1=(-90, 0), P2=(90, 0), unit="m"):
+    """
+    Compute the distance along a cross-section line for given latitude and longitude points.
+
+    Parameters:
+    - lats, lons: Scalars or array-like values of latitude and longitude coordinates.
+    - P1: Tuple (lat, lon) for the starting point of the cross-section.
+    - P2: Tuple (lat, lon) for the ending point of the cross-section.
+    - fwdAA: Forward azimuth from P1 to P2 (precomputed for efficiency).
+    - unit: 'm' (meters, default) or 'km' (kilometers).
+
+    Returns:
+    - DAA: Distances along the cross-section, in the specified unit.
+    """
+
+    import numpy as np
+    from pyproj import Geod
+
+    # Ensure inputs are NumPy arrays to handle both scalars and array-like inputs
+    lats = np.atleast_1d(lats)
+    lons = np.atleast_1d(lons)
+
+    # Initialize geodetic calculations using WGS84
+    geodesic = Geod(ellps="WGS84")
+
+    # Compute azimuth and geodesic distance from P1 to each point
+    fwdAA, backAA, distanceAA = geodesic.inv(P1[1], P1[0], P2[1], P2[0])  # (lon1, lat1, lon2, lat2)
+
+    # Compute azimuth and geodesic distance from P1 to each point
+    fwdA, backA, distanceA = geodesic.inv(P1[1], P1[0], lons, lats)  # (lon1, lat1, lon2, lat2)
+
+    # Compute the angle between P1-point and P1-P2
+    alphaA = fwdA - fwdAA  # Angle difference in degrees
+
+    # Convert angle to radians and compute distance along the cross-section
+    dA = distanceA * np.cos(np.deg2rad(alphaA))  # Projection of distance onto cross-section
+
+    # Convert units if necessary
+    if unit.lower() == "km":
+        dA /= 1000  # Convert meters to kilometers
+    elif unit.lower() != "m":
+        print(f"Warning: Unit '{unit}' not recognized. Using 'm' by default.")
+
+    return dA.tolist() if len(dA) > 1 else dA.item()  # Return scalar if input was scalar
+
+import numpy as np
+import math
+from pyproj import Geod
+
+def project2line(lats, lons, P1=(-90, 0), P2=(90, 0), unit="m"):
+    """
+    Compute the distance along a cross-section line for given latitude and longitude points.
+
+    Parameters:
+    - lats, lons: Scalars or array-like latitude and longitude values.
+    - P1: Tuple (lat, lon) for the starting point of the cross-section.
+    - P2: Tuple (lat, lon) for the ending point of the cross-section.
+    - fwdAA: Forward azimuth from P1 to P2 (precomputed for efficiency).
+    - unit: 'm' (meters, default) or 'km' (kilometers).
+
+    Returns:
+    - DAA: Distances along the cross-section in the specified unit.
+    """
+
+    # Ensure lats/lons are arrays to support both single and multiple points
+    lats = np.atleast_1d(lats)
+    lons = np.atleast_1d(lons)
+
+    # Check that lats and lons have the same length
+    if lats.shape != lons.shape:
+        raise ValueError("Latitude and longitude arrays must have the same length.")
+
+    # Initialize geodetic calculator using WGS84
+    geodesic = Geod(ellps="WGS84")
+
+    # Compute azimuth and geodesic distance from P1 to each point
+    fwdAA, backAA, distanceAA = geodesic.inv(P1[1], P1[0], P2[1], P2[0])  # (lon1, lat1, lon2, lat2)
+
+    # Lists to store computed distances
+    DAA = []
+
+    # Compute distance for each point
+    for lat, lon in zip(lats, lons):
+        # Get azimuth and geodesic distance from P1 to the point
+        fwdA, backA, distanceA = geodesic.inv(P1[1], P1[0], lon, lat)  # (lon1, lat1, lon2, lat2)
+
+        # Compute the angle difference between P1-point and P1-P2
+        alphaA = fwdA - fwdAA  # Angle difference in degrees
+
+        # Project the distance onto the cross-section line
+        dA = distanceA * math.cos(math.radians(alphaA))
+
+        # Convert units if necessary
+        if unit.lower() == "km":
+            dA /= 1000  # Convert meters to kilometers
+        elif unit.lower() != "m":
+            print(f"Warning: Unit '{unit}' not recognized. Using 'm' by default.")
+
+        DAA.append(dA)
+
+    # Return a single value if the input was a scalar
+    return DAA[0] if len(DAA) == 1 else DAA

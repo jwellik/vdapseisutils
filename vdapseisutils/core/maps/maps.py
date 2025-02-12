@@ -391,7 +391,7 @@ class Map(plt.Figure):
         # self.ax.set_xlabel("Map", fontsize=axlf, labelpad=5)  # This doesn't add anything, for some reason
 
         # Draw Grid and labels
-        glv = self.ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, linewidth=1, color='gray', alpha=0.5, zorder=-1)
+        glv = self.ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, linewidth=1, color='gray', alpha=0.5, zorder=-10)
         glv.top_labels = False
         glv.bottom_labels = True
         glv.left_labels = True
@@ -475,8 +475,8 @@ class Map(plt.Figure):
         print("Done.")
 
 
-    def plot(self, lat, lon, *args, transform=ccrs.Geodetic()):
-        self.ax.plot(lon, lat, *args, transform=transform)
+    def plot(self, lat, lon, *args, transform=ccrs.Geodetic(), **kwargs):
+        self.ax.plot(lon, lat, *args, transform=transform, **kwargs)
 
     def scatter(self, lat, lon, size, color, transform=ccrs.Geodetic(), **kwargs):
         self.ax.scatter(lon, lat, size, color, transform=transform, **kwargs)
@@ -685,36 +685,87 @@ class CrossSection(plt.Figure):
         # z = np.array(z) / 1000 * -1  # Convert to km and make negative for swarmmpl purposes
         # super().plot(x, z, **kwargs)
 
-    def plot(self, lat=[], lon=[], z=[], x=[], z_dir="depth", z_unit="m", *args, **kwargs):
-        # Points can be given as lat, lon, z, ...
-        # OR as x, z
-        # If distance is given as x, lat,lon are ignored
-        # Assumes z is given as meters depth (down)
-        # Creates a negative axis
-        # E.g., 5000 m depth is plotted as -5
-        # E.g., 3200 m elevation is plotted as 3.2
+    # def plot(self, lat=[], lon=[], z=[], x=[], z_dir="depth", z_unit="m", *args, **kwargs):
+    #     # Points can be given as lat, lon, z, ...
+    #     # OR as x, z
+    #     # If distance is given as x, lat,lon are ignored
+    #     # Assumes z is given as meters depth (down)
+    #     # Creates a negative axis
+    #     # E.g., 5000 m depth is plotted as -5
+    #     # E.g., 3200 m elevation is plotted as 3.2
+    #     # NOTE: This function is used to make the topographic line
+    #
+    #     if not np.any(z):
+    #          raise ValueError("ERROR: Depth must be provided.")
+    #
+    #     if z_unit.lower() == "km":
+    #         z_unit_conv = 1
+    #     elif z_unit.lower() == "m":
+    #         z_unit_conv = 1 / 1000  # convert m to km
+    #     else:
+    #         raise Warning("Z_UNIT {} not undertsood. Options are 'km' or 'm'. Using km.".format(z_unit))
+    #
+    #     if z_dir.lower() == "depth":
+    #         z_dir_conv = -1  # Depths should be plotted as negative
+    #     elif z_dir.lower() == "elev":
+    #         z_dir_conv = 1
+    #     else:
+    #         raise Warning("Z_DIR {} not undertsood. Options are 'depth' or 'elev'. Using depth.".format(z_unit))
+    #
+    #     z = np.array(z) * z_unit_conv * z_dir_conv  # Convert to km and make negative for swarmmpl purposes
+    #     if not np.any(x):
+    #         x = project2line(lat, lon, P1=self.A1, P2=self.A2)  # returned as array
+    #     self.ax.plot(x, z, *args, **kwargs)
 
-        if not np.any(z):
-            raise ValueError("ERROR: Depth must be provided.")
+    def plot(self, lat=None, lon=None, z=None, x=None, z_dir="depth", z_unit="m", **kwargs):
+        """
+        Plot data as a cross-section.
 
+        Parameters:
+        - lat, lon, depth: Arrays of latitude, longitude, and depth (optional)
+        - x, depth: If x is given, lat/lon are ignored
+        - z_dir: "depth" (default, plotted as negative) or "elev" (positive)
+        - z_unit: "m" (default) or "km" (for conversion)
+        - **kwargs: Passed to self.ax.plot()
+
+        If depth is not provided, it defaults to 0.
+        """
+
+        # Ensure depth is an array and default to 0 if not provided
+        if z is None:
+            z = np.zeros_like(x if x is not None else lat)
+
+        depth = np.asarray(z)
+
+        # Handle unit conversion
         if z_unit.lower() == "km":
             z_unit_conv = 1
         elif z_unit.lower() == "m":
-            z_unit_conv = 1 / 1000  # convert m to km
+            z_unit_conv = 1 / 1000  # Convert meters to kilometers
         else:
-            raise Warning("Z_UNIT {} not undertsood. Options are 'km' or 'm'. Using km.".format(z_unit))
+            raise ValueError(f"Invalid z_unit '{z_unit}'. Options: 'km' or 'm'.")
 
+        # Handle depth/elevation direction
         if z_dir.lower() == "depth":
-            z_dir_conv = -1  # Depths should be plotted as negative
+            z_dir_conv = -1  # Depths should be negative
         elif z_dir.lower() == "elev":
             z_dir_conv = 1
         else:
-            raise Warning("Z_DIR {} not undertsood. Options are 'depth' or 'elev'. Using depth.".format(z_unit))
+            raise ValueError(f"Invalid z_dir '{z_dir}'. Options: 'depth' or 'elev'.")
 
-        z = np.array(z) * z_unit_conv * z_dir_conv  # Convert to km and make negative for swarmmpl purposes
-        if not np.any(x):
-            x = project2line(lat, lon, P1=self.A1, P2=self.A2)  # returned as array
-        self.ax.plot(x, z, *args, **kwargs)
+        # Convert depth values
+        depth = depth * z_unit_conv * z_dir_conv  # Convert to km, apply depth convention
+
+        # Handle x values: if not given, compute from lat/lon
+        if x is None:
+            if lat is None or lon is None:
+                raise ValueError("Either (lat, lon) or x must be provided.")
+            x = project2line(lat, lon, P1=self.A1, P2=self.A2, unit="km")  # Compute projected x-coordinates
+
+        # Ensure x is an array
+        x = np.asarray(x)
+
+        self.ax.plot(x, depth, **kwargs)
 
     def plot_point(self, x, z, *args, **kwargs):
         self.ax.plot(x, z, *args, **kwargs)
@@ -896,7 +947,7 @@ class VolcanoFigure(plt.Figure):
         })
         xs2_defaults = dict({
             'origin': self.properties["origin"],
-            'azimuth': 0,  # East-West
+            'azimuth': 0,  # North-South
             'radius_km': self.properties["radial_extent_km"],
             'depth_extent': self.properties["depth_extent"],
             'label': 'B'
@@ -962,14 +1013,13 @@ class VolcanoFigure(plt.Figure):
     def add_coastline(self, *args, **kwargs):
         self.fig_m.add_ocean(*args, **kwargs)
 
-    def plot(self, lat=[], lon=[], x=[], time=[], y=[], transform=ccrs.Geodetic(), **kwargs):
-        """WILL THIS WORK?"""
-        self.fig_m.plot(lat, lon, transform=transform)
-        self.fig_xs1.plot(lat, lon, **kwargs)
-        self.fig_xs2.plot(lat, lon, **kwargs)
-        self.fig_xs1.plot(x, y, **kwargs)
-        self.fig_xs2.plot(x, y, **kwargs)
-        self.fig_ts.plot(time, y, **kwargs)
+    def plot(self, lat=None, lon=None, z=None, z_dir="depth", z_unit="m", transform=ccrs.Geodetic(), **kwargs):
+        self.fig_m.plot(lat, lon, transform=transform, **kwargs)
+        self.fig_xs1.plot(lat, lon, z=z, z_dir=z_dir, z_unit=z_unit, **kwargs)
+        self.fig_xs2.plot(lat, lon, z=z, z_dir=z_dir, z_unit=z_unit, **kwargs)
+        # self.fig_xs1.plot(x, y, 0, **kwargs)
+        # self.fig_xs2.plot(x, y, 0, **kwargs)
+        # self.fig_ts.plot(time, y, **kwargs)
 
     def scatter(self, lat=[], lon=[], x=[], time=[], y=[], transform=ccrs.Geodetic(), **kwargs):
         """WILL THIS WORK?"""
