@@ -145,7 +145,10 @@ def add_hillshade_pygmt(ax, extent=[-180, 180, -90, 90],
 
     return ax
 
-# Function to convert real-world distance to map units
+########################################################################################################################
+# SCALE BAR
+
+# Distance (km) to _____?
 def get_scale_length(origin, distance_km):
     """
     Convert real-world distance in km to degrees at a given latitude.
@@ -158,7 +161,7 @@ def get_scale_length(origin, distance_km):
     end_lon, end_lat, _ = geod.fwd(lon, lat, 90, distance_km * 1000)  # Move eastward
     return abs(end_lon - lon)  # Return the degree difference
 
-
+# Distance (km) to axes size
 def choose_scale_bar_length(map_width_km, fraction=0.3):
     """
     Given the width of the map in km, return the scale bar length (in km) as the value
@@ -170,10 +173,8 @@ def choose_scale_bar_length(map_width_km, fraction=0.3):
     scale = min(ALLOWED_SCALES, key=lambda x: abs(x - candidate))
     return scale
 
-
 ##############################################################################################################s
 # Misc Axes
-
 
 class MagLegend:
 
@@ -272,62 +273,11 @@ class MagLegend:
             print("M{:>-4.1f} | ms: {:>4.1f} | s: {:>4.1f}".format(M, ms, s))
         print()
 
-
 class ColorBar:
     pass
 
-
-def scale_bar(ax, length=None, location=(0.15, 0.05), linewidth=3):
-    """
-    ax is the axes to draw the scalebar on.
-    length is the length of the scalebar in km.
-    location is center of the scalebar in axis coordinates.
-    (ie. 0.5 is the middle of the plot)
-    linewidth is the thickness of the scalebar.
-
-    Borrowed from: https://stackoverflow.com/questions/32333870/how-can-i-show-a-km-ruler-on-a-cartopy-matplotlib-plot
-    """
-    # Get the limits of the axis in lat long
-    llx0, llx1, lly0, lly1 = ax.get_extent(ccrs.PlateCarree())
-    # Make tmc horizontally centred on the middle of the map,
-    # vertically at scale bar location
-    sbllx = (llx1 + llx0) / 2
-    sblly = lly0 + (lly1 - lly0) * location[1]
-    tmc = ccrs.TransverseMercator(sbllx, sblly)
-    # Get the extent of the plotted area in coordinates in metres
-    x0, x1, y0, y1 = ax.get_extent(tmc)
-    # Turn the specified scalebar location into coordinates in metres
-    sbx = x0 + (x1 - x0) * location[0]
-    sby = y0 + (y1 - y0) * location[1]
-
-    # Calculate a scale bar length if none has been given
-    # (Theres probably a more pythonic way of rounding the number but this works)
-    if not length:
-        length = (x1 - x0) / 5000  # in km
-        ndim = int(np.floor(np.log10(length)))  # number of digits in number
-        length = round(length, -ndim)  # round to 1sf
-
-        # Returns numbers starting with the list
-        def scale_number(x):
-            if str(x)[0] in ['1', '2', '5']:
-                return int(x)
-            else:
-                return scale_number(x - 10 ** ndim)
-
-        length = scale_number(length)
-
-    # Generate the x coordinate for the ends of the scalebar
-    bar_xs = [sbx - length * 500, sbx + length * 500]
-    # Plot the scalebar
-    ax.plot(bar_xs, [sby, sby], transform=tmc, color='k', linewidth=linewidth)
-    # Plot the scalebar label
-    ax.text(sbx, sby, str(length) + ' km', transform=tmc, fontsize=afs,
-            horizontalalignment='center', verticalalignment='bottom')
-
-
 ##############################################################################################################s
 # Misc utils
-
 
 def prep_catalog_data_mpl(catalog, s="magnitude", c="time", maglegend=MagLegend(), time_format="matplotlib"):
     """ PREPCATALOG Converts ObsPy Catalog object to DataFrame w fields appropriate for swarmmpl
@@ -348,7 +298,6 @@ def prep_catalog_data_mpl(catalog, s="magnitude", c="time", maglegend=MagLegend(
     catdata["depth"] *= -1  # below sea level values are negative for swarmmpl purposes
     catdata["size"] = MagLegend().mag2s(catdata["mag"])  # converts magnitudes to point size for scatter plot
     return catdata
-
 
 ##############################################################################################################
 # Figure Classes
@@ -390,15 +339,27 @@ class Map(plt.Figure):
         # self.ax.set_anchor("SW")  # Default is 'C' (But changing to SW has no effect?)
         # self.ax.set_xlabel("Map", fontsize=axlf, labelpad=5)  # This doesn't add anything, for some reason
 
-        # Draw Grid and labels
-        glv = self.ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, linewidth=1, color='gray', alpha=0.5, zorder=-10)
+        # Draw Grid and labels - grey lines and labels
+        glv = self.ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, linewidth=0, color='gray', alpha=0.5)
         glv.top_labels = False
         glv.bottom_labels = True
         glv.left_labels = True
         glv.right_labels = False
         glv.xlines = True
+        # glv.ylines = True
         glv.xlabel_style = {'size': axlf, 'color': axlc}
         glv.ylabel_style = {'size': axlf, 'color': axlc}
+
+        # # Draw lat,lon ticks and labels, no lines (Cartopy example)
+        # from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
+        # glv = self.ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, linewidth=1, color='gray', alpha=0.5, zorder=-10)
+        # glv.bottom_labels = True
+        # glv.left_labels = True
+        # lon_formatter = LongitudeFormatter(zero_direction_label=True)
+        # lat_formatter = LatitudeFormatter()
+        # self.ax.xaxis.set_major_formatter(lon_formatter)
+        # self.ax.yaxis.set_major_formatter(lat_formatter)
+
 
     def info(self):
         print("::: MAP AXES :::")

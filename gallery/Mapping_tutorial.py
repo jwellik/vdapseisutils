@@ -69,7 +69,12 @@ def map_usvolcs():
     fig.add_hillshade(resolution="01s")
     fig.add_scalebar()
     fig.suptitle("Rainier, Washington")
+    # fig.axes[0].tick_params(direction="out", reset=True)
     fig.info()
+
+    # from cartopy.mpl.ticker import LatitudeFormatter, LongitudeFormatter, LatitudeLocator, LongitudeLocator
+    # latloc = LatitudeLocator()
+
     fig.savefig("./output/Mapping_tutorial/Map_Rainier.png")
     plt.show()
 
