@@ -1,13 +1,12 @@
-import os
 import pandas as pd
 
 from obspy import UTCDateTime
 from obspy.core.event import Catalog, Event, Origin, Magnitude
 from obspy.geodetics import FlinnEngdahl
 
-from vdapseisutils.utils.obspyutils import hypoinverse
-from vdapseisutils.utils.obspyutils.inventoryutils import convertNSLCstr
-
+# from vdapseisutils.utils.obspyutils import hypoinverse
+# from vdapseisutils.utils.obspyutils.inventoryutils import convertNSLCstr
+from vdapseisutils.core.datasource.waveID import waveID
 
 def example():
     cat = Catalog()
@@ -116,8 +115,8 @@ def read_victoria_csv(file):
 # Catalog to Text-based files
 ########################################################################################################################
 
-def catalog2basics(args, **kwargs):
-    return catalog2txyzm(args, kwargs)
+def catalog2basics(*args, **kwargs):
+    return catalog2txyzm(*args, **kwargs)
 
 def catalog2txyzm(cat, depth_unit="km", z_dir="depth", time_format="UTCDateTime", verbose=False, filename=False, **to_csv_kwargs):
     """Returns time(UTCDateTime), lat, lon, depth(kilometers), and mag from ObsPy Catalog object
@@ -171,14 +170,19 @@ def catalog2txyzm(cat, depth_unit="km", z_dir="depth", time_format="UTCDateTime"
     depth = []
     mag = []
     for event in cat:
-        lat.append(event.origins[-1].latitude)
-        lon.append(event.origins[-1].longitude)
-        depth.append(event.origins[-1].depth / dconvert * z_dir_convert)  # meters (by default)
-        if event.magnitudes:
-            mag.append(event.magnitudes[-1].mag if event.magnitudes[-1].mag is not None else -1)  # -1 is the default
-        else:
-            mag.append(-1)
-        time.append(convert_time_format(event.origins[-1].time))
+
+        try:
+            lat.append(event.origins[-1].latitude)
+            lon.append(event.origins[-1].longitude)
+            depth.append(event.origins[-1].depth / dconvert * z_dir_convert)  # meters (by default)
+            if event.magnitudes:
+                mag.append(event.magnitudes[-1].mag if event.magnitudes[-1].mag is not None else -1)  # -1 is the default
+            else:
+                mag.append(-1)
+            time.append(convert_time_format(event.origins[-1].time))
+        except Exception as err:
+            print(f"Skipping event due to error: {err}")
+
 
     data = dict({"time": time, "lat": lat, "lon": lon, "depth": depth, "mag": mag})
 
@@ -317,7 +321,7 @@ def catalog2swarm(catalog, nslc, tags=["default"], filename="swarm_tagger.csv", 
 
     df = pd.DataFrame(catalog2txyzm(catalog, time_format="%Y-%m-%d %H:%M:%S.%f"))  # Get time, lat, lon, depth, magnitude
     df = df[["time"]]  # Keep only the "time" column
-    df["nslc"] = convertNSLCstr(nslc, order="nslc", neworder="scnl", sep=".", newsep=" ")  # Add SCNL column
+    df["nslc"] = waveID(nslc).string(order="scnl", sep=" ")  # Create STA CHA NET LOC from NET.STA.LOC.CHA
     df["tag"] = tags
 
     df.to_csv(filename, index=False, header=False, mode=mode)  # Write to CSV with specified mode
