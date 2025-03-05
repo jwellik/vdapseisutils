@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 
 
-class Stream(Stream):
+class StreamV(Stream):
 
     from vdapseisutils.utils.obspyutils import streamutils
 
@@ -83,18 +83,22 @@ class Stream(Stream):
         print("This method will write the Stream into the SDS format to the specified directory")
 
 
-class Trace(Trace):
+class TraceV(Trace):
 
     def __init__(self):
         print("VDAPSDISUTILS Trace")
 
 
-class Catalog(Catalog):
+class CatalogV(Catalog):
 
 
     def __init__(self):
         print("VDAPSEISUTILS Catalog")
-        from obspy import Event, Origin, UTCDateTime, Magnitude
+        from obspy import UTCDateTime
+        from obspy.core.event.event import Event
+        from obspy.core.event.origin import Origin
+        from obspy.core.event.magnitude import Magnitude
+        super().__init__()
 
     def read_csv(self):
         print("Not yet implemented.")
@@ -297,9 +301,7 @@ class Catalog(Catalog):
         self.read_basics(df)
 
 
-
-
-class Inventory(Inventory):
+class InventoryV(Inventory):
 
     def __init__(self):
         print("VDAPSEISUTILS Inventory")
