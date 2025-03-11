@@ -269,9 +269,11 @@ def txyzm2catalog(data):
 
     return cat
 
+
 def basics2catalog(*args, **kwargs):
     """BASICS2CATALOG Wrapper for TXYZM2CATALOG"""
     return txyzm2catalog(*args, **kwargs)
+
 
 def catalog2swarm_dep(catalog, nslc, tags=["default"], filename="swarm_tagger.csv"):
     """
@@ -296,8 +298,6 @@ def catalog2swarm_dep(catalog, nslc, tags=["default"], filename="swarm_tagger.cs
 
     csv = csv.reindex(columns=['time', 'nslc', 'tag'])
     csv.to_csv(filename, index=False, header=False)
-
-# import pandas as pd
 
 
 def catalog2swarm(catalog, nslc, tags=["default"], filename="swarm_tagger.csv", mode="w"):
@@ -333,8 +333,9 @@ def read_swarm_tags(swarm_tag_file, scnl_format="scnl"):
     return df
 
 
-# rename times2swarm?
 def createSwarmTags(times, nslc, tag, filename="swarm_tagger.csv"):
+    print("This function will be deprecated in future versions. Use times2swarm instead.")
+
     import pandas as pd
 
     # create a sample nslc
@@ -358,6 +359,33 @@ def createSwarmTags(times, nslc, tag, filename="swarm_tagger.csv"):
     df.to_csv(filename, header=False)
 
 
+def times2swarm(times, scnl, tag, sort=False, filename="swarm_tagger.csv"):
+    import pandas as pd
+
+    # create a sample nslc
+    if len(scnl) == 1:
+        scnl = scnl*len(times)
+
+    # create a sample tag
+    if len(tag) == 1:
+        tag = tag*len(times)
+
+    # create a pandas DataFrame with the times, nslc, and tag
+    df = pd.DataFrame({'time': times, 'scnl': scnl, 'tag': tag})
+
+    # convert the 'time' column to the correct format
+    df['time'] = pd.to_datetime(df['time'])
+
+    # set the 'time' column as the index
+    df.set_index('time', inplace=True)
+
+    if sort:
+        df.sort_index(inplace=True)
+
+    # write the DataFrame to a CSV file
+    df.to_csv(filename, header=False)
+
+
 if __name__ == '__main__':
     example()
     print()
@@ -368,4 +396,4 @@ if __name__ == '__main__':
 # [X] catalog2swarm
 # TODO [ ] Add optional magnitude type column
 # TODO [ ] Add optional filename output
-# TODO [ ] Should contents of data = catåalog2basics(...) be arrays instead of lists?
+# TODO [ ] Should contents of data = catalog2basics(...) be arrays instead of lists?
