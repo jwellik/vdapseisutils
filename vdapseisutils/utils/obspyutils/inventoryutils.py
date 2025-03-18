@@ -189,7 +189,8 @@ def str2bulk(nslc_list, t1, t2):
 
     return bulk
 
-
+# TODO Allow to filter by existing loc code. E.g.,
+#   overwrite_loc_code(inventory, old="", new="00")
 def overwrite_loc_code(inventory, new_loc_code):
     # Overwrites location code for every channel in an inventory.
     # Change is made in place on inv (copy of inventory)
@@ -208,10 +209,14 @@ def overwrite_loc_code(inventory, new_loc_code):
 # Swarm
 ########################################################################################################################
 
-def write_swarm(inventory, verbose=True, outfile=None):
+def write_swarm(inventory, verbose=True, filename=None, outfile=None):
     """WRITE_SWARM Writes inventory as CSV formatted channel,latitude,longitude,elevation"""
 
     # from vdapseisutils.waveformutils.nslcutils import convertNSLCstr
+
+    if outfile:
+        print("'outfile' is being used for 'filename'. 'outfile' will be deprecated. Please use 'filename' instead.")
+        filename = outfile
 
     # first brack is SCNL in format 'STA CHA NET LOC'
     swarm_format = '{}= Longitude: {}; Latitude: {}; Height: {}'
@@ -225,7 +230,7 @@ def write_swarm(inventory, verbose=True, outfile=None):
         channel_strings.append(cha_str)
 
     if outfile:
-        with open(outfile, 'w') as f:
+        with open(filename, 'w') as f:
             for line in channel_strings:
                 f.write(line)
                 f.write('\n')
