@@ -21,6 +21,7 @@ TODO Why isn't title getting added by default?
 """
 
 import numpy as np
+import math
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
