@@ -192,7 +192,6 @@ def catalog2txyzm(cat, depth_unit="km", z_dir="depth", time_format="UTCDateTime"
 
     return data
 
-
 def catalog2picklog(cat):
     """CATALOG2PICKLOG Returns a DataFrame of Picks"""
 
@@ -210,7 +209,6 @@ def catalog2picklog(cat):
     df = pd.DataFrame.from_dict(pick_list)
     return df
 
-
 def picklog2swarm(picklog, tags=["default"], filename="swarm_tagger.csv", mode="w"):
     """PICKLOG2SWARM Prints a DataFrame of picks to a Swarm tagger csv file"""
 
@@ -225,7 +223,6 @@ def picklog2swarm(picklog, tags=["default"], filename="swarm_tagger.csv", mode="
     df["tag"] = tags
 
     df.to_csv(filename, index=False, header=False, mode=mode)  # Write to CSV with specified mode
-
 
 def txyzm2catalog(data):
     """
@@ -269,11 +266,9 @@ def txyzm2catalog(data):
 
     return cat
 
-
 def basics2catalog(*args, **kwargs):
     """BASICS2CATALOG Wrapper for TXYZM2CATALOG"""
     return txyzm2catalog(*args, **kwargs)
-
 
 def catalog2swarm_dep(catalog, nslc, tags=["default"], filename="swarm_tagger.csv"):
     """
@@ -298,7 +293,6 @@ def catalog2swarm_dep(catalog, nslc, tags=["default"], filename="swarm_tagger.cs
 
     csv = csv.reindex(columns=['time', 'nslc', 'tag'])
     csv.to_csv(filename, index=False, header=False)
-
 
 def catalog2swarm(catalog, nslc, tags=["default"], filename="swarm_tagger.csv", mode="w"):
     """
@@ -326,12 +320,10 @@ def catalog2swarm(catalog, nslc, tags=["default"], filename="swarm_tagger.csv", 
 
     df.to_csv(filename, index=False, header=False, mode=mode)  # Write to CSV with specified mode
 
-
 def read_swarm_tags(swarm_tag_file, scnl_format="scnl"):
     df = pd.read_csv(swarm_tag_file, header=None, names=["time", "scnl", "tag"])
     df["time"] = pd.to_datetime(df["time"])
     return df
-
 
 def createSwarmTags(times, nslc, tag, filename="swarm_tagger.csv"):
     print("This function will be deprecated in future versions. Use times2swarm instead.")
@@ -358,7 +350,6 @@ def createSwarmTags(times, nslc, tag, filename="swarm_tagger.csv"):
     # write the DataFrame to a CSV file
     df.to_csv(filename, header=False)
 
-
 def times2swarm(times, scnl, tag, sort=False, filename="swarm_tagger.csv"):
     import pandas as pd
 
@@ -384,7 +375,61 @@ def times2swarm(times, scnl, tag, sort=False, filename="swarm_tagger.csv"):
 
     # write the DataFrame to a CSV file
     df.to_csv(filename, header=False)
+    
+# Define method for getting waveforms from a catalog
+def get_catalog_waveforms_dev(client, catalog, nslc_str, trange=(-2, 28), verbose=False):
+    """Get Waveforms based on Event origin times"""
+    streams = []
+    net, sta, loc, cha = nslc_str.split(".")
+    # Loop over events in the catalog
+    for event in catalog:
+        try:
+            resource_id = str(event.resource_id).split("/")[-1]
+            t = event.origins[0].time
+            st = client.get_waveforms(net, sta, loc, cha, starttime=t+trange[0], endtime=t+trange[1])
+            streams.append(st)
+            if verbose:
+                print("> event {} | {} | Waveforms dowloaded ({} Streams).".format(resource_id, t, len(st)))
+        except Exception as e:
+            print("> event {} | {} | Waveforms not found. Error: {}".format(resource_id, t, e))
+    return streams
 
+def find_matching_times(times1, reference_times, threshold_seconds=5):
+    """
+    For each datetime in times1, find indices of all reference_times that are within the specified threshold.
+
+    Args:
+        times1: List of datetime objects to check
+        reference_times: List of reference datetime objects to match against
+        threshold_seconds: Maximum time difference in seconds to consider as a match (default: 5)
+
+    Returns:
+        List of lists: For each datetime in times1, a list of indices from reference_times that are within
+                      the threshold. If no matches are found for a datetime, an empty list is returned.
+    """
+    from obspy import UTCDateTime
+    # Ensure datetime objects
+    times1 = [UTCDateTime(t).datetime for t in times1]
+    reference_times = [UTCDateTime(t).datetime for t in reference_times]
+
+    results = []
+
+    # For each datetime in times1, find all matching reference_times indices
+    for t1 in times1:
+        matching_indices = []
+
+        for idx, ref_time in enumerate(reference_times):
+            # Calculate the absolute time difference in seconds
+            time_diff = abs((t1 - ref_time).total_seconds())
+
+            # If the difference is within the threshold, add index to matches
+            if time_diff <= threshold_seconds:
+                matching_indices.append(idx)
+
+        # Add the list of matching indices for this datetime to the results
+        results.append(matching_indices)
+
+    return results
 
 if __name__ == '__main__':
     example()

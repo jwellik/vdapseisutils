@@ -6,6 +6,10 @@ from matplotlib import dates as mdates
 from pandas import Timestamp as pdTimestamp
 from numpy import datetime64 as npdatetime64
 
+from timezonefinder import TimezoneFinder
+from zoneinfo import ZoneInfo
+
+
 # Examples
 A = UTCDateTime(1980, 5, 18)  # 1980-05-18T00:00:00.000000Z <obspy.swarmmpl.utcdatetime.UTCDateTime>
 B = datetime.datetime(1980, 5, 18)  # datetime.datetime(1980, 5, 18, 0, 0) <datetime.datetime>
@@ -191,8 +195,6 @@ def time_range(tstart, tend, freq="1D", dur="freq"):
     return starts, ends
 
 
-from zoneinfo import ZoneInfo
-
 observatory_timezones = {
     "TGS": ZoneInfo("Pacific/Tongatapu"),  # UTC+17:00
     # "": ZoneInfo("Pacific/Fiji"),  #
@@ -256,30 +258,55 @@ def parse_timezone(input):
     """
     PARSE_TIMEZONE Returns a datetime.timezone object from a variety of inputs, including
      - an integer
-     - a string recognized by ZoneInfo (e.g., "Pacific/Honolulu")
+     - an IANA timezone identifier string (e.g., "Pacific/Honolulu")
+     - tuple of lat, lon, (optionally) datetime
      - a datetime.timedelta object
      - a datetime.timezone object (returns itself)
+
+     Returns
+     - datetime.timezone object
     """
 
     if isinstance(input, int):
         # Convert integer offset (hours) to a timedelta and then to a timezone
         return datetime.timezone(datetime.timedelta(hours=input))
+
     elif isinstance(input, datetime.timedelta):
         # Convert timedelta directly to a timezone
         return datetime.timezone(input)
+
     elif isinstance(input, datetime.timezone):
         # If it's already a timezone object, return it as is
         return input
+
     elif isinstance(input, str):
+        # If a string is provided, try to parse it as an IANA identifier w ZoneInfo
         try:
-            # Try to parse string with ZoneInfo
-            zone = ZoneInfo(input)
-            # Get the UTC offset in hours for the provided zone
-            utcoffset = zone.utcoffset(datetime.datetime.now())
+            zone = ZoneInfo(input)  # returns --> ?
+            utcoffset = zone.utcoffset(datetime.datetime.now())  # returns integer of offset hours or None
             if utcoffset is None:
                 raise ValueError(f"Invalid timezone string: {input}")
             return datetime.timezone(utcoffset)
         except Exception as e:
             raise ValueError(f"Invalid timezone string: {e}")
+
+    elif isinstance(input, tuple):
+        # If tuple, parse as lat, lon, datetime w TimezoneFinder
+        lat = input[0]
+        lon = input[1]
+        t = datetime.datetime(input[2]) if len(input) == 3 else datetime.datetime.now()
+        tf = TimezoneFinder(in_memory=True)
+        iana_tz_id = tf.timezone_at(lat=lat, lng=lon)
+        utcoffset = iana_tz_id.utcoffset(t)
+        return datetime.timezone(utcoffset)
+
     else:
-        raise ValueError("Offset must be an int, datetime.timedelta, datetime.timezone, or a valid timezone string")
+        raise ValueError("Offset must be an int, datetime.timedelta, datetime.timezone, (lat, lon, datetime) or a valid IANA identifier string.")
+
+
+class Timezone:
+
+    def __init__(self, *args):
+
+        self.timezone = parse_timezone(*args)
+

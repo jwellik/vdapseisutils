@@ -1,4 +1,4 @@
-from vdapseisutils.sandbox.swarmmpl import colors as vdap_colors
+from vdapseisutils.utils.style import colors as vdap_colors
 
 #
 # def spectrogram(tr, samp_rate=None, wlen=6, overlap=0.5, dbscale=True, log_power=False,

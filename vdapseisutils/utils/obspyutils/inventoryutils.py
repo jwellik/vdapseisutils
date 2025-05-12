@@ -67,7 +67,21 @@ def write_simple_csv(inventory, filename='~/inventory.csv'):
     """Writes inventory as CSV formatted channel,latitude,longitude,elevation"""
 
     stationdf = inventory2df(inventory)
-    stationdf = stationdf.drop(labels=["local_depth"])
+    try:
+        stationdf = stationdf.drop(labels=["local_depth"])
+    except:
+        pass
+
+    if filename:
+        stationdf.to_csv(filename, index=False)
+
+    return stationdf
+
+def write_nslc_list(inventory, filename='~/list.file'):
+    """Writes inventory as CSV formatted channel,latitude,longitude,elevation"""
+
+    stationdf = inventory2df(inventory)
+    stationdf = stationdf[['nslc']]  # limit to only this column
 
     if filename:
         stationdf.to_csv(filename, index=False)

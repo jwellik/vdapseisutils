@@ -15,13 +15,15 @@ https://docs.obspy.org/_modules/obspy/imaging/spectrogram.html#spectrogram
 TIME
 ----------
 In order to make traces line up for waveforms and spectrograms no matter the extent of the data or gaps, both waveforms
-and spectrograms are plotted against an x-axis vector of datetime objects. For a Clipboard of n Traces, Clipboard keeps
+and spectrograms are plotted against an x-axis vector of datetime objects.
+For a Clipboard of n Traces, Clipboard keeps
 track of:
 time_extent | n-by-2 list | (minimum aboslute time, maximum absolute time) for each trace
-date_extent | n-by-2 list | xlim for each trace; could be datetime objects (for 'datetime') or values in seconds (for 'relative')
+date_extent | n-by-2 list | xlim for each trace; could be datetime objects (for 'datetime') or
+                            values in seconds (for 'relative')
 
-NOTE: tr.times() returns a vector of 0:tr.stats.sampling_rate:... In other words, a vector of seconds from 0: for each data point.
-
+NOTE: tr.times() returns a vector of 0:tr.stats.sampling_rate:...
+In other words, a vector of seconds from 0 for each data point. (Is this true?)
 
 DEFAULT SETTINGS
 ----------
@@ -95,8 +97,11 @@ import matplotlib.dates as mdates
 
 from obspy import Stream, UTCDateTime
 
-from vdapseisutils.core.datasource.nslcutils import getNSLCstr
-from vdapseisutils.sandbox.swarmmpl import colors as vdap_colors
+from vdapseisutils.core.datasource.waveID import waveID
+from vdapseisutils.style import colors as vdap_colors
+from vdapseisutils.utils.timeutils import convert_timeformat
+from vdapseisutils.core.maps.maps import prep_catalog_data_mpl
+
 
 # Plot defaults
 spectrogram_defaults = {"samp_rate": 50, "wlen": 6, "overlap": 0.5, "dbscale": True, "log_power": False,
@@ -110,6 +115,37 @@ fontsize_default = 10
 w_ax_defaults = {"color": "k"}
 g_ax_defaults = {"ylim": [0.1, 10.0]}
 s_ax_defaults = {"color": "k", "mode": "loglog", "ylim": [1.0, 10.0]}
+
+
+def _set_xaxis_relative_labels_001(ax, reference_time=None):
+    """Set relative xtick labels for a xaxis with datetime labels"""
+
+    from obspy.imaging.util import _set_xaxis_obspy_dates
+    _set_xaxis_obspy_dates(ax)  # set xticks as datetimes (always); doesn't hurt to do this again
+
+    if not reference_time:
+        reference_time = ax.get_xlim()[0]  # earliest time stamp on the x-axis
+
+    xticks = ax.get_xticks()
+    ax.set_xticks(xticks[1:])  # reset the xticks so that set_xticklabels is happy
+    xticklabels = [str(round(x)) for x in ((xticks[1:] - xticks[0]) * 86400 / 60)]  # minutes
+    ax.set_xticklabels(xticklabels)
+
+
+def _set_xaxis_relative_labels(ax, reference_time=None):
+    """Set relative xtick labels for a xaxis with datetime labels"""
+
+    from obspy.imaging.util import _set_xaxis_obspy_dates
+    _set_xaxis_obspy_dates(ax)  # set xticks as datetimes (always); doesn't hurt to do this again
+
+    if not reference_time:
+        reference_time = ax.get_xlim()[0]  # earliest time stamp on the x-axis
+
+    xticks = ax.get_xticks()
+    nticks = len(xticks) - 1
+    ax.set_xticks(xticks[1:])  # reset the xticks so that set_xticklabels is happy
+    xticklabels = [str(round(x)) for x in ((xticks[1:] - xticks[0]) * 86400 / 60)]  # minutes
+    ax.set_xticklabels(xticklabels)
 
 
 def t2axiscoords(times, textent, axextent, unit="datetime"):
@@ -174,11 +210,12 @@ def plot_trace(tr, mode="wg", tick_type="datetime", relative_offset=0, fig=None,
                          **spectrogram_settings)
 
     # NSLC Label - Horizontal label with two rows
-    s = getNSLCstr(tr)
+    s = tr.id  # returns net.sta.loc.cha
     idx = s.index(".", 3)  # ? gets second instance of "." assuming NN.SS....
     s1, s2 = s[:idx], s[idx + 1:]
     fig.axes[-1].text(
-        -0.01, 0.67, s1 + "\n" + s2, transform=fig.axes[-1].transAxes, rotation='horizontal',
+        # -0.01, 0.67, s1 + "\n" + s2, transform=fig.axes[-1].transAxes, rotation='horizontal',
+        -0.01, 0.67, idx, transform=fig.axes[-1].transAxes, rotation='horizontal',
         horizontalalignment="right", verticalalignment='center', fontsize=fontsize_default,
     )
 
@@ -206,7 +243,7 @@ def plot_wave(tr, tick_type="datetime", relative_offset=0, color="k", ax=None, *
     return ax
 
 
-def plot_spectrogram(tr, samp_rate=None, wlen=6.0, overlap=0.5, dbscale=True, log_power=False,
+def plot_spectrogram(tr, samp_rate=None, wlen=2.0, overlap=0.86, dbscale=True, log_power=False,
                      cmap=vdap_colors.inferno_u, tick_type="datetime", relative_offset=0, ax=None):
     """PLOT_WAVE Plots spectrogram of single Trace. Returns a MatPlotLib Axes object"""
 
@@ -419,11 +456,9 @@ class ClipboardClass(plt.Figure):
 
         # time_lim (define xlim in time units)
         if self.taxis["sync_waves"]:
-            self.taxis["time_lim"] = [(min(starttimes).datetime, max(endtimes).datetime)] * len(
-                st)  # maximum start:end extent across all traces
+            self.taxis["time_lim"] = [(min(starttimes).datetime, max(endtimes).datetime)] * len(st)  # maximum start:end extent across all traces
         else:
-            self.taxis["time_lim"] = [(tr.stats.starttime.datetime, tr.stats.endtime.datetime) for tr in
-                                      st]  # start:ends for each Trace
+            self.taxis["time_lim"] = [(tr.stats.starttime.datetime, tr.stats.endtime.datetime) for tr in st]  # start:ends for each Trace
 
         # xlim (define xlim in axis data units)
         if self.taxis["sync_waves"]:
@@ -431,16 +466,14 @@ class ClipboardClass(plt.Figure):
                 self.taxis["xlim"] = self.taxis["time_lim"].copy()
                 xlabel = "Time"
             else:
-                self.taxis["xlim"] = [(0, max(endtimes) - min(starttimes))] * len(
-                    st)  # length of maximum start:end extent in seconds
+                self.taxis["xlim"] = [(0, max(endtimes) - min(starttimes))] * len(st)  # length of maximum start:end extent in seconds
                 xlabel = "Time (s)"
         else:
             if self.taxis["tick_type"] == "datetime":
                 self.taxis["xlim"] = self.time_extent
                 xlabel = "Time"
             else:
-                self.taxis["xlim"] = [(0, tr.stats.endtime - tr.stats.starttime) for tr in
-                                      st]  # length of maximum start:end extent in seconds
+                self.taxis["xlim"] = [(0, tr.stats.endtime - tr.stats.starttime) for tr in st]  # length of maximum start:end extent in seconds
                 self.offset_sec = [0.0] * len(self.st)  # no offsets
                 xlabel = "Time (s)"
 
@@ -483,6 +516,14 @@ class ClipboardClass(plt.Figure):
                 formatter = mdates.ConciseDateFormatter(loc)
                 ax.xaxis.set_major_locator(loc)
                 ax.xaxis.set_major_formatter(formatter)
+
+                import warnings
+                warnings.simplefilter("ignore", UserWarning)
+                xtl = ax.get_xticklabels()
+                xt = ax.get_xticks()
+                xtl[0] = mdates.num2date(xt[0]).strftime("%Y-%m-%d\n%H:%M")
+                ax.set_xticklabels(xtl)
+                warnings.simplefilter("default", UserWarning)
             else:
                 # self.tick_type=="relative" automatically produces xunits in seconds for both spectrograms and waveforms
                 # so no need to do anything fancy here
@@ -550,3 +591,109 @@ class ClipboardClass(plt.Figure):
 
 def Clipboard(st=Stream(), **kwargs):
     return plt.figure(st=st, FigureClass=ClipboardClass, **kwargs)
+
+
+class TimeSeries(plt.Axes):
+    """Creates time-series Axes, mostly for geophysical data"""
+
+    name = "time-series"
+
+    def __init__(self, fig=None, *args, tick_type="datetime", **kwargs):
+        """
+        Initializes a TimeSeries plot as an Axes object.
+
+        Parameters:
+        - fig: The figure to which this Axes belongs (created if None).
+        - tick_type: Type of ticks on the x-axis (default: "datetime").
+        - *args, **kwargs: Additional arguments for Axes initialization.
+        """
+        if fig is None:
+            fig = plt.figure(figsize=(8, 2), dpi=300)  # Default figure creation
+
+        super().__init__(fig, *args, **kwargs)
+        fig.add_axes(self)  # Ensure the Axes is part of the figure
+
+        self.tick_type = tick_type
+        self.time_lim = []  # Should always be datetime objects
+
+        # xtick labels
+        if self.tick_type == "datetime":
+            # self.xaxis_date()
+            # loc = mdates.AutoDateLocator()
+            # formatter = mdates.ConciseDateFormatter(loc, show_offset=False)
+            # self.ax.xaxis.set_major_locator(loc)
+            # self.ax.xaxis.set_major_formatter(formatter)
+            from obspy.imaging.util import _set_xaxis_obspy_dates
+            _set_xaxis_obspy_dates(self)
+        else:  # tick_type == "relative"
+            pass
+
+    def _set_xlim_auto(self):
+        print("Set xlim")
+        if self.time_lim:
+            # Flatten the list of tuples and find the min and max
+            all_values = [value for tup in self.time_lim for value in tup]
+            smallest_value = min(all_values)
+            largest_value = max(all_values)
+            self.set_xlim(smallest_value, largest_value)
+            print(all_values)
+
+
+    def plot(self, t, data,  *args, units="datetime", **kwargs):
+        self.scatter(convert_timeformat(t, "datetime"), data, *args, **kwargs)
+        self.time_lim.append([min(convert_timeformat(t, "datetime")), max(convert_timeformat(t, "datetime"))])
+        self._set_xlim_auto()
+
+    def scatter(self, t, data, *args, units="datetime", **kwargs):
+        self.scatter(convert_timeformat(t, "datetime"), data, *args, **kwargs)
+        self.time_lim.append([min(convert_timeformat(t, "datetime")), max(convert_timeformat(t, "datetime"))])
+
+    def axvline(self, t, *args, units="datetime", **kwargs):
+        self.axvline(convert_timeformat(t, "datetime"), *args, **kwargs)
+    def axvspan(self, t, *args, units="datetime", **kwargs):
+        self.axvspan(convert_timeformat(t, "datetime"), *args, **kwargs)
+
+    def plot_catalog(self, catalog, yaxis_type="depth", s="magnitude", c="time", alpha=0.5, **kwargs):
+
+        catdata = prep_catalog_data_mpl(catalog, time_format="datetime")
+
+        if s == "magnitude":
+            s = catdata["size"]
+        else:
+            s = s
+        if c == "time":
+            c = catdata["time"]
+        else:
+            c = c
+
+        if yaxis_type == "depth":
+            self.scatter(catdata["time"], catdata["depth"], s=s, c=c, alpha=alpha, **kwargs)
+        if yaxis_type == "magnitude":
+            self.scatter(catdata["time"], catdata["mag"], s=s, c=c, alpha=alpha, **kwargs)
+
+    def plot_waveform(self, tr, *args, **kwargs):
+        # t = tr.times("datetime")
+        # data = tr.data
+        # self.plot(t, data, *args, **kwargs)
+        # self.set_xlim([t[0], t[-1]])
+        plot_wave(tr, *args, ax=self, **kwargs)
+        self.time_lim.append([min(convert_timeformat(tr.data, "datetime")), max(convert_timeformat(tr.data, "datetime"))])
+        self._set_xlim_auto()
+
+    def plot_spectrogram(self, tr, *args, **kwargs):
+        plot_spectrogram(tr, *args, ax=self, **kwargs)
+        self.time_lim.append([min(convert_timeformat(tr.data, "datetime")), max(convert_timeformat(tr.data, "datetime"))])
+        self._set_xlim_auto()
+
+    def imshow(self, t, img, **kwargs):
+        xmin, xmax = convert_timeformat(min(t), "datetime"), convert_timeformat(max(t), "datetime")
+        self.imshow(img, **kwargs)
+        self.set_xlim(xmin, xmax)  # ? set xextent?
+
+
+
+
+
+
+
+

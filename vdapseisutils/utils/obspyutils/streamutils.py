@@ -127,6 +127,47 @@ def idselect(st, ids):
         st2 += st.select(id=id)
     return st2
 
+def align_streams(st_list, shift_len=3.0, pad=True, fill_value=0, main=None):
+    """
+
+    st_select   : ? list of Stream objects
+    shift_len   : float (seconds) amount by which Stream is allowed to shift
+    main        : Index of st_select by which to align all Streams
+    pad         : (bool) passed to ObsPy.Stream.trim when it is time to shift Stream
+    fill_value  : passed to ObsPy.Stream.trim when it is time to shift Stream
+
+    Uses eqcorrscan.utils.stacking.align_traces which takes
+    - tmp       : ObsPy Stream
+    - master    : ObsPy Trace object
+    - shift_len : int (samples) amount by which Stream is allowed to shift
+    <- shifts   : list of floats (seconds) - shift relative to master
+    <- corr     : list of floats - cross correlation value relative to master
+
+    Then shifts streams using ObsPy.Stream.trim
+    <- st_align : list of Stream objects shifted relative to main
+    <- shifts   : list of floats (seconds) - shift relative to main
+    <- corr     : list of floats - cross correlation value relative to main
+    """
+    from obspy import Stream
+    from eqcorrscan.utils.stacking import align_traces
+
+    st_select2 = [st.copy() for st in st_list]
+    sr = st_list[0][0].stats.sampling_rate  # Assumes all Streams have same sampling rate
+
+    master = st_select2[main][0] if main is not None else None
+
+    tmp = Stream()
+    for _tmp in st_select2:
+        tmp += _tmp
+    shifts, corr = align_traces(tmp, master=master, shift_len=int(shift_len * sr))  # shift_len provided in samples
+
+    st_align = [st.copy() for st in st_select2]
+    for st, shift_sec in zip(st_align, shifts):
+        tstart = st[0].stats.starttime
+        tend = st[0].stats.endtime
+        st.trim(tstart - shift_sec, tend - shift_sec, pad=pad, fill_value=fill_value)
+
+    return st_align, shifts, corr
 
 class SuperStream(Stream):
 
