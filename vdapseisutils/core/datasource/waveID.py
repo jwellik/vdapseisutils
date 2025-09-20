@@ -124,8 +124,10 @@ class waveID(WaveformStreamID):
     def channel(self):
         return self.get("channel_code")
 
-    def scnl2nslc(self, sep=".", new_sep="."):
-        print("This method is not yet implemented")
+    @staticmethod
+    def scnl2nslc(scnl, sep=".", new_sep="."):
+        scnl_id = waveID(scnl, order="scnl", sep=sep)
+        return scnl_id.nslc(sep=new_sep)
 
 
 def test():

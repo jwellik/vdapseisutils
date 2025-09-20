@@ -61,7 +61,7 @@ def get_waveforms_from_client(client, nslc_list, t1, t2,
 
     from numpy import dtype
     from obspy import UTCDateTime, Stream
-    from vdapseisutils.core.datasource import waveID
+    from vdapseisutils.core.datasource.waveID import waveID
     from vdapseisutils.utils.obspyutils.streamutils import createEmptyTrace
     from vdapseisutils.utils import timeutils
 
@@ -89,7 +89,7 @@ def get_waveforms_from_client(client, nslc_list, t1, t2,
         for dt1, dt2 in zip(dtstarts, dtends):
 
             try:
-                st_nslc_small = client.get_waveforms(net, sta, dt1, dt2 * 60)  # Call ObsPy function
+                st_nslc_small = client.get_waveforms(net, sta, loc, cha, dt1, dt2)  # Call ObsPy function
 
                 # Stolen from Aaron Wech, I think
                 # Deal w error when sub-traces have different dtypes
@@ -101,6 +101,10 @@ def get_waveforms_from_client(client, nslc_list, t1, t2,
                         # print("dtype != dtype('int32')")
                         tr.data=tr.data.astype('int32') # force type int32
                     # deal with rare error when sub-traces have different sample rates
+
+                sr = round(st_nslc_small[0].stats.sampling_rate)
+                for tr in st_nslc_small:
+                    tr.resample(sr)
 
             except:
                 # stmp2 = Stream()

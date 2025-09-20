@@ -139,6 +139,29 @@ class DataSource:
 
         return st
 
+    def get_waveforms(self, nslc_list, tstart, tend, max_download="1D", create_empty_trace=False, fill_value=None, verbose=False):
+
+        import pandas as pd
+        from obspy import Stream, UTCDateTime
+        from vdapseisutils.core.datasource.clientutils import get_waveforms_from_client
+
+        st = Stream()
+        tstart = UTCDateTime(tstart)
+        tend = UTCDateTime(tend) - pd.Timedelta(seconds=0.0001)  # Remove 0.0001 sample to avoid surplus sample point
+
+        if self.ds_type.lower() == 'client'.lower():
+
+            if verbose:
+                print("Downloading miniseed data...")
+            st = get_waveforms_from_client(self.client, nslc_list, tstart, tend, max_download=max_download,
+                                           create_empty_trace=create_empty_trace,
+                                           fill_value=fill_value, verbose=verbose)
+
+            if verbose:
+                print("Done.")
+
+        return st
+
     def archive_waveforms(self, nslc_list, tstart, tend, loc="--", resample=False,
                           basedir="./", mplex_archive=False, verbose=False):
         """archive_waveforms Archives waveforms as miniseed files with reclen 512 in the SDS filestructure"""
