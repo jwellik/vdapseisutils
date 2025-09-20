@@ -154,7 +154,6 @@ class Helicorder(plt.Figure):
 
     def plot_catalog(self, catalog, marker="o", color="red", markersize=8, markeredgecolor="black", alpha=0.5, **kwargs):
 
-        # ax = self.fig.axes[0]
         ax = self.axes[0]
 
         catdf = catalog2txyzm(catalog)
@@ -240,7 +239,6 @@ class Helicorder(plt.Figure):
                 # make height=0.9 so that it doesn't take up quite the whole line
                 rect = patches.Rectangle((x, y - 0.5 + 0.05), w, 0.9, edgecolor=color, facecolor=color, alpha=alpha, **kwargs)
                 self.axes[0].add_patch(rect)
-
 
     def _time2xy(self, time):
         """JJW: Stolen from ObsPy source code (https://docs.obspy.org/_modules/obspy/imaging/waveform.html#WaveformPlotting.plot_day)"""
