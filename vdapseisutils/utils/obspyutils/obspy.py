@@ -1,5 +1,6 @@
 from obspy import Stream, Trace, Catalog, Inventory
-from vdapseisutils import waveID
+from vdapseisutils.core.datasource.waveID import waveID
+
 
 import os
 import pandas as pd
@@ -28,13 +29,14 @@ class StreamV(Stream):
     def clip(self, clip_threshold):
         return streamutils.clip(self, clip_threshold)
 
-    def sort_by_nlsc(self, nslc_list, verbose=False):
+    def sort_by_nslc(self, nslc_list, verbose=False):
         return streamutils.sortStreamByNSLClist(self, nslc_list, verbose=verbose)
 
     def add_empty_trace(self, *args, **kwargs):
         return streamutils.createEmptyTrace(*args, **kwargs)
 
     def idselect(self, ids):
+        # TODO Deprecate. Use obspy.stream.select(id=...) instead
         return streamutils.idselect(self, ids)
 
     def ffrsam(self, window_length=60, step=None, freq=None):
@@ -90,7 +92,6 @@ class TraceV(Trace):
 
 
 class CatalogV(Catalog):
-
 
     def __init__(self):
         print("VDAPSEISUTILS Catalog")

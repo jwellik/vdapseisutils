@@ -12,50 +12,10 @@ from obspy import Stream
 winston_gap_value = -2**31
 
 
-def same_data_type(st):
-    """Ensures that all Traces have the same data type"""
-    for tr in st:
-        # deal with error when sub-traces have different dtypes
-        if tr.data.dtype.name != 'int32':
-            tr.data = tr.data.astype('int32')
-        if tr.data.dtype != dtype('int32'):
-            tr.data = tr.data.astype('int32')
-        # deal with rare error when sub-traces have different sample rates
-        if tr.stats.sampling_rate != round(tr.stats.sampling_rate):
-            tr.stats.sampling_rate = round(tr.stats.sampling_rate)
-    return st
 
 
-def preprocess(st, resample=None, taper=5.0, filter=None, trim=None):
-    """
-    PREPROCESS Basic pre-processing steps for short time chunks of data
 
-    EXAMPLE:
-    >>> preprocess(st, resample=25.0, filter=["bandpass", {"freqmin": 1.0, "freqmax": 10.0}])
 
-    :param st: ObsPy Stream object
-    :param resample: desired sample rate (Hz)
-    :param taper: seconds to taper beginning and end of trace before filtering
-    :param filter: list : [<filter_type, {<filter_kwargs>]
-    :param trim: (t1, t2) to trim extent of trace
-    :return:
-    """
-
-    # filter_defaults = {"freqmin": 1.0, "freqmax": 10, "corners":2, "zerophase":True}  # Not used, at the moment
-
-    st = same_data_type(st)
-    st.detrend('demean')
-    if resample:
-        for tr in st:
-            if tr.stats['sampling_rate'] != resample:
-                tr.resample(resample)
-    st.taper(max_percentage=None, max_length=taper)
-    if filter:
-        st.filter(filter[0], **filter[1])  # applies filter_type and filter_kwargs
-    if trim:
-        st.trim(trim[0], trim[1])
-
-    return st
 
 
 def removeWinstonGaps(st, winston_gap_value=winston_gap_value, fill_value=0):
@@ -67,7 +27,7 @@ def removeWinstonGaps(st, winston_gap_value=winston_gap_value, fill_value=0):
 
 def replaceGapValue(st, gap_value=np.nan, fill_value=0 ):
     for m in range(len(st)):
-        st[m].data = np.where(st[m].data == gap_value, fill_value, st[m].data) # replace -2**31 (Winston NaN token) w 0  
+        st[m].data = np.where(st[m].data == gap_value, fill_value, st[m].data) # replace -2**31 (Winston NaN token) w 0
     return st
 
 

@@ -23,7 +23,7 @@ def inventory2df(inventory):
                 d["nslc"] = "{}.{}.{}.{}".format(net.code, sta.code, cha.location_code, cha.code)
                 d["latitude"] = [sta.latitude]
                 d["longitude"] = [sta.longitude]
-                d["elevation"] = [sta.elevation]
+                d["elevation"] = [sta.get_elevation]
                 d["local_depth"] = [0.0]
 
                 stationdf = pd.concat([stationdf, pd.DataFrame(d)])

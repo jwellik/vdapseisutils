@@ -109,7 +109,81 @@ def read_victoria_csv(file):
 
 
 
+########################################################################################################################
+# Catalog manipulation
+########################################################################################################################
 
+def sort_catalog(catalog, key='magnitude', reverse=False):
+    """
+    Sort an ObsPy Catalog object by various criteria.
+
+    Parameters:
+    -----------
+    catalog : obspy.Catalog
+        The catalog to sort
+    key : str or callable
+        Sorting criteria. Options:
+        - 'magnitude': Sort by magnitude (uses first magnitude if multiple)
+        - 'time': Sort by origin time (uses first origin if multiple)
+        - 'depth': Sort by depth (uses first origin if multiple)
+        - 'latitude': Sort by latitude (uses first origin if multiple)
+        - 'longitude': Sort by longitude (uses first origin if multiple)
+        - callable: Custom function that takes an Event and returns a sortable value
+    reverse : bool
+        If True, sort in descending order. Default is False (ascending)
+
+    Returns:
+    --------
+    obspy.Catalog
+        A new sorted catalog
+    """
+
+    def get_sort_value(event):
+        if callable(key):
+            return key(event)
+
+        if key == 'magnitude':
+            if event.magnitudes:
+                return event.magnitudes[0].mag
+            else:
+                return float('-inf')  # Events without magnitude go to the end
+
+        elif key == 'time':
+            if event.origins:
+                return event.origins[0].time
+            else:
+                return datetime.min  # Events without origin time go to the beginning
+
+        elif key == 'depth':
+            if event.origins and event.origins[0].depth is not None:
+                return event.origins[0].depth
+            else:
+                return float('inf')  # Events without depth go to the end
+
+        elif key == 'latitude':
+            if event.origins and event.origins[0].latitude is not None:
+                return event.origins[0].latitude
+            else:
+                return float('-inf')
+
+        elif key == 'longitude':
+            if event.origins and event.origins[0].longitude is not None:
+                return event.origins[0].longitude
+            else:
+                return float('-inf')
+
+        else:
+            raise ValueError(f"Unknown sort key: {key}")
+
+    # Sort events
+    sorted_events = sorted(catalog.events, key=get_sort_value, reverse=reverse)
+
+    # Create new catalog with sorted events
+    sorted_catalog = Catalog()
+    for event in sorted_events:
+        sorted_catalog += event
+
+    return sorted_catalog
 
 ########################################################################################################################
 # Catalog to Text-based files
@@ -322,7 +396,8 @@ def catalog2swarm(catalog, nslc, tags=["default"], filename="swarm_tagger.csv", 
 
 def read_swarm_tags(swarm_tag_file, scnl_format="scnl"):
     df = pd.read_csv(swarm_tag_file, header=None, names=["time", "scnl", "tag"])
-    df["time"] = pd.to_datetime(df["time"])
+    # Handle mixed timestamp formats (with and without microseconds)
+    df["time"] = pd.to_datetime(df["time"], format='mixed', dayfirst=False)
     return df
 
 def createSwarmTags(times, nslc, tag, filename="swarm_tagger.csv"):
@@ -350,22 +425,23 @@ def createSwarmTags(times, nslc, tag, filename="swarm_tagger.csv"):
     # write the DataFrame to a CSV file
     df.to_csv(filename, header=False)
 
-def times2swarm(times, scnl, tag, sort=False, filename="swarm_tagger.csv"):
+def times2swarm(times, scnl, tag, sort=False, filename="swarm_tagger.csv", overwrite=True):
     import pandas as pd
+    import os
 
     # create a sample nslc
     if len(scnl) == 1:
-        scnl = scnl*len(times)
+        scnl = scnl * len(times)
 
     # create a sample tag
     if len(tag) == 1:
-        tag = tag*len(times)
+        tag = tag * len(times)
 
     # create a pandas DataFrame with the times, nslc, and tag
     df = pd.DataFrame({'time': times, 'scnl': scnl, 'tag': tag})
 
     # convert the 'time' column to the correct format
-    df['time'] = pd.to_datetime(df['time'])
+    df['time'] = pd.to_datetime(df['time']).dt.strftime('%Y-%m-%d %H:%M:%S.%f')
 
     # set the 'time' column as the index
     df.set_index('time', inplace=True)
@@ -373,8 +449,13 @@ def times2swarm(times, scnl, tag, sort=False, filename="swarm_tagger.csv"):
     if sort:
         df.sort_index(inplace=True)
 
-    # write the DataFrame to a CSV file
-    df.to_csv(filename, header=False)
+    # check if the file exists and handle overwriting
+    if os.path.exists(filename) and not overwrite:
+        # Append to the existing file
+        df.to_csv(filename, mode='a', header=False)
+    else:
+        # Write to a new file or overwrite
+        df.to_csv(filename, header=False)
     
 # Define method for getting waveforms from a catalog
 def get_catalog_waveforms_dev(client, catalog, nslc_str, trange=(-2, 28), verbose=False):
@@ -430,6 +511,7 @@ def find_matching_times(times1, reference_times, threshold_seconds=5):
         results.append(matching_indices)
 
     return results
+
 
 if __name__ == '__main__':
     example()
