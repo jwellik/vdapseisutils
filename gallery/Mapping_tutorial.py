@@ -294,3 +294,30 @@ if __name__ == '__main__':
     volcano_figure()
     bathymetry_map_xsection()
     print("#"*80)
+def add_scalebar(self, scale_length_km="auto"):
+    """ADD_SCALEBAR Uses Matplotlib's AnchoredSizeBar to make a scale bar in km"""
+    
+    from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
+    import matplotlib.font_manager as fm
+    from vdapseisutils.utils.geoutils import backazimuth
+
+    # Get scalebar length in axes percentage
+    map_lonL, map_lonR, map_midlat = self.properties["map_extent"][0:3]
+    az, d = backazimuth((map_midlat, map_lonL), (map_midlat, map_lonR))  # azimuth & map width (meters)
+    map_width_km = d / 1000
+    if scale_length_km == "auto":
+        scale_length_km = choose_scale_bar_length(map_width_km, 0.30)
+    scale_bar_length_ax = scale_length_km / map_width_km
+
+    # Add scale bar
+    scalebar = AnchoredSizeBar(self.ax.transAxes,  # Changed from self.figure.axes[0].transAxes
+                               scale_bar_length_ax,
+                               f"{scale_length_km} km",
+                               'lower right',
+                               pad=0.5,
+                               color='black',
+                               frameon=False,
+                               size_vertical=0.01,
+                               fontproperties=fm.FontProperties(size=10))
+
+    self.ax.add_artist(scalebar)  # Changed from self.figure.axes[0].add_artist

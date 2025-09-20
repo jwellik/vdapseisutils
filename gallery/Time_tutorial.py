@@ -1,13 +1,11 @@
 import datetime
-from zoneinfo import ZoneInfo
-from vdapseisutils.utils.timeutils import parse_timezone
-
-
 from datetime import time, tzinfo, timedelta, timezone, datetime
+
 from zoneinfo import ZoneInfo
 import pytz
 
 from obspy import UTCDateTime
+from vdapseisutils.utils.timeutils import parse_timezone
 
 
 def public_time_packages():
@@ -72,15 +70,15 @@ def vdap_time_packages():
 
     # Timezone string
     tz = parse_timezone("Pacific/Honolulu")
-    print(tz)
+    print(tz)  # --> UTC-10:00
 
     # Integer
     tz = parse_timezone(-10)
-    print(tz)
+    print(tz)  # --> UTC-10:00
 
     # TimeDelta object
     tz = parse_timezone(timedelta(hours=-10))
-    print(tz)
+    print(tz)  # --> UTC-10:00
 
     print("Done.")
 
