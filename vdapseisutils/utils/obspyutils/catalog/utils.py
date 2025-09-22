@@ -278,9 +278,54 @@ class VCatalogUtilsMixin:
         return eventid
 
     def filter(self, magnitude=None, longitude=None, latitude=None, depth=None, time=None,
-               standard_error=None, azimuthal_gap=None, used_station_count=None, used_phase_count=None,
+               max_standard_error=None, max_azimuthal_gap=None, min_station_count=None, min_phase_count=None,
                inverse=False):
-        # TODO Implement remaining parameters
+        """
+        Filter the catalog based on various criteria.
+        
+        Parameters
+        ----------
+        magnitude : tuple, optional
+            (min_magnitude, max_magnitude) range for filtering
+        longitude : tuple, optional
+            (min_longitude, max_longitude) range for filtering
+        latitude : tuple, optional
+            (min_latitude, max_latitude) range for filtering
+        depth : tuple, optional
+            (min_depth, max_depth) range for filtering
+        time : tuple, optional
+            (start_time, end_time) range for filtering. Times can be strings or UTCDateTime objects.
+        max_standard_error : float, optional
+            Maximum standard error (inclusive). Events with standard_error > this value are excluded.
+        max_azimuthal_gap : float, optional
+            Maximum azimuthal gap (inclusive). Events with azimuthal_gap > this value are excluded.
+        min_station_count : int, optional
+            Minimum used station count (inclusive). Events with used_station_count < this value are excluded.
+        min_phase_count : int, optional
+            Minimum used phase count (inclusive). Events with used_phase_count < this value are excluded.
+        inverse : bool, default False
+            If True, invert the filter logic (exclude events that match criteria instead of including them)
+            
+        Returns
+        -------
+        VCatalog
+            New VCatalog instance containing filtered events
+            
+        Examples
+        --------
+        >>> # Filter by magnitude range
+        >>> filtered_cat = catalog.filter(magnitude=(3.0, 5.0))
+        
+        >>> # Filter by time range
+        >>> filtered_cat = catalog.filter(time=("2023-01-01", "2023-12-31"))
+        
+        >>> # Filter by quality criteria
+        >>> filtered_cat = catalog.filter(
+        ...     max_standard_error=0.1,
+        ...     min_station_count=5,
+        ...     min_phase_count=10
+        ... )
+        """
         # TODO Add lat,lon,radius_km
 
         filter_params = []
@@ -295,6 +340,18 @@ class VCatalogUtilsMixin:
             t2 = UTCDateTime(time[1])
             filter_params.append("time >= " + t1.isoformat())
             filter_params.append("time <= " + t2.isoformat())
+
+        if max_standard_error is not None:
+            filter_params.append("standard_error <= " + str(max_standard_error))
+
+        if max_azimuthal_gap is not None:
+            filter_params.append("azimuthal_gap <= " + str(max_azimuthal_gap))
+
+        if min_station_count is not None:
+            filter_params.append("used_station_count >= " + str(min_station_count))
+
+        if min_phase_count is not None:
+            filter_params.append("used_phase_count >= " + str(min_phase_count))
 
         # Call the parent class (ObsPy Catalog) filter method and return a new VCatalog
         filtered_catalog = super().filter(*filter_params, inverse=inverse)
