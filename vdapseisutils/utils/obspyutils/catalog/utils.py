@@ -388,7 +388,7 @@ class VCatalogUtilsMixin:
 
     def get_waveforms(self, client, inventory=None, outdir=None, pre_t=2, post_t=18,
                               verbose=True, components=["Z", "N", "E"],
-                              fallback_clients=None, client_timeout=30):
+                              fallback_clients=None, client_timeout=30, loc_code_override=None):
         """
         Retrieve waveforms for all events in a catalog using ObsPy with support for multiple data sources.
 
@@ -426,6 +426,10 @@ class VCatalogUtilsMixin:
             - Dict with same mapping options as primary client
         client_timeout : float, default 30
             Timeout in seconds for individual client requests
+        loc_code_override : str, optional
+            Override location code for all waveform requests. If provided, this will
+            be used instead of the location codes from the picks. Useful when picks
+            have '--' but the archive has empty location codes, or vice versa.
 
         Returns
         -------
@@ -474,6 +478,9 @@ class VCatalogUtilsMixin:
         >>> fallbacks = [Client("SCEDC"), Client("GEOFON")]
         >>> streams, stats = cat.get_waveforms(network_clients,
         ...                                  fallback_clients=fallbacks)
+        >>>
+        >>> # Override location codes (e.g., when picks have '--' but archive has '')
+        >>> streams, stats = cat.get_waveforms(client, loc_code_override="")
         """
 
         import os
@@ -654,7 +661,11 @@ class VCatalogUtilsMixin:
                 try:
                     pick_id = pick.waveform_id.id
                     net, sta, loc, cha = pick_id.split(".")
-                    loc = "--" if loc == "" else loc
+                    loc = "*" if loc == "" else loc
+                    
+                    # Apply location code override if provided
+                    if loc_code_override is not None:
+                        loc = loc_code_override
 
                     # Get pick time
                     pick_time = pick.time
