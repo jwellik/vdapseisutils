@@ -5,6 +5,7 @@ from vdapseisutils.utils.obspyutils.utcdatetime import VUTCDateTime, vutcnow, vu
 
 # Import catalog functionality
 from vdapseisutils.utils.obspyutils.catalog import VCatalog
+from vdapseisutils.utils.obspyutils.inventory import VInventory
 
 # TODO Inherit class Inventory
 # TODO Inherit class WaveformID
