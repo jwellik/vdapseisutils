@@ -65,6 +65,50 @@ class VEvent(Event):
         temp_catalog = VCatalog([self])
         return temp_catalog.get_waveforms(client, **kwargs)
     
+    def short_str(self):
+        """
+        Returns a short string representation of the event with depth information.
+        This overrides the default Event.short_str() method to include depth.
+        """
+        try:
+            if self.origins:
+                origin = self.origins[0]
+                time_str = str(origin.time)
+                lat = origin.latitude
+                lon = origin.longitude
+                depth = origin.depth
+                
+                # Format coordinates with + signs
+                lat_str = f"+{lat:.3f}" if lat >= 0 else f"{lat:.3f}"
+                lon_str = f"+{lon:.3f}" if lon >= 0 else f"{lon:.3f}"
+                
+                # Format depth (convert from meters to km if needed)
+                if depth is not None:
+                    depth_km = depth / 1000.0  # Convert meters to km
+                    depth_str = f"{depth_km:.2f}"
+                else:
+                    depth_str = "N/A"
+                
+                # Get magnitude information
+                mag_str = "N/A"
+                if self.magnitudes:
+                    mag = self.magnitudes[0]
+                    if mag.mag is not None:
+                        mag_str = f"{mag.mag:>4.1f} {mag.magnitude_type:<3}"  # Should be max 8 characters
+                
+                # Determine method (manual/automatic) based on evaluation mode
+                method = "automatic"
+                if hasattr(origin, 'evaluation_mode') and origin.evaluation_mode:
+                    if origin.evaluation_mode.lower() == 'manual':
+                        method = "manual"
+                
+                # Format the event line with depth included
+                return f"{time_str:<27} | {lat_str:>8}, {lon_str:>8}, {depth_str:>6} | {mag_str:>8} | {method:<9}"
+            else:
+                return f"{self.resource_id} | No origin information"
+        except Exception:
+            return f"{self.resource_id} | Error formatting event"
+
     def sort_picks(self, inplace=True, verbose=False):
         """
         Sort picks by earliest arrival time for this event.
@@ -242,6 +286,36 @@ class VCatalog(VCatalogConversionMixin, VCatalogPlottingMixin, VCatalogAnalysisM
                         pass
             
             return vevent
+
+    def __str__(self, print_all=False):
+        """
+        Returns short summary string of the current catalog with depth information.
+
+        It will contain the number of Events in the Catalog and the return
+        value of each Event's short_str() method, modified to include depth.
+
+        :type print_all: bool, optional
+        :param print_all: If True, all events will be printed, otherwise a
+            maximum of ten event will be printed.
+            Defaults to False.
+        """
+        out = str(len(self.events)) + ' Event(s) in Catalog:\n'
+        if len(self) <= 10 or print_all is True:
+            out += "\n".join([self._get_vevent(i).short_str() for i in range(len(self))])
+        else:
+            out += "\n".join([self._get_vevent(i).short_str() for i in range(2)])
+            out += "\n...\n"
+            out += "\n".join([self._get_vevent(i).short_str() for i in range(len(self)-2, len(self))])
+            out += "\nTo see all events call " + \
+                   "'print(CatalogObject.__str__(print_all=True))'"
+        return out
+
+    def _get_vevent(self, index):
+        """
+        Helper method to get a VEvent object for a given index.
+        This ensures we get VEvent objects with the custom short_str() method.
+        """
+        return self[index]  # This will return a VEvent object due to __getitem__ override
 
     def write(self, filename, format=None, **kwargs):
         """
