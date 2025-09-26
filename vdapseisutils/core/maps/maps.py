@@ -755,7 +755,70 @@ class Map:
     def scatter(self, lat, lon, size, color, transform=ccrs.Geodetic(), **kwargs):
         self.ax.scatter(lon, lat, size, color, transform=transform, **kwargs)
 
-    def plot_catalog(self, catalog, s="magnitude", c="time", cmap="viridis_r", alpha=0.5, transform=ccrs.Geodetic(), **kwargs):
+    def plot_catalog(self, catalog, s="magnitude", c="time", color=None, cmap="viridis_r", alpha=0.5, transform=ccrs.Geodetic(), **kwargs):
+        """
+        Plot earthquake catalog on the map.
+        
+        Creates a scatter plot of earthquake events from an ObsPy Catalog object,
+        with customizable size, color, and styling options.
+        
+        Parameters:
+        -----------
+        catalog : obspy.core.event.Catalog
+            ObsPy Catalog object containing earthquake events
+        s : str or array-like, optional
+            Size parameter for scatter points. If "magnitude" (default), 
+            point sizes are scaled by earthquake magnitude. Otherwise, 
+            can be a numeric array or column name from catalog data.
+        c : str or array-like, optional
+            Color parameter for scatter points. If "time" (default), 
+            points are colored by event time. Otherwise, can be a numeric 
+            array, column name, or color specification.
+        color : str or array-like, optional
+            Alternative to 'c' parameter for specifying color. If provided,
+            takes precedence over 'c'. Can be a single color name, hex code,
+            or array of colors. Compatible with matplotlib's scatter color
+            parameter.
+        cmap : str or matplotlib.colors.Colormap, optional
+            Colormap for mapping numeric values to colors (default: "viridis_r")
+        alpha : float, optional
+            Transparency of scatter points, 0 (transparent) to 1 (opaque) 
+            (default: 0.5)
+        transform : cartopy.crs.Projection, optional
+            Coordinate reference system for the data (default: ccrs.Geodetic())
+        **kwargs
+            Additional keyword arguments passed to matplotlib's scatter function
+            
+        Returns:
+        --------
+        matplotlib.collections.PathCollection
+            The scatter plot collection
+            
+        Notes:
+        ------
+        - Point sizes are automatically scaled based on magnitude using the
+          MagLegend class when s="magnitude"
+        - Colors are mapped using the specified colormap when c or color 
+          contains numeric data
+        - Both 'c' and 'color' parameters are supported for compatibility
+          with matplotlib's scatter function
+        - The method automatically extracts latitude, longitude, magnitude,
+          and time data from the ObsPy Catalog object
+          
+        Examples:
+        ---------
+        # Basic usage with default magnitude sizing and time coloring
+        map_obj.plot_catalog(catalog)
+        
+        # Custom size and color
+        map_obj.plot_catalog(catalog, s="magnitude", c="depth", cmap="plasma")
+        
+        # Use color parameter instead of c
+        map_obj.plot_catalog(catalog, color="red", alpha=0.8)
+        
+        # Custom size array and color mapping
+        map_obj.plot_catalog(catalog, s=[10, 20, 30], c=[1, 2, 3], cmap="cool")
+        """
         catdata = prep_catalog_data_mpl(catalog, time_format="matplotlib")
 
         if s == "magnitude":
@@ -763,12 +826,16 @@ class Map:
         else:
             s = s
 
-        if c == "time":
+        # Handle both 'c' and 'color' parameters like matplotlib's scatter
+        if color is not None:
+            # 'color' parameter takes precedence over 'c'
+            c = color
+        elif c == "time":
             c = catdata["time"]
         else:
             c = c
 
-        self.ax.scatter(catdata["lon"], catdata["lat"], s=s, c=c, cmap=cmap, alpha=alpha, transform=transform, **kwargs)
+        return self.ax.scatter(catdata["lon"], catdata["lat"], s=s, c=c, cmap=cmap, alpha=alpha, transform=transform, **kwargs)
 
     def plot_line(self, p1, p2, color="k", linewidth=1,
                   label=None, va='center', ha='center',
@@ -883,6 +950,19 @@ class Map:
             print(f"Error creating heatmap: {e}")
             print("Continuing without heatmap...")
             return None
+
+    def add_terrain(self, zoom='auto', cache=False):
+        """
+        Add terrain background tiles from default source to the map.
+
+        Parameters:
+        -----------
+        zoom : int or str, optional
+            Zoom level for the tiles ('auto' for auto-detection, default: 'auto')
+        cache : bool, optional
+            Whether to cache tiles (default: False)
+        """
+        self.add_arcgis_terrain(zoom=zoom, cache=cache)
 
     def add_arcgis_terrain(self, zoom='auto', style='terrain', cache=False):
         """
@@ -1136,7 +1216,70 @@ class CrossSection:
         x = np.asarray(x)
         self.ax.plot(x, depth, **kwargs)
 
-    def plot_catalog(self, catalog, s="magnitude", c="time", cmap="viridis_r", alpha=0.5, **kwargs):
+    def plot_catalog(self, catalog, s="magnitude", c="time", color=None, cmap="viridis_r", alpha=0.5, **kwargs):
+        """
+        Plot earthquake catalog on the cross-section.
+        
+        Creates a scatter plot of earthquake events from an ObsPy Catalog object
+        projected onto the cross-section line, with customizable size, color, 
+        and styling options.
+        
+        Parameters:
+        -----------
+        catalog : obspy.core.event.Catalog
+            ObsPy Catalog object containing earthquake events
+        s : str or array-like, optional
+            Size parameter for scatter points. If "magnitude" (default), 
+            point sizes are scaled by earthquake magnitude. Otherwise, 
+            can be a numeric array or column name from catalog data.
+        c : str or array-like, optional
+            Color parameter for scatter points. If "time" (default), 
+            points are colored by event time. Otherwise, can be a numeric 
+            array, column name, or color specification.
+        color : str or array-like, optional
+            Alternative to 'c' parameter for specifying color. If provided,
+            takes precedence over 'c'. Can be a single color name, hex code,
+            or array of colors. Compatible with matplotlib's scatter color
+            parameter.
+        cmap : str or matplotlib.colors.Colormap, optional
+            Colormap for mapping numeric values to colors (default: "viridis_r")
+        alpha : float, optional
+            Transparency of scatter points, 0 (transparent) to 1 (opaque) 
+            (default: 0.5)
+        **kwargs
+            Additional keyword arguments passed to matplotlib's scatter function
+            
+        Returns:
+        --------
+        matplotlib.collections.PathCollection
+            The scatter plot collection
+            
+        Notes:
+        ------
+        - Point sizes are automatically scaled based on magnitude using the
+          MagLegend class when s="magnitude"
+        - Colors are mapped using the specified colormap when c or color 
+          contains numeric data
+        - Both 'c' and 'color' parameters are supported for compatibility
+          with matplotlib's scatter function
+        - Earthquake coordinates are automatically projected onto the 
+          cross-section line using the project2line function
+        - The cross-section extent is automatically adjusted after plotting
+          
+        Examples:
+        ---------
+        # Basic usage with default magnitude sizing and time coloring
+        xs_obj.plot_catalog(catalog)
+        
+        # Custom size and color
+        xs_obj.plot_catalog(catalog, s="magnitude", c="depth", cmap="plasma")
+        
+        # Use color parameter instead of c
+        xs_obj.plot_catalog(catalog, color="red", alpha=0.8)
+        
+        # Custom size array and color mapping
+        xs_obj.plot_catalog(catalog, s=[10, 20, 30], c=[1, 2, 3], cmap="cool")
+        """
         catdata = prep_catalog_data_mpl(catalog, time_format="matplotlib")
 
         if s == "magnitude":
@@ -1144,15 +1287,20 @@ class CrossSection:
         else:
             s = s
 
-        if c == "time":
+        # Handle both 'c' and 'color' parameters like matplotlib's scatter
+        if color is not None:
+            # 'color' parameter takes precedence over 'c'
+            c = color
+        elif c == "time":
             c = catdata["time"]
         else:
             c = c
 
         x = project2line(catdata["lat"], catdata["lon"], P1=self.A1, P2=self.A2, unit="km")
-        self.ax.scatter(x, catdata["depth"], s=s, c=c, cmap=cmap, alpha=alpha, **kwargs)
+        scatter = self.ax.scatter(x, catdata["depth"], s=s, c=c, cmap=cmap, alpha=alpha, **kwargs)
         self.set_depth_extent()
         self.set_horiz_extent()
+        return scatter
 
     def plot_inventory(self, inventory, marker_size=6, color='black', alpha=0.8, **kwargs):
         try:
@@ -1377,23 +1525,90 @@ class TimeSeries:
         self.ax.scatter(convert_timeformat(t, "matplotlib"), y, **kwargs)
         self.set_ylim()
 
-    def plot_catalog(self, catalog, s="magnitude", c="time", alpha=0.5, **kwargs):
+    def plot_catalog(self, catalog, s="magnitude", c="time", color=None, alpha=0.5, **kwargs):
+        """
+        Plot earthquake catalog on the time-series plot.
+        
+        Creates a scatter plot of earthquake events from an ObsPy Catalog object
+        plotted against time, with customizable size, color, and styling options.
+        The y-axis can represent either depth or magnitude based on the axis_type.
+        
+        Parameters:
+        -----------
+        catalog : obspy.core.event.Catalog
+            ObsPy Catalog object containing earthquake events
+        s : str or array-like, optional
+            Size parameter for scatter points. If "magnitude" (default), 
+            point sizes are scaled by earthquake magnitude. Otherwise, 
+            can be a numeric array or column name from catalog data.
+        c : str or array-like, optional
+            Color parameter for scatter points. If "time" (default), 
+            points are colored by event time. Otherwise, can be a numeric 
+            array, column name, or color specification.
+        color : str or array-like, optional
+            Alternative to 'c' parameter for specifying color. If provided,
+            takes precedence over 'c'. Can be a single color name, hex code,
+            or array of colors. Compatible with matplotlib's scatter color
+            parameter.
+        alpha : float, optional
+            Transparency of scatter points, 0 (transparent) to 1 (opaque) 
+            (default: 0.5)
+        **kwargs
+            Additional keyword arguments passed to matplotlib's scatter function
+            
+        Returns:
+        --------
+        matplotlib.collections.PathCollection
+            The scatter plot collection
+            
+        Notes:
+        ------
+        - Point sizes are automatically scaled based on magnitude using the
+          MagLegend class when s="magnitude"
+        - Colors are mapped using the specified colormap when c or color 
+          contains numeric data
+        - Both 'c' and 'color' parameters are supported for compatibility
+          with matplotlib's scatter function
+        - The y-axis represents either depth (when axis_type="depth") or 
+          magnitude (when axis_type="magnitude")
+        - The y-axis limits are automatically adjusted after plotting
+          
+        Examples:
+        ---------
+        # Basic usage with default magnitude sizing and time coloring
+        ts_obj.plot_catalog(catalog)
+        
+        # Custom size and color for depth-time plot
+        ts_obj.plot_catalog(catalog, s="magnitude", c="depth", alpha=0.8)
+        
+        # Use color parameter instead of c
+        ts_obj.plot_catalog(catalog, color="red", alpha=0.8)
+        
+        # Custom size array and color mapping
+        ts_obj.plot_catalog(catalog, s=[10, 20, 30], c=[1, 2, 3])
+        """
         catdata = prep_catalog_data_mpl(catalog, time_format="matplotlib")
 
         if s == "magnitude":
             s = catdata["size"]
         else:
             s = s
-        if c == "time":
+
+        # Handle both 'c' and 'color' parameters like matplotlib's scatter
+        if color is not None:
+            # 'color' parameter takes precedence over 'c'
+            c = color
+        elif c == "time":
             c = catdata["time"]
         else:
             c = c
 
         if self.axis_type == "depth":
-            self.ax.scatter(catdata["time"], catdata["depth"], s=s, c=c, alpha=alpha, **kwargs)
+            scatter = self.ax.scatter(catdata["time"], catdata["depth"], s=s, c=c, alpha=alpha, **kwargs)
         if self.axis_type == "magnitude":
-            self.ax.scatter(catdata["time"], catdata["mag"], s=s, c=c, alpha=alpha, **kwargs)
+            scatter = self.ax.scatter(catdata["time"], catdata["mag"], s=s, c=c, alpha=alpha, **kwargs)
         self.set_ylim()
+        return scatter
 
     def axvline(self, t, *args, **kwargs):
         self.ax.axvline(convert_timeformat(t, "matplotlib"), *args, **kwargs)
@@ -1511,6 +1726,10 @@ class VolcanoFigure(plt.Figure):
     def add_coastline(self, *args, **kwargs):
         self.map_obj.add_coastline(*args, **kwargs)
 
+    def add_terrain(self, *args, **kwargs):
+        """Add terrain tiles from default source to map."""
+        self.add_arcgis_terrain(*args, **kwargs)
+
     def add_arcgis_terrain(self, *args, **kwargs):
         """Add ArcGIS terrain tiles to the map."""
         self.map_obj.add_arcgis_terrain(*args, **kwargs)
@@ -1540,10 +1759,54 @@ class VolcanoFigure(plt.Figure):
         self.ts_obj.scatter(time, y, **kwargs)
 
     def plot_catalog(self, *args, transform=ccrs.Geodetic(), **kwargs):
-        self.map_obj.plot_catalog(*args, transform=transform, **kwargs)
-        self.xs1_obj.plot_catalog(*args, **kwargs)
-        self.xs2_obj.plot_catalog(*args, **kwargs)
-        self.ts_obj.plot_catalog(*args, **kwargs)
+        """
+        Plot earthquake catalog on all subplots (map, cross-sections, and time-series).
+        
+        Creates scatter plots of earthquake events from an ObsPy Catalog object
+        on the map, both cross-sections, and time-series plot with consistent
+        styling across all subplots.
+        
+        Parameters:
+        -----------
+        catalog : obspy.core.event.Catalog
+            ObsPy Catalog object containing earthquake events
+        s : str or array-like, optional
+            Size parameter for scatter points. If "magnitude" (default), 
+            point sizes are scaled by earthquake magnitude.
+        c : str or array-like, optional
+            Color parameter for scatter points. If "time" (default), 
+            points are colored by event time.
+        color : str or array-like, optional
+            Alternative to 'c' parameter for specifying color. If provided,
+            takes precedence over 'c'.
+        cmap : str or matplotlib.colors.Colormap, optional
+            Colormap for mapping numeric values to colors (default: "viridis_r")
+        alpha : float, optional
+            Transparency of scatter points (default: 0.5)
+        transform : cartopy.crs.Projection, optional
+            Coordinate reference system for the map data (default: ccrs.Geodetic())
+        **kwargs
+            Additional keyword arguments passed to matplotlib's scatter function
+            
+        Returns:
+        --------
+        tuple
+            Tuple containing the scatter plot collections from all subplots
+            
+        Notes:
+        ------
+        - All subplots use the same styling parameters for consistency
+        - The map shows events in geographic coordinates
+        - Cross-sections show events projected onto their respective lines
+        - Time-series shows events plotted against time
+        - Both 'c' and 'color' parameters are supported for compatibility
+          with matplotlib's scatter function
+        """
+        map_scatter = self.map_obj.plot_catalog(*args, transform=transform, **kwargs)
+        xs1_scatter = self.xs1_obj.plot_catalog(*args, **kwargs)
+        xs2_scatter = self.xs2_obj.plot_catalog(*args, **kwargs)
+        ts_scatter = self.ts_obj.plot_catalog(*args, **kwargs)
+        return map_scatter, xs1_scatter, xs2_scatter, ts_scatter
 
     def plot_inventory(self, inventory, marker_size=8, color='black', alpha=0.8, 
                       transform=ccrs.Geodetic(), cross_section_marker_size=6, 
