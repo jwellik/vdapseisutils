@@ -106,17 +106,32 @@ def add_arcgis_terrain(ax, zoom='auto', style='terrain', cache=False, radial_ext
             zoom_level = 10
     else:
         zoom_level = zoom
-    
-    background_tile = cimgt.GoogleTiles(
+
+    # Add arcgis terrain and transparent shading
+    # (I stole this two-pronged approach from Alicia Hotovec Ellis and REDPy, circa 2025 September)
+    # - Terrain--Nice hillshade tile
+    terrain = cimgt.GoogleTiles(
         cache=cache,
         url=(
-            'https://server.arcgisonline.com/ArcGIS/rest/services/'
-            'World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}.jpg'
+            'https://services.arcgisonline.com/arcgis/rest/services'
+            '/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}'
+            # 'https://server.arcgisonline.com/ArcGIS/rest/services/'
+            # 'World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}.jpg'
         ),
         style=style,
         desired_tile_form='RGB',
     )
-    ax.add_image(background_tile, zoom_level)
+    ax.add_image(terrain, zoom_level)
+
+    # - Overlay--shading provides contrast for land/sea
+    overlay = cimgt.GoogleTiles(
+        cache=cache,
+        url=(
+            'https://tiles.basemaps.cartocdn.com/light_nolabels/'
+            '{z}/{x}/{y}.png'
+        ),
+    )
+    ax.add_image(overlay, zoom_level, alpha=0.5)
 
 
 def add_google_tile(ax, zoom='auto', style='terrain', cache=False, radial_extent_km=None, **kwargs):
