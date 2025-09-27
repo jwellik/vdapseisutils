@@ -2,11 +2,13 @@
 Python scripts for swarmmpl earthquake catalogs at volcanoes.
 
 Author: Jay Wellik, jwellik@vdap.org
-Last updated: 2024 February 28
+Last updated: 2025 September 26
 
 TODO Address FutureWarning
 /home/jwellik/miniconda3/envs/seismology312/lib/python3.12/site-packages/shapely/ops.py:276: FutureWarning: This function is deprecated. See: https://pyproj4.github.io/pyproj/stable/gotchas.html#upgrading-to-pyproj-2-from-pyproj-1
   shell = type(geom.exterior)(zip(*func(*zip(*geom.exterior.coords))))
+TODO LatLonTicks https://cartopy.readthedocs.io/v0.25.0.post2/gallery/gridlines_and_labels/tick_labels.html
+TODO Add location map
 
 """
 
@@ -72,8 +74,8 @@ GRID_DEFAULTS = {
     'color': 'gray',
     'alpha': 0.5,
     'xlines': True,
-    'ylabel_style': {'color': 'grey', 'rotation': 0},  # 0 = parallel to axis
-    'xlabel_style': {'color': 'grey'}
+    'ylabel_style': {'color': 'grey', 'rotation': 90, 'size': 'small'},  # 90 = vertical
+    'xlabel_style': {'color': 'grey', 'size': 'small'}
 }
 
 # Keep legacy variables for backward compatibility (now using centralized config)
@@ -650,6 +652,46 @@ class Map:
         print(self.properties)
         print()
 
+    def set_ticks(self, x_spacing=None, y_spacing=None, 
+                 show_bottom=True, show_left=True, 
+                 show_top=False, show_right=False):
+        """
+        Customize the gridliner ticks on the map.
+        
+        Parameters:
+        -----------
+        x_spacing : float, optional
+            Spacing for x-axis (longitude) ticks in degrees
+        y_spacing : float, optional  
+            Spacing for y-axis (latitude) ticks in degrees
+        show_bottom : bool, optional
+            Show ticks on bottom axis (default: True)
+        show_left : bool, optional
+            Show ticks on left axis (default: True)
+        show_top : bool, optional
+            Show ticks on top axis (default: False)
+        show_right : bool, optional
+            Show ticks on right axis (default: False)
+        """
+        # Get the gridliner object
+        glv = None
+        for child in self.ax.get_children():
+            if hasattr(child, 'xlocator'):  # This identifies the gridliner
+                glv = child
+                break
+        
+        if glv is not None:
+            if x_spacing is not None:
+                glv.xlocator = plt.MultipleLocator(x_spacing)
+            if y_spacing is not None:
+                glv.ylocator = plt.MultipleLocator(y_spacing)
+            
+            # Set which sides show labels
+            glv.xlabels_bottom = show_bottom
+            glv.ylabels_left = show_left
+            glv.xlabels_top = show_top
+            glv.ylabels_right = show_right
+
     def add_hillshade(self, source="PyGMT", data_source="igpp", resolution="auto", 
                      topo=True, bath=False, radiance=[315, 60], alpha=0.8,
                      blend_mode="overlay", elevation_weight=0.3, hillshade_weight=0.7,
@@ -1049,6 +1091,108 @@ class Map:
             radial_extent_km=self.properties.get("radial_extent_km"),
             **kwargs
         )
+
+    def add_world_location_map(self, size=0.18, position='upper left', **kwargs):
+        """
+        Add a world location reference map as an inset to the main map.
+        
+        Creates a small circular world map in the top left corner (or specified position)
+        that shows the global context of the main map. The world map is centered on
+        the same longitude as the main map center and shows a square marker for the main map center.
+        
+        Parameters:
+        -----------
+        size : float, optional
+            Size of the inset map as fraction of figure (default: 0.18)
+        position : str, optional
+            Position of the inset map ('upper left', 'upper right', 'lower left', 'lower right')
+            (default: 'upper left')
+        **kwargs
+            Additional keyword arguments passed to make_world_location_map()
+            
+        Returns:
+        --------
+        matplotlib.axes.Axes
+            The axes object for the world location map inset
+        """
+        # Calculate center coordinates from main map extent
+        map_extent = self.properties["map_extent"]
+        center_lon = (map_extent[0] + map_extent[1]) / 2  # Average of min and max longitude
+        center_lat = (map_extent[2] + map_extent[3]) / 2  # Average of min and max latitude
+        
+        # Get main map center for marking
+        if self.properties["origin"] is not None:
+            main_map_center = self.properties["origin"]
+        else:
+            main_map_center = (center_lat, center_lon)
+                        
+        # Calculate the position for the inset axes relative to the main axes
+        fig = self.ax.figure
+        
+        # Get the main axes position in figure coordinates
+        main_ax_pos = self.ax.get_position()
+        main_left = main_ax_pos.x0
+        main_bottom = main_ax_pos.y0
+        main_width = main_ax_pos.width
+        main_height = main_ax_pos.height
+        
+        # Calculate position relative to main axes
+        if position == 'upper left':
+            left = main_left - (size/2) * main_width # + 0.02 * main_width
+            bottom = main_bottom + main_height - (size/2) * main_height - 0.05 * main_height
+        elif position == 'upper right':
+            left = main_left + main_width - (size/2) - 0.02 * main_width
+            bottom = main_bottom + main_height - (size/2) * main_height - 0.05 * main_height
+        elif position == 'lower left':
+            left = main_left - (size/2) * main_width # + 0.02 * main_width
+            bottom = main_bottom - (size/2) * main_height + 0.02 * main_height
+        elif position == 'lower right':
+            left = main_left + main_width - (size/2) - 0.02 * main_width
+            bottom = main_bottom - (size/2) * main_height + 0.02 * main_height
+        else:  # lower left
+            left = main_left - (size/2) * main_width + 0.02 * main_width
+            bottom = main_bottom + main_height - (size/2) * main_height - 0.05 * main_height
+        
+        # Create GeoAxes directly with orthographic projection
+        world_ax = fig.add_axes([left, bottom, size, size], 
+                               projection=ccrs.Orthographic(central_longitude=center_lon, central_latitude=center_lat))
+        
+        # Set global extent
+        world_ax.set_global()
+        
+        # Add features with specified styling
+        # Grey oceans
+        world_ax.add_feature(cfeature.OCEAN, color='lightgrey', alpha=0.8)
+        
+        # White land
+        world_ax.add_feature(cfeature.LAND, color='white', alpha=1.0)
+        
+        # Country borders
+        world_ax.add_feature(cfeature.BORDERS, color='black', linewidth=0.5, alpha=0.8)
+        
+        # Coastlines
+        world_ax.add_feature(cfeature.COASTLINE, color='black', linewidth=0.5, alpha=0.8)
+        
+        # Add grid
+        gl = world_ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=False, 
+                               linewidth=0.5, color='gray', alpha=0.5, linestyle='--')
+        gl.xlines = True
+        gl.ylines = True
+        
+        # Add square marker for main map center if provided
+        if main_map_center is not None:
+            main_lat, main_lon = main_map_center
+            world_ax.plot(main_lon, main_lat, 's', color='black', markersize=5, 
+                         transform=ccrs.Geodetic())
+        
+        # Remove axis labels and ticks
+        world_ax.set_xticks([])
+        world_ax.set_yticks([])
+        
+        # Make the plot circular by setting equal aspect ratio
+        world_ax.set_aspect('equal')
+        
+        return world_ax
 
 
 class CrossSection:
