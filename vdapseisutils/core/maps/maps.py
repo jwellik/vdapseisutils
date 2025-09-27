@@ -1273,7 +1273,7 @@ class CrossSection:
     def __add_profile(self):
         hd = self.profile.distance / 1000  # horizontal distance along line (convert meters to km)
         elev = np.array(self.profile.elevation / 1000)  # elevation (convert m to km)
-        self.plot(x=hd, z=elev, z_dir="elev", color="k", z_unit="km", linewidth=0.75)
+        self.plot(x=hd, z=elev, z_dir="elev", color="k", z_unit="km", linewidth=1.5)
         self.set_depth_extent()
         self.set_horiz_extent()
 

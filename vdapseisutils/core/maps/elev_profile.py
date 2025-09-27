@@ -427,7 +427,6 @@ def download_profile_opentopo(p1, p2, n=100,
         lon_p = lon_list[j]
         dp = haversine(p1[0], p1[1], lat_p, lon_p) / 1000  # km - Fixed: use p1[0], p1[1] instead of lat0, lon0
         d_list.append(dp)
-    d_list_rev = d_list[::-1]  # reverse list
 
 
     # BATCH REQUESTS - OpenTopoData has limits on points per request
@@ -488,7 +487,7 @@ def download_profile_opentopo(p1, p2, n=100,
             time.sleep(0.1)
 
     datadict = dict({'lat': np.array(lat_list), 'lon': np.array(lon_list),
-                     'd': np.array(d_list_rev) * 1000,  # distance in meters
+                     'd': np.array(d_list) * 1000,  # distance in meters
                      'elev': np.array(elev_list),
                      'elev_m': np.array(elev_list), 'elev_km': np.array(elev_list)/1000})
 
