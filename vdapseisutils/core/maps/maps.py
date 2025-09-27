@@ -1300,9 +1300,28 @@ class CrossSection:
         self.ax.set_ylabel("Depth (km)", rotation=270, labelpad=15, 
                            color=TICK_DEFAULTS['axes_labelcolor'], 
                            fontsize=TICK_DEFAULTS['axes_labelsize'])
-        self.ax.set_xlabel("Distance (km)", labelpad=10,
-                           color=TICK_DEFAULTS['axes_labelcolor'], 
-                           fontsize=TICK_DEFAULTS['axes_labelsize'])
+        
+        # Remove xlabel
+        self.ax.set_xlabel("")  # Remove xlabel
+
+    # TODO: Maybe just append ' km' to the text instead of reformatting the number (results in smarter sig digs)
+    def _append_km_to_last_xtick(self):
+        """Append ' km' to the last xticklabel."""
+        # Get current tick positions and labels
+        ticks = self.ax.get_xticks()
+        if len(ticks) > 0:
+            # Get the last tick position
+            last_tick = ticks[-1]
+            
+            # Create a custom formatter that adds ' km' to the last tick
+            def format_func(x, pos):
+                if x == last_tick:
+                    return f'{x} km'
+                else:
+                    return f'{x}'
+            
+            # Apply the custom formatter
+            self.ax.xaxis.set_major_formatter(plt.FuncFormatter(format_func))
 
     def __add_labels_to_xsection(self):
         self.set_horiz_extent()
@@ -1317,6 +1336,9 @@ class CrossSection:
         self.ax.text(x2, y, "{}'".format(self.properties["label"]),
                      verticalalignment='bottom', horizontalalignment='right',
                      path_effects=[pe.withStroke(linewidth=2, foreground="white")])
+        
+        # Append ' km' to the last xticklabel
+        self._append_km_to_last_xtick()
 
     def set_depth_extent(self, depth_extent=None):
         if depth_extent is None:
