@@ -4,9 +4,7 @@ Python scripts for swarmmpl earthquake catalogs at volcanoes.
 Author: Jay Wellik, jwellik@vdap.org
 Last updated: 2025 September 26
 
-TODO Address FutureWarning
-/home/jwellik/miniconda3/envs/seismology312/lib/python3.12/site-packages/shapely/ops.py:276: FutureWarning: This function is deprecated. See: https://pyproj4.github.io/pyproj/stable/gotchas.html#upgrading-to-pyproj-2-from-pyproj-1
-  shell = type(geom.exterior)(zip(*func(*zip(*geom.exterior.coords))))
+COMPLETED: Fixed FutureWarning by updating pyproj usage in geodesic_point_buffer functions
 TODO LatLonTicks https://cartopy.readthedocs.io/v0.25.0.post2/gallery/gridlines_and_labels/tick_labels.html
 TODO Add location map
 
