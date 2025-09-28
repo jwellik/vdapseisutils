@@ -55,7 +55,7 @@ TICK_DEFAULTS = {
     'labelsize': 'small',  # 0.8x base = 6.4
     'tick_color': 'grey',
     'tick_size': 3,  # tick length
-    'tick_width': 0.5,  # tick line width
+    'tick_width': 1.5,  # tick line width
     'tick_direction': 'out',
     'tick_pad': 2,  # padding between ticks and labels
     
@@ -66,6 +66,28 @@ TICK_DEFAULTS = {
     
     # Legend styling
     'legend_fontsize': 'medium',  # 1.0x base = 8
+}
+
+# General axes customization defaults - applies to all axes
+AXES_DEFAULTS = {
+    # Spine styling
+    'spine_linewidth': 1.5,  # thickness of all spines
+    'spine_color': 'black',  # color of spines
+}
+
+# Cross-section specific defaults
+CROSSSECTION_DEFAULTS = {
+    # Profile line styling (for cross-sections)
+    'profile_linewidth': 1.5,  # linewidth for topographic profiles
+    'profile_color': 'k',  # color for topographic profiles
+    
+    # Text styling for labels and annotations
+    'text_stroke_linewidth': 2,  # linewidth for text stroke effects
+    'text_stroke_color': 'white',  # color for text stroke effects
+    
+    # Label positioning
+    'ylabel_rotation': 270,  # rotation for y-axis labels
+    'ylabel_pad': 15,  # padding for y-axis labels
 }
 
 # Grid line styling defaults for maps
@@ -412,19 +434,19 @@ def get_scale_length(origin, distance_km):
 
 
 # Distance (km) to axes size
-def choose_scale_bar_length(map_width_km, fraction=0.3):
+def choose_scale_bar_length(map_width_km, fraction=0.25):
     """
     Choose an appropriate scale bar length based on map width.
     
     Given the width of the map in km, return the scale bar length (in km) as the value
-    from ALLOWED_SCALES that is closest to fraction * map_width_km.
+    from ALLOWED_SCALES that is the largest value less than or equal to fraction * map_width_km.
     
     Parameters:
     -----------
     map_width_km : float
         Width of the map in kilometers
     fraction : float, optional
-        Fraction of map width to target for scale bar length (default: 0.3)
+        Fraction of map width to target for scale bar length (default: 0.25)
         
     Returns:
     --------
@@ -434,12 +456,16 @@ def choose_scale_bar_length(map_width_km, fraction=0.3):
     Notes:
     ------
     The function uses a predefined list of standard scale bar lengths:
-    [1, 5, 10, 20, 50, 100, 150, 200, 250, 500, 750, 1000, 5000, 10000] km
+    [0.1, 0.2, 0.5, 1, 5, 10, 20, 50, 100, 150, 200, 250, 500, 750, 1000, 5000, 10000] km
     """
     candidate = map_width_km * fraction
-    # Choose the allowed scale that minimizes the absolute difference from candidate.
-    ALLOWED_SCALES = [1, 5, 10, 20, 50, 100, 150, 200, 250, 500, 750, 1000, 5000, 10000]
-    scale = min(ALLOWED_SCALES, key=lambda x: abs(x - candidate))
+    # Choose the largest allowed scale that is less than or equal to candidate.
+    ALLOWED_SCALES = [0.1, 0.2, 0.5, 1, 5, 10, 20, 50, 100, 150, 200, 250, 500, 750, 1000, 5000, 10000]
+    valid_scales = [scale for scale in ALLOWED_SCALES if scale <= candidate]
+    if valid_scales:
+        scale = max(valid_scales)
+    else:
+        scale = min(ALLOWED_SCALES)  # Fallback to smallest scale if candidate is too small
     return scale
 
 
@@ -502,10 +528,10 @@ class MagLegend:
         ax.tick_params(axis="y", direction="out", pad=0, right=False)  # put labels on inside and remove ticks
         ax.patch.set_alpha(0.0)  # set axis background to transparent
 
-        # Set thicker spines (1.5x normal thickness) for visible spines
+        # Set thicker spines for visible spines
         for spine in ax.spines.values():
             if spine.get_visible():
-                spine.set_linewidth(1.5)
+                spine.set_linewidth(AXES_DEFAULTS['spine_linewidth'])
 
         ax.spines['top'].set_visible(False)  # make all spines invisible
         ax.spines['bottom'].set_visible(False)
@@ -606,9 +632,9 @@ class Map:
         # Create the principal axes for the map
         self.ax = fig.add_subplot(111, projection=ccrs.Mercator(), **plot_kwargs)
         
-        # Set thicker spines (1.5x normal thickness)
+        # Set thicker spines
         for spine in self.ax.spines.values():
-            spine.set_linewidth(1.5)
+            spine.set_linewidth(AXES_DEFAULTS['spine_linewidth'])
 
         # Define Map Properties
         self.properties = dict()
@@ -754,9 +780,9 @@ class Map:
         Notes:
         ------
         The scale bar length is calculated as a fraction of the map width.
-        For automatic calculation, the function uses 30% of the map width as
-        a target and selects the closest standard scale bar length from a
-        predefined list of common values.
+        For automatic calculation, the function uses 25% of the map width as
+        a target and selects the largest standard scale bar length that is
+        less than or equal to the target from a predefined list of common values.
         
         The scale bar is positioned in axes coordinates, so it will maintain
         its relative position even if the map extent changes.
@@ -771,15 +797,27 @@ class Map:
         map_width_km = d / 1000
         
         if scale_length_km == "auto":
-            scale_length_km = choose_scale_bar_length(map_width_km, 0.30)
+            scale_length_km = choose_scale_bar_length(map_width_km, 0.25)
         
         scale_bar_length_ax = scale_length_km / map_width_km
+
+        # Determine appropriate unit and label
+        if scale_length_km < 1:
+            # Convert to meters for small scales
+            scale_length_m = int(scale_length_km * 1000)
+            scale_label = f"{scale_length_m} m"
+        else:
+            # Use kilometers for larger scales
+            if scale_length_km == int(scale_length_km):
+                scale_label = f"{int(scale_length_km)} km"
+            else:
+                scale_label = f"{scale_length_km} km"
 
         # Add scale bar with text on top
         scalebar = AnchoredSizeBar(
             self.ax.transAxes,
             scale_bar_length_ax,
-            f"{scale_length_km} km",
+            scale_label,
             position,
             pad=pad,
             color=color,
@@ -1168,10 +1206,10 @@ class Map:
         world_ax.add_feature(cfeature.LAND, color='white', alpha=1.0)
         
         # Country borders
-        world_ax.add_feature(cfeature.BORDERS, color='black', linewidth=0.5, alpha=0.8)
+        world_ax.add_feature(cfeature.BORDERS, edgecolor='black', linewidth=0.5, alpha=0.8)
         
         # Coastlines
-        world_ax.add_feature(cfeature.COASTLINE, color='black', linewidth=0.5, alpha=0.8)
+        world_ax.add_feature(cfeature.COASTLINE, edgecolor='black', linewidth=0.5, alpha=0.8)
         
         # Add grid
         gl = world_ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=False, 
@@ -1225,9 +1263,9 @@ class CrossSection:
         # Create the axes
         self.ax = fig.add_subplot(111, **plot_kwargs)
         
-        # Set thicker spines (1.5x normal thickness)
+        # Set thicker spines
         for spine in self.ax.spines.values():
-            spine.set_linewidth(1.5)
+            spine.set_linewidth(AXES_DEFAULTS['spine_linewidth'])
 
         # Better organization
         self.properties = dict()
@@ -1273,7 +1311,7 @@ class CrossSection:
     def __add_profile(self):
         hd = self.profile.distance / 1000  # horizontal distance along line (convert meters to km)
         elev = np.array(self.profile.elevation / 1000)  # elevation (convert m to km)
-        self.plot(x=hd, z=elev, z_dir="elev", color="k", z_unit="km", linewidth=1.5)
+        self.plot(x=hd, z=elev, z_dir="elev", color=CROSSSECTION_DEFAULTS['profile_color'], z_unit="km", linewidth=CROSSSECTION_DEFAULTS['profile_linewidth'])
         self.set_depth_extent()
         self.set_horiz_extent()
 
@@ -1297,31 +1335,51 @@ class CrossSection:
                             right=True, labelright=True,
                             top=False, labeltop=False)
         self.ax.yaxis.set_label_position("right")
-        self.ax.set_ylabel("Depth (km)", rotation=270, labelpad=15, 
+        self.ax.set_ylabel("Depth (km)", rotation=CROSSSECTION_DEFAULTS['ylabel_rotation'], labelpad=CROSSSECTION_DEFAULTS['ylabel_pad'], 
                            color=TICK_DEFAULTS['axes_labelcolor'], 
                            fontsize=TICK_DEFAULTS['axes_labelsize'])
         
         # Remove xlabel
         self.ax.set_xlabel("")  # Remove xlabel
+    
+    def _append_km_to_last_xtick_dep001(self):
+        """Append ' km' to the last xticklabel while preserving original formatting."""
+        # Force matplotlib to draw the plot first to ensure ticks are generated
+        self.ax.figure.canvas.draw()
+        
+        # Get current tick labels after drawing
+        tick_labels = self.ax.get_xticklabels()
+        if tick_labels and len(tick_labels) > 0:
+            # Get the original text of the last label
+            last_label_text = tick_labels[-1].get_text()
+            
+            # Only modify if ' km' is not already present
+            if not last_label_text.endswith(' km'):
+                # Create new labels list
+                new_labels = [label.get_text() for label in tick_labels]
+                new_labels[-1] = f'{last_label_text} km'
+                
+                # Use set_xticks and set_xticklabels together to avoid the warning
+                ticks = self.ax.get_xticks()
+                self.ax.set_xticks(ticks)
+                self.ax.set_xticklabels(new_labels)
 
-    # TODO: Maybe just append ' km' to the text instead of reformatting the number (results in smarter sig digs)
     def _append_km_to_last_xtick(self):
-        """Append ' km' to the last xticklabel."""
-        # Get current tick positions and labels
-        ticks = self.ax.get_xticks()
-        if len(ticks) > 0:
-            # Get the last tick position
-            last_tick = ticks[-1]
+        """Append ' km' to the last xticklabel while preserving original formatting."""
+        # Get current tick labels after drawing
+        tick_labels = self.ax.get_xticklabels()
+        if tick_labels and len(tick_labels) > 0:
+            # Get the original text of the last label
+            last_label_text = tick_labels[-1].get_text()
             
-            # Create a custom formatter that adds ' km' to the last tick
-            def format_func(x, pos):
-                if x == last_tick:
-                    return f'{x} km'
-                else:
-                    return f'{x}'
-            
-            # Apply the custom formatter
-            self.ax.xaxis.set_major_formatter(plt.FuncFormatter(format_func))
+            # Create new labels list
+            new_labels = [label.get_text() for label in tick_labels]
+            new_labels[-1] = f'{last_label_text} km'
+                
+            # Use set_xticks and set_xticklabels together to avoid the warning
+            ticks = self.ax.get_xticks()
+            self.ax.set_xticks(ticks)
+            self.ax.set_xticklabels(new_labels)
 
     def __add_labels_to_xsection(self):
         self.set_horiz_extent()
@@ -1332,10 +1390,10 @@ class CrossSection:
 
         self.ax.text(x1, y, "{}".format(self.properties["label"]),
                      verticalalignment='bottom', horizontalalignment='left',
-                     path_effects=[pe.withStroke(linewidth=2, foreground="white")])
+                     path_effects=[pe.withStroke(linewidth=CROSSSECTION_DEFAULTS['text_stroke_linewidth'], foreground=CROSSSECTION_DEFAULTS['text_stroke_color'])])
         self.ax.text(x2, y, "{}'".format(self.properties["label"]),
                      verticalalignment='bottom', horizontalalignment='right',
-                     path_effects=[pe.withStroke(linewidth=2, foreground="white")])
+                     path_effects=[pe.withStroke(linewidth=CROSSSECTION_DEFAULTS['text_stroke_linewidth'], foreground=CROSSSECTION_DEFAULTS['text_stroke_color'])])
         
         # Append ' km' to the last xticklabel
         self._append_km_to_last_xtick()
@@ -1610,9 +1668,9 @@ class TimeSeries:
         # Create the axes
         self.ax = fig.add_subplot(111, **plot_kwargs)
         
-        # Set thicker spines (1.5x normal thickness)
+        # Set thicker spines
         for spine in self.ax.spines.values():
-            spine.set_linewidth(1.5)
+            spine.set_linewidth(AXES_DEFAULTS['spine_linewidth'])
 
         self.trange = trange
         self.depth_extent = depth_extent
@@ -1667,7 +1725,7 @@ class TimeSeries:
         elif self.axis_type == "magnitude":
             ylabel = "Magnitude"
         self.set_ylim()
-        self.ax.set_ylabel(ylabel, labelpad=15,
+        self.ax.set_ylabel(ylabel, labelpad=CROSSSECTION_DEFAULTS['ylabel_pad'],
                            color=TICK_DEFAULTS['axes_labelcolor'], 
                            fontsize=TICK_DEFAULTS['axes_labelsize'])
 
