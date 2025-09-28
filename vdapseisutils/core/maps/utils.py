@@ -10,206 +10,6 @@ import cartopy.feature as cfeature
 import six
 
 ########################################################################################################################
-### Basic Geometry
-########################################################################################################################
-
-
-def dd2dms(dd, hemisphere=None):
-    """DD2DMS Convert decicmal degrees to degrees/minutes/seconds"""
-
-    is_positive = dd >= 0
-    dd = abs(dd)
-    minutes, seconds = divmod(dd*3600, 60)
-    degrees, minutes = divmod(minutes, 60)
-    degrees = degrees if is_positive else -1*degrees
-
-    if hemisphere == "latitude":
-        hemi = "N" if degrees >= 0.0 else "S"
-        degrees = abs(degrees)
-        dms = (degrees, minutes, seconds, hemi)
-    elif hemisphere == "longitude":
-        hemi = "E" if degrees >= 0.0 else "W"
-        degrees = abs(degrees)
-        dms = (degrees, minutes, seconds, hemi)
-    else:
-        dms = (degrees, minutes, seconds)
-
-    return dms
-
-
-def dd2dm(dd, hemisphere=None):
-    """DD2DM Conver decicaml degrees to degrees/minutes"""
-
-    degrees, minutes, seconds = dd2dms(dd)
-    minutes = minutes + seconds/60.0
-    del seconds
-
-    if hemisphere == "latitude":
-        hemi = "N" if degrees >= 0.0 else "S"
-        degrees = abs(degrees)
-        dm = (degrees, minutes, hemi)
-    elif hemisphere == "longitude":
-        hemi = "E" if degrees >= 0.0 else "W"
-        degrees = abs(degrees)
-        dm = (degrees, minutes, hemi)
-    else:
-        dm = (degrees, minutes)
-
-    return dm
-
-
-def dms2dd(dms):
-    dd = np.abs(dms[0])+dms[1]/60+dms[2]/3600
-    if dms[0] < 0:
-        dd *= -1
-    return dd
-
-
-########################################################################################################################
-### EXTENTS & BUFFERS
-########################################################################################################################
-
-
-def geodesic_point_buffer(lat, lon, km):
-    '''https://gis.stackexchange.com/questions/289044/creating-buffer-circle-x-kilometers-from-point-using-python/289923'''
-    ### Doesn't work near poles??? bc of azimuthal equidistant projection system???
-
-    from functools import partial
-    import pyproj
-    from shapely.ops import transform
-    from shapely.geometry import Point
-    import numpy as np
-
-    proj_wgs84 = pyproj.Proj('+proj=longlat +datum=WGS84')
-
-    # Azimuthal equidistant projection
-    aeqd_proj = '+proj=aeqd +lat_0={lat} +lon_0={lon} +x_0=0 +y_0=0'
-    project = partial(
-        pyproj.transform,
-        pyproj.Proj(aeqd_proj.format(lat=lat, lon=lon)),
-        proj_wgs84)
-    buf = Point(0, 0).buffer(km * 1000)  # distance in metres
-
-    a = np.array(transform(project, buf).exterior.coords[:])  # n-by-2 array of lon,lat pairs
-    b = np.empty_like(a)
-    b[:, 0] = a[:, 1]
-    b[:, 1] = a[:, 0]
-    # returns an n-by-2 array of lat,lon pairs
-    return b
-
-
-def radial_extent2map_extent(lat, lon, km):
-    """Returns [minlon, maxlon, minlat, maxlat] LRBT"""
-    rlatlon = geodesic_point_buffer(lat, lon, km)
-    map_extent = [min(rlatlon[:, 1]), max(rlatlon[:, 1]), min(rlatlon[:, 0]), max(rlatlon[:, 0])]
-    return map_extent
-
-
-def radial_extent2bounds_bltr(lat, lon, km):
-    """Returns [minlat, minlon, maxlat, maxlon] or [bottom, left, top, right]"""
-    rlatlon = geodesic_point_buffer(lat, lon, km)
-    map_extent = [min(rlatlon[:, 0]), min(rlatlon[:, 1]), max(rlatlon[:, 0]), max(rlatlon[:, 1])]
-    return map_extent
-
-
-def set_radial_map_extent(ax, lat, lon, km, crs=None):
-    '''Sets the extent of the map based on radius from given point'''
-    ax.set_extent(radial_extent2map_extent(lat, lon, km), crs=crs)
-    return ax
-
-
-def sight_point_geopy(origin, bearing, km):
-    """Returns the (lat,lon) of point N km away along a given bearing"""
-    # https://stackoverflow.com/questions/24427828/calculate-point-based-on-distance-and-direction
-    import geopy.distance
-
-    # Define starting point.
-    start = geopy.Point(origin[0], origin[1])
-
-    # Define a general distance object, initialized with a distance of 1 km.
-    d = geopy.distance.VincentyDistance(kilometers=km)
-
-    # Use the `destination` method with a bearing of 0 degrees (which is north)
-    # in order to go from point `start` 1 km to north.
-    return d.destination(point=start, bearing=bearing)
-
-
-def sight_point_pyproj(origin, bearing, km, ellipse='WGS84'):
-    """Returns the (lat,lon) of point N km away along a given bearing"""
-    # https://gis.stackexchange.com/questions/174761/create-a-new-point-from-a-reference-point-degree-and-distance
-    import pyproj
-
-    endLon, endLat, backAzimuth = (pyproj.Geod(ellps=ellipse).fwd(origin[1], origin[0], bearing, km))
-    point = (endLat, endLon)
-    return point
-
-
-def sight_point(origin, bearing, km, method="pyproj"):
-    if method == "pyproj":
-        return sight_point_pyproj(origin, bearing, km)
-    elif method == "geopy":
-        return sight_point_geopy(origin, bearing, km)
-    else:
-        print("sight_point: Method not understood :-(")
-
-
-def backazimuth_pyproj(latlon1, latlon2, ellipse='WGS84'):
-    from pyproj import Geod
-    g = Geod(ellps=ellipse)  # Use Clarke 1866 ellipsoid.
-    # specify the lat/lons of Boston and Portland.
-    boston_lat = 42. + (15. / 60.);
-    boston_lon = -71. - (7. / 60.)
-    portland_lat = 45. + (31. / 60.);
-    portland_lon = -123. - (41. / 60.)
-    # az12, az21, dist = g.inv(boston_lon, boston_lat, portland_lon, portland_lat)  # example
-    az12, az21, dist = g.inv(latlon1[1], latlon1[0], latlon2[1], latlon2[0])  # example
-    return az12, dist
-
-
-def project2line(lats, lons, P1=(-90, 0), P2=(90, 0)):
-    """
-    PROJECT2LINE
-
-    Project points to line. Line defined by two points.
-
-    :param lats:
-    :param lons:
-    :param P1:
-    :param P2:
-    :return:
-    """
-
-    import pyproj
-    import math
-
-    # fwdA
-    # dA    : EQ distance along A-A'
-    # Create projection system
-    geodesic = pyproj.Geod(ellps='WGS84')  # Create projection system
-    # Angle of cross-section vectors
-    fwdAA, backAA, distanceAA = geodesic.inv(P1[1], P1[0], P2[1], P2[0])  # (long, lat, long, lat)
-
-    FWDAA = []
-    BACKAA = []
-    DISTANCEAA = []
-    ALPHAAA = []
-    DAA = []  # Distance from P1 to point along cross section
-
-    # for idx, row in catdata.iterrows():
-    for lat, lon in zip(lats, lons):
-        fwdA, backA, distanceA = geodesic.inv(P1[1], P1[0], lon, lat)  # long, lat, long, lat
-        alphaA = fwdA - fwdAA  # angle between A1-pt and A1-A2
-        dA = distanceA * math.cos((alphaA) * (np.pi / 180))  # distance to pt along xsection line
-        FWDAA.append(fwdA)
-        BACKAA.append(backA)
-        DISTANCEAA.append(distanceA)
-        ALPHAAA.append(alphaA)
-        DAA.append(dA)
-
-    return DAA
-
-
-########################################################################################################################
 ### MAP FEATURES
 ########################################################################################################################
 
@@ -368,75 +168,44 @@ def plot_catalog(axm, catalog, transform=ccrs.Geodetic(), plot_errors=True, verb
 def plot_catalog2xs_dep(fig, catalog, marker='o', color='black', markersize=8, alpha=0.95,
                     plot_errors=True):
     # Get origin info for xsection plots
-    lon = catalog[0].origins[-1].longitude
-    lat = catalog[0].origins[-1].latitude
-    depth = catalog[0].origins[-1].depth / 1000 * -1  # km
-    lat_uncertainty = catalog[0].origins[-1].latitude_errors.uncertainty
-    lon_uncertainty = catalog[0].origins[-1].longitude_errors.uncertainty
-    z_uncertainty = catalog[0].origins[
-                        -1].depth_errors.uncertainty / 1000  # km (does not need to be negative bc abosolute value)
-    laterrory = [lat - lat_uncertainty / 110, lat + lat_uncertainty / 110]
-    laterrorx = [lon, lon]
-    lonerrorx = [lon - lon_uncertainty / 110, lon + lon_uncertainty / 100]
-    lonerrory = [lat, lat]
-    zerror = [depth - z_uncertainty, depth + z_uncertainty]
+    for event in catalog:
+        lat = event.origins[-1].latitude
+        lon = event.origins[-1].longitude
+        depth = event.origins[-1].depth / 1000  # convert to km
 
-    # Plot to horizontal xsection
-    if plot_errors:
-        fig.axes[1].plot(lonerrorx, [depth, depth], color=color, linewidth=1)
-        fig.axes[1].plot([lon, lon], zerror, color=color, linewidth=1)
-    fig.axes[1].plot(lon, depth, color=color)
+        # Plot errors
+        if plot_errors:
+            fig = plot_eventerror2xs(fig, event, color=color, alpha=alpha)
 
-    # Plot to vertical xsection
-    if plot_errors:
-        fig.axes[2].plot([depth, depth], laterrory, color=color, linewidth=1)
-        fig.axes[2].plot(zerror, [lat, lat], color=color, linewidth=1)
-    fig.axes[2].plot(depth, lat, color=color)
+        # Plot to vertical xsection
+        fig.axes[2].plot(lat, depth, marker=marker, color=color, markersize=markersize, alpha=alpha)
+
+        # Plot to horizontal xsection
+        fig.axes[1].plot(lon, depth, marker=marker, color=color, markersize=markersize, alpha=alpha)
 
     return fig
 
 
 def plot_catalog2xs(fig, catalog, marker='o', color='black', markersize=8, alpha=0.95):
-
-    for eqevent in catalog:
-        # Get origin info for xsection plots
-        lon = eqevent.origins[-1].longitude
-        lat = eqevent.origins[-1].latitude
-        depth = eqevent.origins[-1].depth / 1000 * -1  # km
-        contains_errors = eqevent.origins[-1].latitude_errors.uncertainty
-        if contains_errors:
-            lat_uncertainty = eqevent.origins[-1].latitude_errors.uncertainty
-            lon_uncertainty = eqevent.origins[-1].longitude_errors.uncertainty
-            z_uncertainty = eqevent.origins[
-                                -1].depth_errors.uncertainty / 1000  # km (does not need to be negative bc abosolute value)
-            laterrory = [lat - lat_uncertainty / 110, lat + lat_uncertainty / 110]
-            laterrorx = [lon, lon]
-            lonerrorx = [lon - lon_uncertainty / 110, lon + lon_uncertainty / 100]
-            lonerrory = [lat, lat]
-            zerror = [depth - z_uncertainty, depth + z_uncertainty]
-
-        # Plot to horizontal xsection
-        if contains_errors:
-            fig.axes[1].plot(lonerrorx, [depth, depth], color=color, linewidth=1)
-            fig.axes[1].plot([lon, lon], zerror, color=color, linewidth=1)
-        fig.axes[1].plot(lon, depth, color=color)
+    # Get origin info for xsection plots
+    for event in catalog:
+        lat = event.origins[-1].latitude
+        lon = event.origins[-1].longitude
+        depth = event.origins[-1].depth / 1000  # convert to km
 
         # Plot to vertical xsection
-        if contains_errors:
-            fig.axes[2].plot([depth, depth], laterrory, color=color, linewidth=1)
-            fig.axes[2].plot(zerror, [lat, lat], color=color, linewidth=1)
-        fig.axes[2].plot(depth, lat, color=color)
+        fig.axes[2].plot(lat, depth, marker=marker, color=color, markersize=markersize, alpha=alpha)
+
+        # Plot to horizontal xsection
+        fig.axes[1].plot(lon, depth, marker=marker, color=color, markersize=markersize, alpha=alpha)
 
     return fig
 
 
 def plot_hypo2xs(ax, lat=None, lon=None, depth=None, orientation='h', marker='o', color='black', markersize=8, alpha=0.95):
-
-    # Plot to horizontal xsection
-    if plot_errors:
-        fig.axes[1].plot(lonerrorx, [depth, depth], color=color, linewidth=1)
-        fig.axes[1].plot([lon, lon], zerror, color=color, linewidth=1)
-    fig.axes[1].plot(lon, depth, color=color)
+    # Plot to horizontal cross-section
+    ax.plot(lon, depth, marker=marker, color=color, markersize=markersize, alpha=alpha)
+    return ax
 
 
 def plot_eventerror2map(ax, event, color='black', linewidth=1, alpha=0.95,
@@ -488,6 +257,7 @@ def plot_stations(ax, lat, lon, marker='v', color='white', edgecolor='black', ma
 def plot_station_inventory(ax, inventory, marker='v', color='white', edgecolor='black', markersize=6, alpha=0.95,
                            transform=ccrs.Geodetic()):
     import matplotlib.pyplot as plt
+    import warnings
 
     # lat/lon coordinates
     lats = []
