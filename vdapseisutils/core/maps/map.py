@@ -21,17 +21,6 @@ from .utils import prep_catalog_data_mpl, choose_scale_bar_length
 from vdapseisutils.utils.geoutils import backazimuth, radial_extent2map_extent
 
 
-# deprecated - this won't be used anymore
-class ShadedReliefESRI(cimgt.GoogleTiles):
-    # shaded relief - produces terrain tile w pink hue and blue water
-    def _image_url(self, tile):
-        x, y, z = tile
-        url = ('https://server.arcgisonline.com/ArcGIS/rest/services/' \
-               'World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}.jpg').format(
-            z=z, y=y, x=x)
-        return url
-
-
 def add_hillshade_pygmt(ax, extent=[-180, 180, -90, 90],
                         data_source="igpp",
                         resolution="auto",
