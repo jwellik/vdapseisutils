@@ -16,7 +16,8 @@ import cartopy.feature as cfeature
 
 from .defaults import (
     HEATMAP_DEFAULTS, TICK_DEFAULTS, AXES_DEFAULTS, GRID_DEFAULTS, default_volcano,
-    PLOT_VOLCANO_DEFAULTS, PLOT_PEAK_DEFAULTS, PLOT_CATALOG_DEFAULTS, PLOT_INVENTORY_DEFAULTS
+    PLOT_VOLCANO_DEFAULTS, PLOT_PEAK_DEFAULTS, PLOT_CATALOG_DEFAULTS, PLOT_INVENTORY_DEFAULTS,
+    WORLD_LOCATION_MAP_DEFAULTS
 )
 from .utils import prep_catalog_data_mpl, choose_scale_bar_length
 from vdapseisutils.utils.geoutils import backazimuth, radial_extent2map_extent
@@ -731,7 +732,55 @@ class Map:
         )
 
     def add_world_location_map(self, size=0.18, position='upper left', **kwargs):
-        """Add a world location reference map as an inset to the main map."""
+        """
+        Add a world location reference map as an inset to the main map.
+        
+        Parameters:
+        -----------
+        size : float, optional
+            Size of the inset map as a fraction of the main map (default: 0.18)
+        position : str, optional
+            Position of the inset map: 'upper left', 'upper right', 'lower left', 'lower right' (default: 'upper left')
+        **kwargs : dict, optional
+            Override styling parameters. Available options:
+            
+            Ocean styling:
+                ocean_color : str (default: 'lightgrey')
+                ocean_alpha : float (default: 0.8)
+                
+            Land styling:
+                land_color : str (default: 'white') 
+                land_alpha : float (default: 1.0)
+                
+            Country borders styling:
+                borders_color : str (default: 'black')
+                borders_linewidth : float (default: 0.5)
+                borders_alpha : float (default: 0.8)
+                
+            Coastlines styling:
+                coastlines_color : str (default: 'black')
+                coastlines_linewidth : float (default: 0.5)
+                coastlines_alpha : float (default: 0.8)
+                
+            Grid styling:
+                grid_linewidth : float (default: 0.5)
+                grid_color : str (default: 'gray')
+                grid_alpha : float (default: 0.5)
+                grid_linestyle : str (default: '--')
+                
+            Center marker styling:
+                marker_color : str (default: 'black')
+                marker_size : float (default: 5)
+                marker_style : str (default: 's')
+        
+        Returns:
+        --------
+        world_ax : cartopy.mpl.geoaxes.GeoAxes
+            The world location map axes
+        """
+        # Merge defaults with user-provided kwargs
+        style_params = {**WORLD_LOCATION_MAP_DEFAULTS, **kwargs}
+        
         # Calculate center coordinates from main map extent
         map_extent = self.properties["map_extent"]
         center_lon = (map_extent[0] + map_extent[1]) / 2  # Average of min and max longitude
@@ -777,29 +826,44 @@ class Map:
         # Set global extent
         world_ax.set_global()
         
-        # Add features with specified styling
-        # Grey oceans
-        world_ax.add_feature(cfeature.OCEAN, color='lightgrey', alpha=0.8)
-        
-        # White land
-        world_ax.add_feature(cfeature.LAND, color='white', alpha=1.0)
+        # Add features with configurable styling
+        # Ocean
+        world_ax.add_feature(cfeature.OCEAN, 
+                            color=style_params['ocean_color'], 
+                            alpha=style_params['ocean_alpha'])
+
+        # Land
+        world_ax.add_feature(cfeature.LAND, 
+                            color=style_params['land_color'], 
+                            alpha=style_params['land_alpha'])
         
         # Country borders
-        world_ax.add_feature(cfeature.BORDERS, edgecolor='black', linewidth=0.5, alpha=0.8)
+        world_ax.add_feature(cfeature.BORDERS, 
+                            edgecolor=style_params['borders_color'], 
+                            linewidth=style_params['borders_linewidth'], 
+                            alpha=style_params['borders_alpha'])
         
         # Coastlines
-        world_ax.add_feature(cfeature.COASTLINE, edgecolor='black', linewidth=0.5, alpha=0.8)
+        world_ax.add_feature(cfeature.COASTLINE, 
+                            edgecolor=style_params['coastlines_color'], 
+                            linewidth=style_params['coastlines_linewidth'], 
+                            alpha=style_params['coastlines_alpha'])
         
         # Add grid
         gl = world_ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=False, 
-                               linewidth=0.5, color='gray', alpha=0.5, linestyle='--')
+                               linewidth=style_params['grid_linewidth'], 
+                               color=style_params['grid_color'], 
+                               alpha=style_params['grid_alpha'], 
+                               linestyle=style_params['grid_linestyle'])
         gl.xlines = True
         gl.ylines = True
         
-        # Add square marker for main map center if provided
+        # Add marker for main map center if provided
         if main_map_center is not None:
             main_lat, main_lon = main_map_center
-            world_ax.plot(main_lon, main_lat, 's', color='black', markersize=5, 
+            world_ax.plot(main_lon, main_lat, style_params['marker_style'], 
+                         color=style_params['marker_color'], 
+                         markersize=style_params['marker_size'], 
                          transform=ccrs.Geodetic())
         
         # Remove axis labels and ticks

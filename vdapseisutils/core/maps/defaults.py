@@ -134,6 +134,38 @@ PLOT_PEAK_DEFAULTS = {
     'edgecolor': 'black'
 }
 
+# World location map styling defaults
+WORLD_LOCATION_MAP_DEFAULTS = {
+    # Ocean styling
+    'ocean_color': 'lightgrey',
+    'ocean_alpha': 0.8,
+    
+    # Land styling  
+    'land_color': 'white',
+    'land_alpha': 1.0,
+    
+    # Country borders styling
+    'borders_color': 'black',
+    'borders_linewidth': 0.5,
+    'borders_alpha': 0.8,
+    
+    # Coastlines styling
+    'coastlines_color': 'black', 
+    'coastlines_linewidth': 0.5,
+    'coastlines_alpha': 0.8,
+    
+    # Grid styling
+    'grid_linewidth': 0.5,
+    'grid_color': 'gray',
+    'grid_alpha': 0.5,
+    'grid_linestyle': '--',
+    
+    # Center marker styling
+    'marker_color': 'black',
+    'marker_size': 5,
+    'marker_style': 's'
+}
+
 
 def _test_defaults():
     """Simple test to verify defaults module loads correctly."""
