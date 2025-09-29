@@ -343,8 +343,11 @@ class Map:
         glv.xlines = GRID_DEFAULTS['xlines']
         glv.xlabel_style = GRID_DEFAULTS['xlabel_style']
         glv.ylabel_style = GRID_DEFAULTS['ylabel_style']
+        
+        # Apply intelligent tick spacing and proper formatters by default
+        self.set_ticks(auto_spacing=True, use_formatters=True)
 
-        # Apply centralized tick styling
+        # Apply tick styling specifically for cartopy - this enables actual tick marks
         self.ax.tick_params(axis='both', 
                             labelcolor=TICK_DEFAULTS['labelcolor'],
                             labelsize=TICK_DEFAULTS['labelsize'],
@@ -352,7 +355,8 @@ class Map:
                             length=TICK_DEFAULTS['tick_size'],
                             width=TICK_DEFAULTS['tick_width'],
                             direction=TICK_DEFAULTS['tick_direction'],
-                            pad=TICK_DEFAULTS['tick_pad'])
+                            pad=TICK_DEFAULTS['tick_pad'],
+                            which='both')  # Apply to both major and minor ticks
 
     def info(self):
         """Display information about the map."""
@@ -360,18 +364,66 @@ class Map:
         print(self.properties)
         print()
 
+    def _calculate_smart_tick_spacing(self):
+        """
+        Calculate intelligent tick spacing based on map extent.
+        
+        Returns:
+        --------
+        tuple: (x_spacing, y_spacing) in degrees
+        """
+        extent = self.properties["map_extent"]
+        lon_range = extent[1] - extent[0]  # max_lon - min_lon
+        lat_range = extent[3] - extent[2]  # max_lat - min_lat
+        
+        # Define possible tick spacings (in degrees)
+        possible_spacings = [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 
+                           1, 2, 5, 10, 15, 20, 30, 45, 60, 90]
+        
+        # Target 4-8 ticks for optimal readability
+        target_ticks = 6
+        
+        # Find best x spacing (longitude)
+        x_spacing = None
+        for spacing in possible_spacings:
+            num_ticks = lon_range / spacing
+            if 4 <= num_ticks <= 8:
+                x_spacing = spacing
+                break
+        if x_spacing is None:
+            # Fallback: choose spacing that gives closest to target
+            x_spacing = min(possible_spacings, 
+                          key=lambda s: abs(lon_range/s - target_ticks))
+        
+        # Find best y spacing (latitude) 
+        y_spacing = None
+        for spacing in possible_spacings:
+            num_ticks = lat_range / spacing
+            if 4 <= num_ticks <= 8:
+                y_spacing = spacing
+                break
+        if y_spacing is None:
+            # Fallback: choose spacing that gives closest to target
+            y_spacing = min(possible_spacings,
+                          key=lambda s: abs(lat_range/s - target_ticks))
+                          
+        return x_spacing, y_spacing
+
     def set_ticks(self, x_spacing=None, y_spacing=None, 
                  show_bottom=True, show_left=True, 
-                 show_top=False, show_right=False):
+                 show_top=False, show_right=False,
+                 auto_spacing=True, use_formatters=True):
         """
-        Customize the gridliner ticks on the map.
+        Customize the gridliner ticks on the map with intelligent spacing and formatting.
         
         Parameters:
         -----------
         x_spacing : float, optional
-            Spacing for x-axis (longitude) ticks in degrees
+            Spacing for x-axis (longitude) ticks in degrees. If None and auto_spacing=True,
+            spacing will be calculated automatically based on map extent.
         y_spacing : float, optional  
-            Spacing for y-axis (latitude) ticks in degrees
+            Spacing for y-axis (latitude) ticks in degrees. If None and auto_spacing=True,
+            spacing will be calculated automatically based on map extent.
         show_bottom : bool, optional
             Show ticks on bottom axis (default: True)
         show_left : bool, optional
@@ -380,7 +432,21 @@ class Map:
             Show ticks on top axis (default: False)
         show_right : bool, optional
             Show ticks on right axis (default: False)
+        auto_spacing : bool, optional
+            If True, automatically calculate optimal tick spacing when x_spacing 
+            or y_spacing is None (default: True)
+        use_formatters : bool, optional
+            If True, use cartopy's LongitudeFormatter and LatitudeFormatter for 
+            proper coordinate formatting (default: True)
         """
+        # Calculate automatic spacing if needed
+        if auto_spacing and (x_spacing is None or y_spacing is None):
+            auto_x, auto_y = self._calculate_smart_tick_spacing()
+            if x_spacing is None:
+                x_spacing = auto_x
+            if y_spacing is None:
+                y_spacing = auto_y
+        
         # Get the gridliner object
         glv = None
         for child in self.ax.get_children():
@@ -399,6 +465,56 @@ class Map:
             glv.ylabels_left = show_left
             glv.xlabels_top = show_top
             glv.ylabels_right = show_right
+            
+            # Apply proper coordinate formatters
+            if use_formatters:
+                from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
+                glv.xformatter = LongitudeFormatter()
+                glv.yformatter = LatitudeFormatter()
+                
+            # Enable actual tick marks by setting ticks on the axes
+            if x_spacing is not None or y_spacing is not None:
+                import numpy as np
+                extent = self.properties["map_extent"]
+                
+                if x_spacing is not None:
+                    # Generate longitude ticks
+                    lon_min, lon_max = extent[0], extent[1]
+                    lon_start = np.ceil(lon_min / x_spacing) * x_spacing
+                    lon_ticks = np.arange(lon_start, lon_max + x_spacing/2, x_spacing)
+                    self.ax.set_xticks(lon_ticks, crs=ccrs.PlateCarree())
+                    
+                if y_spacing is not None:
+                    # Generate latitude ticks
+                    lat_min, lat_max = extent[2], extent[3]
+                    lat_start = np.ceil(lat_min / y_spacing) * y_spacing
+                    lat_ticks = np.arange(lat_start, lat_max + y_spacing/2, y_spacing)
+                    self.ax.set_yticks(lat_ticks, crs=ccrs.PlateCarree())
+                    
+                # Remove default tick labels to avoid duplication with gridlines
+                # The gridlines will handle the formatting with proper rotation
+                self.ax.set_xticklabels([])
+                self.ax.set_yticklabels([])
+                
+        return self  # Enable method chaining
+    
+    def set_ticks_outside(self, x_spacing=None, y_spacing=None, auto_spacing=True):
+        """
+        Convenience method to show ticks on all four sides (outside the map).
+        
+        Parameters:
+        -----------
+        x_spacing : float, optional
+            Spacing for longitude ticks in degrees
+        y_spacing : float, optional  
+            Spacing for latitude ticks in degrees
+        auto_spacing : bool, optional
+            If True, automatically calculate optimal tick spacing (default: True)
+        """
+        return self.set_ticks(x_spacing=x_spacing, y_spacing=y_spacing,
+                            show_bottom=True, show_left=True, 
+                            show_top=True, show_right=True,
+                            auto_spacing=auto_spacing, use_formatters=True)
 
     def add_hillshade(self, source="PyGMT", data_source="igpp", resolution="auto", 
                      topo=True, bath=False, radiance=[315, 60], alpha=0.8,

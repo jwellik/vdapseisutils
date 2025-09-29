@@ -118,8 +118,8 @@ def add_arcgis_terrain(ax, zoom='auto', style='terrain', cache=False, radial_ext
             # 'https://server.arcgisonline.com/ArcGIS/rest/services/'
             # 'World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}.jpg'
         ),
-        style=style,
-        desired_tile_form='RGB',
+        # style=style,
+        # desired_tile_form='RGB',
     )
     ax.add_image(terrain, zoom_level)
 
@@ -127,11 +127,11 @@ def add_arcgis_terrain(ax, zoom='auto', style='terrain', cache=False, radial_ext
     overlay = cimgt.GoogleTiles(
         cache=cache,
         url=(
-            'https://tiles.basemaps.cartocdn.com/light_nolabels/'
+            'https://tiles.basemaps.cartocdn.com/dark_nolabels/'
             '{z}/{x}/{y}.png'
         ),
     )
-    ax.add_image(overlay, zoom_level, alpha=0.5)
+    ax.add_image(overlay, zoom_level, alpha=0.5)  # Reduced alpha for better contrast
 
 
 def add_google_tile(ax, zoom='auto', style='terrain', cache=False, radial_extent_km=None, **kwargs):
