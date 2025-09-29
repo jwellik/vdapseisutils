@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 
-from .defaults import default_volcano
+from .defaults import default_volcano, TITLE_DEFAULTS, SUBTITLE_DEFAULTS
 from .map import Map
 from .cross_section import CrossSection
 from .time_series import TimeSeries
@@ -263,8 +263,8 @@ class VolcanoFigure(plt.Figure):
         ts_scatter = self.ts_obj.plot_catalog(*args, **kwargs)
         return map_scatter, xs1_scatter, xs2_scatter, ts_scatter
 
-    def plot_inventory(self, inventory, marker_size=8, color='black', alpha=0.8, 
-                      transform=ccrs.Geodetic(), cross_section_marker_size=6, 
+    def plot_inventory(self, inventory, s=8, c='black', alpha=0.8, 
+                      transform=ccrs.Geodetic(), cross_section_s=6, 
                       **kwargs):
         """
         Plot ObsPy inventory stations on the map and cross-sections.
@@ -273,30 +273,30 @@ class VolcanoFigure(plt.Figure):
         -----------
         inventory : obspy.core.inventory.Inventory
             ObsPy Inventory object containing station information
-        marker_size : int, optional
+        s : int, optional
             Size of markers on the map (default: 8)
-        color : str, optional
+        c : str, optional
             Color of the markers (default: 'black')
         alpha : float, optional
             Transparency of markers (default: 0.8)
         transform : cartopy.crs.Projection, optional
             Coordinate reference system for map data (default: ccrs.Geodetic())
-        cross_section_marker_size : int, optional
+        cross_section_s : int, optional
             Size of markers on cross-sections (default: 6)
         **kwargs
             Additional plotting arguments
         """
         # Plot inventory on the main map
-        self.map_obj.plot_inventory(inventory, marker_size=marker_size, color=color, 
+        self.map_obj.plot_inventory(inventory, s=s, c=c, 
                                  alpha=alpha, transform=transform, **kwargs)
         
         # Plot inventory on both cross-sections
-        self.xs1_obj.plot_inventory(inventory, marker_size=cross_section_marker_size, 
-                                   color=color, alpha=alpha, **kwargs)
-        self.xs2_obj.plot_inventory(inventory, marker_size=cross_section_marker_size, 
-                                   color=color, alpha=alpha, **kwargs)
+        self.xs1_obj.plot_inventory(inventory, s=cross_section_s, 
+                                   c=c, alpha=alpha, **kwargs)
+        self.xs2_obj.plot_inventory(inventory, s=cross_section_s, 
+                                   c=c, alpha=alpha, **kwargs)
 
-    def plot_volcano(self, lat, lon, elev, transform=ccrs.Geodetic(), **kwargs):
+    def plot_volcano(self, lat, lon, elev=0, transform=ccrs.Geodetic(), **kwargs):
         """
         Plot volcano location on all subplots (map and cross-sections).
         
@@ -306,8 +306,8 @@ class VolcanoFigure(plt.Figure):
             Latitude of the volcano
         lon : float
             Longitude of the volcano
-        elev : float
-            Elevation of the volcano in meters
+        elev : float, optional
+            Elevation of the volcano in meters (default: 0)
         transform : cartopy.crs.Projection, optional
             Coordinate reference system for map data (default: ccrs.Geodetic())
         **kwargs
@@ -320,7 +320,7 @@ class VolcanoFigure(plt.Figure):
         self.xs1_obj.plot_volcano(lat, lon, elev, **kwargs)
         self.xs2_obj.plot_volcano(lat, lon, elev, **kwargs)
 
-    def plot_peak(self, lat, lon, elev, transform=ccrs.Geodetic(), **kwargs):
+    def plot_peak(self, lat, lon, elev=0, transform=ccrs.Geodetic(), **kwargs):
         """
         Plot peak location on all subplots (map and cross-sections).
         
@@ -330,8 +330,8 @@ class VolcanoFigure(plt.Figure):
             Latitude of the peak
         lon : float
             Longitude of the peak
-        elev : float
-            Elevation of the peak in meters
+        elev : float, optional
+            Elevation of the peak in meters (default: 0)
         transform : cartopy.crs.Projection, optional
             Coordinate reference system for map data (default: ccrs.Geodetic())
         **kwargs
@@ -362,7 +362,7 @@ class VolcanoFigure(plt.Figure):
         self.xs1_obj.plot_heatmap(*args, **kwargs)
         self.xs2_obj.plot_heatmap(*args, **kwargs)
 
-    def title(self, t, x=0.5, y=0.975, **kwargs):
+    def title(self, t, **kwargs):
         """
         Add a title to the figure.
         
@@ -370,16 +370,53 @@ class VolcanoFigure(plt.Figure):
         -----------
         t : str
             Title text
-        x : float, optional
-            X position in figure coordinates (default: 0.5)
-        y : float, optional
-            Y position in figure coordinates (default: 0.975)
         **kwargs
-            Additional text arguments
+            Additional text arguments to override defaults. Available options:
+            - fontsize: str or float (default: 'large')
+            - fontweight: str (default: 'bold')
+            - color: str (default: 'black')
+            - ha: str (default: 'center')
+            - va: str (default: 'top')
+            - pad: float (default: 20)
+            - y: float (default: 0.95)
+            - x: float (default: 0.5)
         """
-        self.suptitle(t, x=x, y=y, **kwargs)
+        # Merge defaults with user kwargs
+        title_params = {**TITLE_DEFAULTS, **kwargs}
+        
+        # Always use text for VolcanoFigure to avoid suptitle issues
+        # Calculate y position if not provided
+        if title_params.get('y') is None:
+            # Use smart spacing calculation
+            if title_params.get('auto_spacing', True):
+                # Get the main map axes position for smart spacing
+                map_ax = self.map_obj.ax
+                ax_pos = map_ax.get_position()
+                ax_top = ax_pos.y1
+                available_space = 1.0 - ax_top
+                title_height = 0.05
+                if available_space >= title_height:
+                    title_y = ax_top + available_space - title_height/2
+                else:
+                    title_y = ax_top + 0.01
+                title_params['y'] = title_y
+            else:
+                title_params['y'] = 0.95
+        
+        # Use text with transFigure for reliable positioning
+        self.text(x=title_params['x'], y=title_params['y'], s=t,
+                 fontsize=title_params['fontsize'],
+                 fontweight=title_params['fontweight'],
+                 color=title_params['color'],
+                 ha=title_params['ha'],
+                 va=title_params['va'],
+                 transform=self.transFigure)
+        
+        # Store title info for subtitle positioning
+        self._title_text = t
+        self._title_y = title_params['y']
 
-    def subtitle(self, t, x=0.5, y=0.925, ha='center', va='center', **kwargs):
+    def subtitle(self, t, **kwargs):
         """
         Add a subtitle to the figure.
         
@@ -387,31 +424,99 @@ class VolcanoFigure(plt.Figure):
         -----------
         t : str
             Subtitle text
-        x : float, optional
-            X position in figure coordinates (default: 0.5)
-        y : float, optional
-            Y position in figure coordinates (default: 0.925)
-        ha : str, optional
-            Horizontal alignment (default: 'center')
-        va : str, optional
-            Vertical alignment (default: 'center')
         **kwargs
-            Additional text arguments
+            Additional text arguments to override defaults. Available options:
+            - fontsize: str or float (default: 'medium')
+            - fontweight: str (default: 'normal')
+            - color: str (default: 'black')
+            - ha: str (default: 'center')
+            - va: str (default: 'top')
+            - pad: float (default: 10)
+            - y: float (default: 0.90)
+            - x: float (default: 0.5)
         """
-        self.text(x, y, t, ha=ha, va=va, **kwargs)
+        # Merge defaults with user kwargs
+        subtitle_params = {**SUBTITLE_DEFAULTS, **kwargs}
+        
+        # Calculate y position if not provided
+        if subtitle_params.get('y') is None:
+            # Use smart spacing calculation
+            if subtitle_params.get('auto_spacing', True):
+                # Check if there's already a title to position relative to it
+                existing_title_y = getattr(self, '_title_y', None)
+                if existing_title_y is not None:
+                    # Position subtitle below existing title
+                    subtitle_height = 0.03
+                    min_padding = 0.02
+                    subtitle_y = existing_title_y - subtitle_height/2 - min_padding
+                else:
+                    # No existing title, position relative to axes
+                    map_ax = self.map_obj.ax
+                    ax_pos = map_ax.get_position()
+                    ax_top = ax_pos.y1
+                    available_space = 1.0 - ax_top
+                    subtitle_height = 0.03
+                    if available_space >= subtitle_height:
+                        subtitle_y = ax_top + available_space - subtitle_height/2
+                    else:
+                        subtitle_y = ax_top - 0.01
+                
+                subtitle_params['y'] = subtitle_y
+            else:
+                subtitle_params['y'] = 0.90
+        
+        # Use text with transFigure for reliable positioning
+        self.text(x=subtitle_params['x'], y=subtitle_params['y'], s=t,
+                 fontsize=subtitle_params['fontsize'],
+                 fontweight=subtitle_params['fontweight'],
+                 color=subtitle_params['color'],
+                 ha=subtitle_params['ha'],
+                 va=subtitle_params['va'],
+                 transform=self.transFigure)
 
-    def text(self, t, x=0.5, y=0.5, ha='center', va='center', **kwargs):
+    def set_titles(self, title_text=None, subtitle_text=None, **kwargs):
+        """
+        Add both title and subtitle to the volcano figure in one call.
+        
+        Parameters:
+        -----------
+        title_text : str, optional
+            Title text to display
+        subtitle_text : str, optional
+            Subtitle text to display
+        **kwargs
+            Additional text arguments. Use 'title_' prefix for title-specific
+            parameters and 'subtitle_' prefix for subtitle-specific parameters.
+            For example: title_fontsize='x-large', subtitle_color='gray'
+        """
+        # Separate title and subtitle kwargs
+        title_kwargs = {k.replace('title_', ''): v for k, v in kwargs.items() 
+                       if k.startswith('title_')}
+        subtitle_kwargs = {k.replace('subtitle_', ''): v for k, v in kwargs.items() 
+                          if k.startswith('subtitle_')}
+        
+        # Add title if provided
+        if title_text:
+            self.title(title_text, **title_kwargs)
+        
+        # Add subtitle if provided
+        if subtitle_text:
+            self.subtitle(subtitle_text, **subtitle_kwargs)
+        
+        return self  # Enable method chaining
+
+    def text(self, x, y, s, ha='center', va='center', **kwargs):
         """
         Add text to the figure.
         
         Parameters:
         -----------
-        t : str
+        x : float
+            X position in figure coordinates
+        y : float
+            Y position in figure coordinates
+        s : str
             Text content
-        x : float, optional
-            X position in figure coordinates (default: 0.5)
-        y : float, optional
-            Y position in figure coordinates (default: 0.5)
         ha : str, optional
             Horizontal alignment (default: 'center')
         va : str, optional
@@ -419,20 +524,20 @@ class VolcanoFigure(plt.Figure):
         **kwargs
             Additional text arguments
         """
-        super().text(x, y, t, ha=ha, va=va, **kwargs)
+        super().text(x, y, s, ha=ha, va=va, **kwargs)
 
-    def reftext(self, t, x=0.025, y=0.025, color="grey", ha="left", va="center", **kwargs):
+    def reftext(self, x=0.025, y=0.025, s="", color="grey", ha="left", va="center", **kwargs):
         """
         Add reference text (e.g., citation) to the figure.
         
         Parameters:
         -----------
-        t : str
-            Reference text
         x : float, optional
             X position in figure coordinates (default: 0.025)
         y : float, optional
             Y position in figure coordinates (default: 0.025)
+        s : str, optional
+            Reference text (default: "")
         color : str, optional
             Text color (default: "grey")
         ha : str, optional
@@ -442,7 +547,7 @@ class VolcanoFigure(plt.Figure):
         **kwargs
             Additional text arguments
         """
-        super().text(x, y, t, color=color, ha=ha, va=va, **kwargs)
+        super().text(x, y, s, color=color, ha=ha, va=va, **kwargs)
 
     def catalog_subtitle(self, catalog):
         """

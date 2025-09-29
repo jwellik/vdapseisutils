@@ -14,7 +14,8 @@ import matplotlib.patheffects as pe
 
 from .defaults import (
     HEATMAP_DEFAULTS, TICK_DEFAULTS, AXES_DEFAULTS, CROSSSECTION_DEFAULTS, default_volcano,
-    PLOT_VOLCANO_DEFAULTS, PLOT_PEAK_DEFAULTS, PLOT_CATALOG_DEFAULTS, PLOT_INVENTORY_DEFAULTS
+    PLOT_VOLCANO_DEFAULTS, PLOT_PEAK_DEFAULTS, PLOT_CATALOG_DEFAULTS, PLOT_INVENTORY_DEFAULTS,
+    TITLE_DEFAULTS, SUBTITLE_DEFAULTS
 )
 from .utils import prep_catalog_data_mpl
 from .legends import MagLegend
@@ -314,8 +315,8 @@ class CrossSection:
         self.set_horiz_extent()
         return scatter
 
-    def plot_inventory(self, inventory, marker_size=PLOT_INVENTORY_DEFAULTS['marker_size'], 
-                      color=PLOT_INVENTORY_DEFAULTS['color'], alpha=PLOT_INVENTORY_DEFAULTS['alpha'], **kwargs):
+    def plot_inventory(self, inventory, s=PLOT_INVENTORY_DEFAULTS['s'], 
+                      c=PLOT_INVENTORY_DEFAULTS['c'], alpha=PLOT_INVENTORY_DEFAULTS['alpha'], **kwargs):
         """Plot seismic station inventory on the cross-section."""
         try:
             station_lats = []
@@ -330,9 +331,13 @@ class CrossSection:
                         station_elevs.append(station.elevation)
             
             if station_lats and station_lons:
+                # Merge defaults with user kwargs
+                plot_kwargs = {**PLOT_INVENTORY_DEFAULTS, **kwargs}
+                # Override with explicit parameters
+                plot_kwargs.update({'s': s, 'c': c, 'alpha': alpha})
+                
                 self.scatter(lat=station_lats, lon=station_lons, z=station_elevs, 
-                           z_dir="elev", z_unit="m", s=marker_size, c=color, 
-                           marker=PLOT_INVENTORY_DEFAULTS['marker'], alpha=alpha, **kwargs)
+                           z_dir="elev", z_unit="m", **plot_kwargs)
                 self.set_depth_extent()
                 self.set_horiz_extent()
             else:
@@ -464,6 +469,171 @@ class CrossSection:
             print(f"Error creating cross-section heatmap: {e}")
             print("Continuing without heatmap...")
             return None
+
+    def _calculate_smart_title_spacing(self, title_params, subtitle_params=None):
+        """
+        Calculate smart positioning for title and subtitle based on figure layout.
+        
+        Parameters:
+        -----------
+        title_params : dict
+            Title parameters
+        subtitle_params : dict, optional
+            Subtitle parameters (if provided, will be positioned below title)
+            
+        Returns:
+        --------
+        tuple: (title_y, subtitle_y) positions in figure coordinates
+        """
+        # Get the main axes position
+        ax_pos = self.ax.get_position()
+        ax_top = ax_pos.y1  # Top of the main axes
+        
+        # Calculate available space above the axes
+        available_space = 1.0 - ax_top
+        
+        # Minimum spacing requirements
+        title_height = 0.05  # Approximate title height
+        subtitle_height = 0.03  # Approximate subtitle height
+        min_padding = 0.02  # Minimum padding between elements
+        
+        if subtitle_params is not None:
+            # Both title and subtitle
+            total_height = title_height + subtitle_height + min_padding
+            if available_space >= total_height:
+                # Enough space for both
+                title_y = ax_top + available_space - title_height/2
+                subtitle_y = title_y - title_height/2 - subtitle_height/2 - min_padding
+            else:
+                # Not enough space, position closer to axes
+                title_y = ax_top + 0.01
+                subtitle_y = ax_top - 0.01
+        else:
+            # Only title
+            if available_space >= title_height:
+                title_y = ax_top + available_space - title_height/2
+            else:
+                title_y = ax_top + 0.01
+            subtitle_y = None
+            
+        return title_y, subtitle_y
+
+    def set_title(self, title_text, **kwargs):
+        """
+        Add a title to the cross-section with smart spacing.
+        
+        Parameters:
+        -----------
+        title_text : str
+            Title text to display
+        **kwargs
+            Additional text arguments to override defaults. Available options:
+            - fontsize: str or float (default: 'large')
+            - fontweight: str (default: 'bold')
+            - color: str (default: 'black')
+            - ha: str (default: 'center')
+            - va: str (default: 'top')
+            - pad: float (default: 20)
+            - y: float (override automatic positioning)
+            - x: float (default: 0.5)
+            - auto_spacing: bool (default: True)
+        """
+        # Merge defaults with user kwargs
+        title_params = {**TITLE_DEFAULTS, **kwargs}
+        
+        # Calculate smart positioning if enabled and y not explicitly set
+        if title_params.get('auto_spacing', True) and title_params.get('y') is None:
+            title_y, _ = self._calculate_smart_title_spacing(title_params)
+            title_params['y'] = title_y
+        
+        # Fallback to default if no y position calculated
+        if title_params.get('y') is None:
+            title_params['y'] = 0.95
+        
+        # Add title to the figure
+        if title_params.get('y') is not None and title_params['y'] != 0.98:
+            # Custom y position - use text instead of suptitle
+            self.figure.text(x=title_params['x'], y=title_params['y'], s=title_text,
+                           fontsize=title_params['fontsize'],
+                           fontweight=title_params['fontweight'],
+                           color=title_params['color'],
+                           ha=title_params['ha'],
+                           va=title_params['va'],
+                           transform=self.figure.transFigure)
+        else:
+            # Use suptitle for default positioning
+            self.figure.suptitle(title_text, 
+                               fontsize=title_params['fontsize'],
+                               fontweight=title_params['fontweight'],
+                               color=title_params['color'],
+                               ha=title_params['ha'],
+                               va=title_params['va'])
+        
+        return self  # Enable method chaining
+
+    def set_subtitle(self, subtitle_text, **kwargs):
+        """
+        Add a subtitle to the cross-section.
+        
+        Parameters:
+        -----------
+        subtitle_text : str
+            Subtitle text to display
+        **kwargs
+            Additional text arguments to override defaults. Available options:
+            - fontsize: str or float (default: 'medium')
+            - fontweight: str (default: 'normal')
+            - color: str (default: 'black')
+            - ha: str (default: 'center')
+            - va: str (default: 'top')
+            - pad: float (default: 10)
+            - y: float (default: 0.90)
+            - x: float (default: 0.5)
+        """
+        # Merge defaults with user kwargs
+        subtitle_params = {**SUBTITLE_DEFAULTS, **kwargs}
+        
+        # Add subtitle to the figure
+        self.figure.text(x=subtitle_params['x'], y=subtitle_params['y'], s=subtitle_text,
+                        fontsize=subtitle_params['fontsize'],
+                        fontweight=subtitle_params['fontweight'],
+                        color=subtitle_params['color'],
+                        ha=subtitle_params['ha'],
+                        va=subtitle_params['va'],
+                        transform=self.figure.transFigure)
+        
+        return self  # Enable method chaining
+
+    def set_titles(self, title_text=None, subtitle_text=None, **kwargs):
+        """
+        Add both title and subtitle to the cross-section in one call.
+        
+        Parameters:
+        -----------
+        title_text : str, optional
+            Title text to display
+        subtitle_text : str, optional
+            Subtitle text to display
+        **kwargs
+            Additional text arguments. Use 'title_' prefix for title-specific
+            parameters and 'subtitle_' prefix for subtitle-specific parameters.
+            For example: title_fontsize='x-large', subtitle_color='gray'
+        """
+        # Separate title and subtitle kwargs
+        title_kwargs = {k.replace('title_', ''): v for k, v in kwargs.items() 
+                       if k.startswith('title_')}
+        subtitle_kwargs = {k.replace('subtitle_', ''): v for k, v in kwargs.items() 
+                          if k.startswith('subtitle_')}
+        
+        # Add title if provided
+        if title_text:
+            self.set_title(title_text, **title_kwargs)
+        
+        # Add subtitle if provided
+        if subtitle_text:
+            self.set_subtitle(subtitle_text, **subtitle_kwargs)
+        
+        return self  # Enable method chaining
 
 
 def _test_cross_section():

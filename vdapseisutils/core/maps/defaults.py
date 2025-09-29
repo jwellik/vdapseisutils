@@ -114,24 +114,50 @@ PLOT_CATALOG_DEFAULTS = {
 }
 
 PLOT_INVENTORY_DEFAULTS = {
-    'marker_size': 6,
-    'color': 'black',
-    'alpha': 0.8,
-    'marker': 'v'
+    's': 49,  # Use 's' for size in scatter plots (6^2 = 36 for equivalent visual size)
+    'c': 'black',  # Use 'c' for scatter plot color
+    'alpha': 1.0,
+    'marker': 'v',
+    'edgecolors': 'black'  # Use 'edgecolors' (plural) in scatter plots
 }
 
 PLOT_VOLCANO_DEFAULTS = {
     'marker': '^',
-    'color': 'orangered',
-    'markersize': 8,
-    'edgecolor': 'black'
+    'c': 'orangered',  # Use 'c' for color in scatter plots
+    's': 64,  # Use 's' for size in scatter plots (8^2 = 64 for equivalent visual size)
+    'edgecolors': 'black'  # Use 'edgecolors' (plural) in scatter plots
 }
 
 PLOT_PEAK_DEFAULTS = {
     'marker': '^',
-    'color': 'floralwhite', 
-    'markersize': 6,
-    'edgecolor': 'black'
+    'c': 'floralwhite',  # Use 'c' for color in scatter plots
+    's': 64,  # Use 's' for size in scatter plots (8^2 = 64 for equivalent visual size)
+    'edgecolors': 'black'  # Use 'edgecolors' (plural) in scatter plots
+}
+
+# Title and subtitle styling defaults
+TITLE_DEFAULTS = {
+    'fontsize': 'large',  # 1.2x base = 9.6
+    'fontweight': 'bold',
+    'color': 'black',
+    'ha': 'center',
+    'va': 'top',
+    'pad': 20,  # padding in points
+    'y': None,  # Will be calculated automatically
+    'x': 0.5,   # default x position in figure coordinates
+    'auto_spacing': True,  # Enable automatic spacing calculation
+}
+
+SUBTITLE_DEFAULTS = {
+    'fontsize': 'medium',  # 1.0x base = 8
+    'fontweight': 'normal',
+    'color': 'black',
+    'ha': 'center',
+    'va': 'top',
+    'pad': 10,  # padding in points
+    'y': None,  # Will be calculated automatically
+    'x': 0.5,   # default x position in figure coordinates
+    'auto_spacing': True,  # Enable automatic spacing calculation
 }
 
 # World location map styling defaults
@@ -173,7 +199,8 @@ def _test_defaults():
         # Test that all required defaults are present
         required_defaults = [
             'HEATMAP_DEFAULTS', 'TICK_DEFAULTS', 'AXES_DEFAULTS',
-            'CROSSSECTION_DEFAULTS', 'GRID_DEFAULTS', 'default_volcano'
+            'CROSSSECTION_DEFAULTS', 'GRID_DEFAULTS', 'TITLE_DEFAULTS', 
+            'SUBTITLE_DEFAULTS', 'default_volcano'
         ]
         
         for default in required_defaults:

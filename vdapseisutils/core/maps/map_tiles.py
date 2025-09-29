@@ -14,7 +14,7 @@ import urllib.request
 import cartopy.io.img_tiles as cimgt
 
 
-def _create_ssl_context(ssl_verify=True):
+def _create_ssl_context(ssl_verify=False):
     """
     Create an SSL context for tile requests.
     
@@ -41,7 +41,7 @@ def _create_ssl_context(ssl_verify=True):
             return ssl.create_default_context()
 
 
-def _create_tile_with_ssl_context(url, cache=False, ssl_verify=True):
+def _create_tile_with_ssl_context(url, cache=False, ssl_verify=False):
     """
     Create a GoogleTiles object with SSL context handling.
     
@@ -143,7 +143,7 @@ def _calculate_auto_zoom_google(radius_km):
         return 5
 
 
-def add_arcgis_terrain(ax, zoom='auto', cache=False, radial_extent_km=None, verbose=False, ssl_verify=True):
+def add_arcgis_terrain(ax, zoom='auto', cache=False, radial_extent_km=None, verbose=False, ssl_verify=False):
     """
     Add world terrain background tiles from ArcGIS to the map.
 
@@ -162,8 +162,8 @@ def add_arcgis_terrain(ax, zoom='auto', cache=False, radial_extent_km=None, verb
     verbose : bool, optional
         Whether to print URLs and zoom levels to console (default: False)
     ssl_verify : bool, optional
-        Whether to verify SSL certificates (default: True)
-        Set to False if getting SSL certificate errors
+        Whether to verify SSL certificates (default: False)
+        Set to True for enhanced security in production
     """
     # Calculate zoom level if auto
     if zoom == 'auto':
@@ -201,7 +201,7 @@ def add_arcgis_terrain(ax, zoom='auto', cache=False, radial_extent_km=None, verb
     ax.add_image(overlay, zoom_level, alpha=0.5)  # Reduced alpha for better contrast
 
 
-def add_google_tile(ax, zoom='auto', style='terrain', cache=False, radial_extent_km=None, verbose=False, ssl_verify=True, **kwargs):
+def add_google_tile(ax, zoom='auto', style='terrain', cache=False, radial_extent_km=None, verbose=False, ssl_verify=False, **kwargs):
     """
     Add Google background tiles to the map.
     
@@ -220,8 +220,8 @@ def add_google_tile(ax, zoom='auto', style='terrain', cache=False, radial_extent
     verbose : bool, optional
         Whether to print URLs and zoom levels to console (default: False)
     ssl_verify : bool, optional
-        Whether to verify SSL certificates (default: True)
-        Set to False if getting SSL certificate errors
+        Whether to verify SSL certificates (default: False)
+        Set to True for enhanced security in production
     """
     # Calculate zoom level if auto
     if zoom == 'auto':
@@ -260,17 +260,17 @@ def add_google_tile(ax, zoom='auto', style='terrain', cache=False, radial_extent
     ax.add_image(background_tile, zoom_level)
 
 
-def add_google_terrain(ax, zoom='auto', cache=False, radial_extent_km=None, verbose=False, ssl_verify=True, **kwargs):
+def add_google_terrain(ax, zoom='auto', cache=False, radial_extent_km=None, verbose=False, ssl_verify=False, **kwargs):
     """Add Google terrain tiles to the map."""
     add_google_tile(ax, zoom, style='terrain', cache=cache, radial_extent_km=radial_extent_km, verbose=verbose, ssl_verify=ssl_verify, **kwargs)
 
 
-def add_google_street(ax, zoom='auto', cache=False, radial_extent_km=None, verbose=False, ssl_verify=True, **kwargs):
+def add_google_street(ax, zoom='auto', cache=False, radial_extent_km=None, verbose=False, ssl_verify=False, **kwargs):
     """Add Google street tiles to the map."""
     add_google_tile(ax, zoom, style='street', cache=cache, radial_extent_km=radial_extent_km, verbose=verbose, ssl_verify=ssl_verify, **kwargs)
 
 
-def add_google_satellite(ax, zoom='auto', cache=False, radial_extent_km=None, verbose=False, ssl_verify=True, **kwargs):
+def add_google_satellite(ax, zoom='auto', cache=False, radial_extent_km=None, verbose=False, ssl_verify=False, **kwargs):
     """Add Google satellite tiles to the map."""
     add_google_tile(ax, zoom, style='satellite', cache=cache, radial_extent_km=radial_extent_km, verbose=verbose, ssl_verify=ssl_verify, **kwargs)
 

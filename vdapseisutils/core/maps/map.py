@@ -17,7 +17,7 @@ import cartopy.feature as cfeature
 from .defaults import (
     HEATMAP_DEFAULTS, TICK_DEFAULTS, AXES_DEFAULTS, GRID_DEFAULTS, default_volcano,
     PLOT_VOLCANO_DEFAULTS, PLOT_PEAK_DEFAULTS, PLOT_CATALOG_DEFAULTS, PLOT_INVENTORY_DEFAULTS,
-    WORLD_LOCATION_MAP_DEFAULTS
+    WORLD_LOCATION_MAP_DEFAULTS, TITLE_DEFAULTS, SUBTITLE_DEFAULTS
 )
 from .utils import prep_catalog_data_mpl, choose_scale_bar_length
 from vdapseisutils.utils.geoutils import backazimuth, radial_extent2map_extent
@@ -648,8 +648,8 @@ class Map:
                      bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, pad=2),
                      transform=transform)
 
-    def plot_inventory(self, inventory, marker_size=PLOT_INVENTORY_DEFAULTS['marker_size'], 
-                      color=PLOT_INVENTORY_DEFAULTS['color'], alpha=PLOT_INVENTORY_DEFAULTS['alpha'], 
+    def plot_inventory(self, inventory, s=PLOT_INVENTORY_DEFAULTS['s'], 
+                      c=PLOT_INVENTORY_DEFAULTS['c'], alpha=PLOT_INVENTORY_DEFAULTS['alpha'], 
                       transform=ccrs.Geodetic(), **kwargs):
         """Plot seismic station inventory on the map."""
         try:
@@ -663,13 +663,14 @@ class Map:
                         station_lons.append(station.longitude)
             
             if station_lats and station_lons:
+                # Merge defaults with user kwargs
+                plot_kwargs = {**PLOT_INVENTORY_DEFAULTS, **kwargs}
+                # Override with explicit parameters
+                plot_kwargs.update({'s': s, 'c': c, 'alpha': alpha})
+                
                 self.ax.scatter(station_lons, station_lats, 
-                              s=marker_size, 
-                              c=color, 
-                              marker=PLOT_INVENTORY_DEFAULTS['marker'],
-                              alpha=alpha,
                               transform=transform,
-                              **kwargs)
+                              **plot_kwargs)
             else:
                 print("No valid station coordinates found in inventory")
                 
@@ -677,7 +678,7 @@ class Map:
             print(f"Error plotting inventory: {e}")
             print("Continuing without inventory plot...")
 
-    def plot_volcano(self, lat, lon, elev, transform=ccrs.Geodetic(), **kwargs):
+    def plot_volcano(self, lat, lon, elev=0, transform=ccrs.Geodetic(), **kwargs):
         """
         Plot volcano location on the map.
         
@@ -687,8 +688,8 @@ class Map:
             Latitude of the volcano
         lon : float
             Longitude of the volcano
-        elev : float
-            Elevation of the volcano (in meters, used for reference but not plotted)
+        elev : float, optional
+            Elevation of the volcano (in meters, used for reference but not plotted, default: 0)
         transform : cartopy.crs.Projection, optional
             Coordinate reference system for the data (default: ccrs.Geodetic())
         **kwargs
@@ -699,7 +700,7 @@ class Map:
         
         self.ax.scatter(lon, lat, transform=transform, **plot_kwargs)
 
-    def plot_peak(self, lat, lon, elev, transform=ccrs.Geodetic(), **kwargs):
+    def plot_peak(self, lat, lon, elev=0, transform=ccrs.Geodetic(), **kwargs):
         """
         Plot peak location on the map.
         
@@ -709,8 +710,8 @@ class Map:
             Latitude of the peak
         lon : float
             Longitude of the peak
-        elev : float
-            Elevation of the peak (in meters, used for reference but not plotted)
+        elev : float, optional
+            Elevation of the peak (in meters, used for reference but not plotted, default: 0)
         transform : cartopy.crs.Projection, optional
             Coordinate reference system for the data (default: ccrs.Geodetic())
         **kwargs
@@ -795,11 +796,11 @@ class Map:
             print("Continuing without heatmap...")
             return None
 
-    def add_terrain(self, zoom='auto', cache=False, verbose=False, ssl_verify=True):
+    def add_terrain(self, zoom='auto', cache=False, verbose=False, ssl_verify=False):
         """Add terrain background tiles from default source to the map."""
         self.add_arcgis_terrain(zoom=zoom, cache=cache, verbose=verbose, ssl_verify=ssl_verify)
 
-    def add_arcgis_terrain(self, zoom='auto', cache=False, verbose=False, ssl_verify=True):
+    def add_arcgis_terrain(self, zoom='auto', cache=False, verbose=False, ssl_verify=False):
         """Add world terrain background tiles from ArcGIS to the map."""
         from .map_tiles import add_arcgis_terrain
         
@@ -812,7 +813,7 @@ class Map:
             ssl_verify=ssl_verify
         )
 
-    def add_google_terrain(self, zoom='auto', cache=False, verbose=False, ssl_verify=True, **kwargs):
+    def add_google_terrain(self, zoom='auto', cache=False, verbose=False, ssl_verify=False, **kwargs):
         """Add Google terrain tiles to the map."""
         from .map_tiles import add_google_terrain
         
@@ -826,7 +827,7 @@ class Map:
             **kwargs
         )
 
-    def add_google_street(self, zoom='auto', cache=False, verbose=False, ssl_verify=True, **kwargs):
+    def add_google_street(self, zoom='auto', cache=False, verbose=False, ssl_verify=False, **kwargs):
         """Add Google street tiles to the map."""
         from .map_tiles import add_google_street
         
@@ -840,7 +841,7 @@ class Map:
             **kwargs
         )
 
-    def add_google_satellite(self, zoom='auto', cache=False, verbose=False, ssl_verify=True, **kwargs):
+    def add_google_satellite(self, zoom='auto', cache=False, verbose=False, ssl_verify=False, **kwargs):
         """Add Google satellite tiles to the map."""
         from .map_tiles import add_google_satellite
         
@@ -997,6 +998,233 @@ class Map:
         world_ax.set_aspect('equal')
         
         return world_ax
+
+    def _calculate_smart_title_spacing(self, title_params, subtitle_params=None):
+        """
+        Calculate smart positioning for title and subtitle based on figure layout.
+        
+        Parameters:
+        -----------
+        title_params : dict
+            Title parameters
+        subtitle_params : dict, optional
+            Subtitle parameters (if provided, will be positioned below title)
+            
+        Returns:
+        --------
+        tuple: (title_y, subtitle_y) positions in figure coordinates
+        """
+        # Get the main axes position
+        ax_pos = self.ax.get_position()
+        ax_top = ax_pos.y1  # Top of the main axes
+        
+        # Calculate available space above the axes
+        available_space = 1.0 - ax_top
+        
+        # Minimum spacing requirements
+        title_height = 0.05  # Approximate title height
+        subtitle_height = 0.03  # Approximate subtitle height
+        min_padding = 0.02  # Minimum padding between elements
+        
+        if subtitle_params is not None:
+            # Both title and subtitle
+            total_height = title_height + subtitle_height + min_padding
+            if available_space >= total_height:
+                # Enough space for both
+                title_y = ax_top + available_space - title_height/2
+                subtitle_y = title_y - title_height/2 - subtitle_height/2 - min_padding
+            else:
+                # Not enough space, position closer to axes
+                title_y = ax_top + 0.01
+                subtitle_y = ax_top - 0.01
+        else:
+            # Only title
+            if available_space >= title_height:
+                title_y = ax_top + available_space - title_height/2
+            else:
+                title_y = ax_top + 0.01
+            subtitle_y = None
+            
+        return title_y, subtitle_y
+
+    def set_title(self, title_text, **kwargs):
+        """
+        Add a title to the map with smart spacing.
+        
+        Parameters:
+        -----------
+        title_text : str
+            Title text to display
+        **kwargs
+            Additional text arguments to override defaults. Available options:
+            - fontsize: str or float (default: 'large')
+            - fontweight: str (default: 'bold')
+            - color: str (default: 'black')
+            - ha: str (default: 'center')
+            - va: str (default: 'top')
+            - pad: float (default: 20)
+            - y: float (override automatic positioning)
+            - x: float (default: 0.5)
+            - auto_spacing: bool (default: True)
+        """
+        # Merge defaults with user kwargs
+        title_params = {**TITLE_DEFAULTS, **kwargs}
+        
+        # Calculate smart positioning if enabled and y not explicitly set
+        if title_params.get('auto_spacing', True) and title_params.get('y') is None:
+            title_y, _ = self._calculate_smart_title_spacing(title_params)
+            title_params['y'] = title_y
+        
+        # Fallback to default if no y position calculated
+        if title_params.get('y') is None:
+            title_params['y'] = 0.95
+        
+        # Add title to the figure
+        if title_params.get('y') is not None and title_params['y'] != 0.98:
+            # Custom y position - use text instead of suptitle
+            self.figure.text(x=title_params['x'], y=title_params['y'], s=title_text,
+                           fontsize=title_params['fontsize'],
+                           fontweight=title_params['fontweight'],
+                           color=title_params['color'],
+                           ha=title_params['ha'],
+                           va=title_params['va'],
+                           transform=self.figure.transFigure)
+        else:
+            # Use suptitle for default positioning
+            self.figure.suptitle(title_text, 
+                               fontsize=title_params['fontsize'],
+                               fontweight=title_params['fontweight'],
+                               color=title_params['color'],
+                               ha=title_params['ha'],
+                               va=title_params['va'])
+        
+        return self  # Enable method chaining
+
+    def set_subtitle(self, subtitle_text, **kwargs):
+        """
+        Add a subtitle to the map with smart spacing.
+        
+        Parameters:
+        -----------
+        subtitle_text : str
+            Subtitle text to display
+        **kwargs
+            Additional text arguments to override defaults. Available options:
+            - fontsize: str or float (default: 'medium')
+            - fontweight: str (default: 'normal')
+            - color: str (default: 'black')
+            - ha: str (default: 'center')
+            - va: str (default: 'top')
+            - pad: float (default: 10)
+            - y: float (override automatic positioning)
+            - x: float (default: 0.5)
+            - auto_spacing: bool (default: True)
+        """
+        # Merge defaults with user kwargs
+        subtitle_params = {**SUBTITLE_DEFAULTS, **kwargs}
+        
+        # Calculate smart positioning if enabled and y not explicitly set
+        if subtitle_params.get('auto_spacing', True) and subtitle_params.get('y') is None:
+            # Check if there's already a title to position relative to it
+            existing_title = getattr(self.figure, '_suptitle', None)
+            if existing_title is not None:
+                # Position subtitle below existing title
+                title_y = existing_title.get_position()[1]
+                subtitle_y = title_y - 0.05  # Position below title
+            else:
+                # No existing title, position relative to axes
+                _, subtitle_y = self._calculate_smart_title_spacing(None, subtitle_params)
+            
+            subtitle_params['y'] = subtitle_y
+        
+        # Fallback to default if no y position calculated
+        if subtitle_params.get('y') is None:
+            subtitle_params['y'] = 0.90
+        
+        # Add subtitle to the figure
+        self.figure.text(x=subtitle_params['x'], y=subtitle_params['y'], s=subtitle_text,
+                        fontsize=subtitle_params['fontsize'],
+                        fontweight=subtitle_params['fontweight'],
+                        color=subtitle_params['color'],
+                        ha=subtitle_params['ha'],
+                        va=subtitle_params['va'],
+                        transform=self.figure.transFigure)
+        
+        return self  # Enable method chaining
+
+    def set_titles(self, title_text=None, subtitle_text=None, **kwargs):
+        """
+        Add both title and subtitle to the map in one call with smart spacing.
+        
+        Parameters:
+        -----------
+        title_text : str, optional
+            Title text to display
+        subtitle_text : str, optional
+            Subtitle text to display
+        **kwargs
+            Additional text arguments. Use 'title_' prefix for title-specific
+            parameters and 'subtitle_' prefix for subtitle-specific parameters.
+            For example: title_fontsize='x-large', subtitle_color='gray'
+        """
+        # Separate title and subtitle kwargs
+        title_kwargs = {k.replace('title_', ''): v for k, v in kwargs.items() 
+                       if k.startswith('title_')}
+        subtitle_kwargs = {k.replace('subtitle_', ''): v for k, v in kwargs.items() 
+                          if k.startswith('subtitle_')}
+        
+        # If both title and subtitle are provided, calculate optimal spacing together
+        if title_text and subtitle_text:
+            # Merge defaults
+            title_params = {**TITLE_DEFAULTS, **title_kwargs}
+            subtitle_params = {**SUBTITLE_DEFAULTS, **subtitle_kwargs}
+            
+            # Calculate smart positioning for both
+            if (title_params.get('auto_spacing', True) and title_params.get('y') is None and
+                subtitle_params.get('auto_spacing', True) and subtitle_params.get('y') is None):
+                
+                title_y, subtitle_y = self._calculate_smart_title_spacing(title_params, subtitle_params)
+                title_params['y'] = title_y
+                subtitle_params['y'] = subtitle_y
+            
+            # Add title
+            if title_params.get('y') is not None and title_params['y'] != 0.98:
+                # Custom y position - use text instead of suptitle
+                self.figure.text(x=title_params['x'], y=title_params['y'], s=title_text,
+                               fontsize=title_params['fontsize'],
+                               fontweight=title_params['fontweight'],
+                               color=title_params['color'],
+                               ha=title_params['ha'],
+                               va=title_params['va'],
+                               transform=self.figure.transFigure)
+            else:
+                # Use suptitle for default positioning
+                self.figure.suptitle(title_text, 
+                                   fontsize=title_params['fontsize'],
+                                   fontweight=title_params['fontweight'],
+                                   color=title_params['color'],
+                                   ha=title_params['ha'],
+                                   va=title_params['va'])
+            
+            # Add subtitle
+            self.figure.text(x=subtitle_params['x'], y=subtitle_params.get('y', 0.90), s=subtitle_text,
+                            fontsize=subtitle_params['fontsize'],
+                            fontweight=subtitle_params['fontweight'],
+                            color=subtitle_params['color'],
+                            ha=subtitle_params['ha'],
+                            va=subtitle_params['va'],
+                            transform=self.figure.transFigure)
+        
+        else:
+            # Add title if provided
+            if title_text:
+                self.set_title(title_text, **title_kwargs)
+            
+            # Add subtitle if provided
+            if subtitle_text:
+                self.set_subtitle(subtitle_text, **subtitle_kwargs)
+        
+        return self  # Enable method chaining
 
 
 def _test_map():
