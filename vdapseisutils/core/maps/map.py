@@ -795,23 +795,24 @@ class Map:
             print("Continuing without heatmap...")
             return None
 
-    def add_terrain(self, zoom='auto', cache=False):
+    def add_terrain(self, zoom='auto', cache=False, verbose=False, ssl_verify=True):
         """Add terrain background tiles from default source to the map."""
-        self.add_arcgis_terrain(zoom=zoom, cache=cache)
+        self.add_arcgis_terrain(zoom=zoom, cache=cache, verbose=verbose, ssl_verify=ssl_verify)
 
-    def add_arcgis_terrain(self, zoom='auto', style='terrain', cache=False):
+    def add_arcgis_terrain(self, zoom='auto', cache=False, verbose=False, ssl_verify=True):
         """Add world terrain background tiles from ArcGIS to the map."""
         from .map_tiles import add_arcgis_terrain
         
         add_arcgis_terrain(
             self.ax, 
             zoom=zoom, 
-            style=style, 
             cache=cache, 
-            radial_extent_km=self.properties.get("radial_extent_km")
+            radial_extent_km=self.properties.get("radial_extent_km"),
+            verbose=verbose,
+            ssl_verify=ssl_verify
         )
 
-    def add_google_terrain(self, zoom='auto', cache=False, **kwargs):
+    def add_google_terrain(self, zoom='auto', cache=False, verbose=False, ssl_verify=True, **kwargs):
         """Add Google terrain tiles to the map."""
         from .map_tiles import add_google_terrain
         
@@ -820,10 +821,12 @@ class Map:
             zoom=zoom, 
             cache=cache, 
             radial_extent_km=self.properties.get("radial_extent_km"),
+            verbose=verbose,
+            ssl_verify=ssl_verify,
             **kwargs
         )
 
-    def add_google_street(self, zoom='auto', cache=False, **kwargs):
+    def add_google_street(self, zoom='auto', cache=False, verbose=False, ssl_verify=True, **kwargs):
         """Add Google street tiles to the map."""
         from .map_tiles import add_google_street
         
@@ -832,10 +835,12 @@ class Map:
             zoom=zoom, 
             cache=cache, 
             radial_extent_km=self.properties.get("radial_extent_km"),
+            verbose=verbose,
+            ssl_verify=ssl_verify,
             **kwargs
         )
 
-    def add_google_satellite(self, zoom='auto', cache=False, **kwargs):
+    def add_google_satellite(self, zoom='auto', cache=False, verbose=False, ssl_verify=True, **kwargs):
         """Add Google satellite tiles to the map."""
         from .map_tiles import add_google_satellite
         
@@ -844,6 +849,8 @@ class Map:
             zoom=zoom, 
             cache=cache, 
             radial_extent_km=self.properties.get("radial_extent_km"),
+            verbose=verbose,
+            ssl_verify=ssl_verify,
             **kwargs
         )
 

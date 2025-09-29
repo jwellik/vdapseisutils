@@ -9,7 +9,70 @@ Last updated: 2025-01-27
 """
 
 import os
+import ssl
+import urllib.request
 import cartopy.io.img_tiles as cimgt
+
+
+def _create_ssl_context(ssl_verify=True):
+    """
+    Create an SSL context for tile requests.
+    
+    Parameters:
+    -----------
+    ssl_verify : bool
+        Whether to verify SSL certificates (default: True)
+        
+    Returns:
+    --------
+    ssl.SSLContext or None
+        SSL context for urllib requests, None if verification is enabled
+    """
+    if not ssl_verify:
+        # Create unverified context for testing/debugging
+        return ssl._create_unverified_context()
+    else:
+        # Use default context (with verification)
+        try:
+            import certifi
+            return ssl.create_default_context(cafile=certifi.where())
+        except ImportError:
+            # Fall back to default context if certifi not available
+            return ssl.create_default_context()
+
+
+def _create_tile_with_ssl_context(url, cache=False, ssl_verify=True):
+    """
+    Create a GoogleTiles object with SSL context handling.
+    
+    Parameters:
+    -----------
+    url : str
+        URL template for the tile source
+    cache : bool
+        Whether to cache tiles
+    ssl_verify : bool
+        Whether to verify SSL certificates
+        
+    Returns:
+    --------
+    cimgt.GoogleTiles
+        Configured tile source
+    """
+    ssl_context = _create_ssl_context(ssl_verify)
+    
+    # Create custom opener if SSL context is needed
+    if ssl_context:
+        https_handler = urllib.request.HTTPSHandler(context=ssl_context)
+        opener = urllib.request.build_opener(https_handler)
+        # Set as default opener for urllib
+        urllib.request.install_opener(opener)
+    
+    return cimgt.GoogleTiles(
+        cache=cache,
+        url=url,
+        desired_tile_form='RGB'
+    )
 
 
 def _calculate_auto_zoom_arcgis(radius_km):
@@ -80,7 +143,7 @@ def _calculate_auto_zoom_google(radius_km):
         return 5
 
 
-def add_arcgis_terrain(ax, zoom='auto', style='terrain', cache=False, radial_extent_km=None):
+def add_arcgis_terrain(ax, zoom='auto', cache=False, radial_extent_km=None, verbose=False, ssl_verify=True):
     """
     Add world terrain background tiles from ArcGIS to the map.
 
@@ -96,6 +159,11 @@ def add_arcgis_terrain(ax, zoom='auto', style='terrain', cache=False, radial_ext
         Whether to cache tiles (default: False)
     radial_extent_km : float, optional
         Radial extent in km for auto zoom calculation (default: None)
+    verbose : bool, optional
+        Whether to print URLs and zoom levels to console (default: False)
+    ssl_verify : bool, optional
+        Whether to verify SSL certificates (default: True)
+        Set to False if getting SSL certificate errors
     """
     # Calculate zoom level if auto
     if zoom == 'auto':
@@ -107,34 +175,33 @@ def add_arcgis_terrain(ax, zoom='auto', style='terrain', cache=False, radial_ext
     else:
         zoom_level = zoom
 
+    if verbose:
+        print(f"ArcGIS Terrain Tiles:")
+        print(f"  Zoom level: {zoom_level}")
+        print(f"  SSL verification: {ssl_verify}")
+        print(f"  Terrain URL: https://services.arcgisonline.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer/tile/{zoom_level}/{{y}}/{{x}}")
+        print(f"  Overlay URL: https://tiles.basemaps.cartocdn.com/light_nolabels/{zoom_level}/{{x}}/{{y}}.png")
+
     # Add arcgis terrain and transparent shading
     # (I stole this two-pronged approach from Alicia Hotovec Ellis and REDPy, circa 2025 September)
     # - Terrain--Nice hillshade tile
-    terrain = cimgt.GoogleTiles(
-        cache=cache,
-        url=(
-            'https://services.arcgisonline.com/arcgis/rest/services'
-            '/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}'
-            # 'https://server.arcgisonline.com/ArcGIS/rest/services/'
-            # 'World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}.jpg'
-        ),
-        # style=style,
-        # desired_tile_form='RGB',
+    terrain_url = (
+        'https://services.arcgisonline.com/arcgis/rest/services'
+        '/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}'
     )
+    terrain = _create_tile_with_ssl_context(terrain_url, cache=cache, ssl_verify=ssl_verify)
     ax.add_image(terrain, zoom_level)
 
     # - Overlay--shading provides contrast for land/sea
-    overlay = cimgt.GoogleTiles(
-        cache=cache,
-        url=(
-            'https://tiles.basemaps.cartocdn.com/dark_nolabels/'
-            '{z}/{x}/{y}.png'
-        ),
+    overlay_url = (
+        'https://tiles.basemaps.cartocdn.com/light_nolabels/'
+        '{z}/{x}/{y}.png'
     )
+    overlay = _create_tile_with_ssl_context(overlay_url, cache=cache, ssl_verify=ssl_verify)
     ax.add_image(overlay, zoom_level, alpha=0.5)  # Reduced alpha for better contrast
 
 
-def add_google_tile(ax, zoom='auto', style='terrain', cache=False, radial_extent_km=None, **kwargs):
+def add_google_tile(ax, zoom='auto', style='terrain', cache=False, radial_extent_km=None, verbose=False, ssl_verify=True, **kwargs):
     """
     Add Google background tiles to the map.
     
@@ -150,6 +217,11 @@ def add_google_tile(ax, zoom='auto', style='terrain', cache=False, radial_extent
         Whether to cache tiles (default: False)
     radial_extent_km : float, optional
         Radial extent in km for auto zoom calculation (default: None)
+    verbose : bool, optional
+        Whether to print URLs and zoom levels to console (default: False)
+    ssl_verify : bool, optional
+        Whether to verify SSL certificates (default: True)
+        Set to False if getting SSL certificate errors
     """
     # Calculate zoom level if auto
     if zoom == 'auto':
@@ -170,11 +242,15 @@ def add_google_tile(ax, zoom='auto', style='terrain', cache=False, radial_extent
     
     lyrs = style_map.get(style, 'p')  # Default to terrain
     
-    background_tile = cimgt.GoogleTiles(
-        cache=cache,
-        url=f'https://mt1.google.com/vt/lyrs={lyrs}&x={{x}}&y={{y}}&z={{z}}',
-        desired_tile_form='RGB',
-    )
+    tile_url = f'https://mt1.google.com/vt/lyrs={lyrs}&x={{x}}&y={{y}}&z={{z}}'
+    
+    if verbose:
+        print(f"Google {style.capitalize()} Tiles:")
+        print(f"  Zoom level: {zoom_level}")
+        print(f"  SSL verification: {ssl_verify}")
+        print(f"  URL template: {tile_url}")
+    
+    background_tile = _create_tile_with_ssl_context(tile_url, cache=cache, ssl_verify=ssl_verify)
     
     # Check if axes projection matches tile projection
     if hasattr(ax, 'projection') and ax.projection != background_tile.crs:
@@ -184,22 +260,22 @@ def add_google_tile(ax, zoom='auto', style='terrain', cache=False, radial_extent
     ax.add_image(background_tile, zoom_level)
 
 
-def add_google_terrain(ax, zoom='auto', cache=False, radial_extent_km=None, **kwargs):
+def add_google_terrain(ax, zoom='auto', cache=False, radial_extent_km=None, verbose=False, ssl_verify=True, **kwargs):
     """Add Google terrain tiles to the map."""
-    add_google_tile(ax, zoom, style='terrain', cache=cache, radial_extent_km=radial_extent_km, **kwargs)
+    add_google_tile(ax, zoom, style='terrain', cache=cache, radial_extent_km=radial_extent_km, verbose=verbose, ssl_verify=ssl_verify, **kwargs)
 
 
-def add_google_street(ax, zoom='auto', cache=False, radial_extent_km=None, **kwargs):
+def add_google_street(ax, zoom='auto', cache=False, radial_extent_km=None, verbose=False, ssl_verify=True, **kwargs):
     """Add Google street tiles to the map."""
-    add_google_tile(ax, zoom, style='street', cache=cache, radial_extent_km=radial_extent_km, **kwargs)
+    add_google_tile(ax, zoom, style='street', cache=cache, radial_extent_km=radial_extent_km, verbose=verbose, ssl_verify=ssl_verify, **kwargs)
 
 
-def add_google_satellite(ax, zoom='auto', cache=False, radial_extent_km=None, **kwargs):
+def add_google_satellite(ax, zoom='auto', cache=False, radial_extent_km=None, verbose=False, ssl_verify=True, **kwargs):
     """Add Google satellite tiles to the map."""
-    add_google_tile(ax, zoom, style='satellite', cache=cache, radial_extent_km=radial_extent_km, **kwargs)
+    add_google_tile(ax, zoom, style='satellite', cache=cache, radial_extent_km=radial_extent_km, verbose=verbose, ssl_verify=ssl_verify, **kwargs)
 
 
-def add_tile_with_projection_check(ax, tile_source, zoom, tile_name="tile"):
+def add_tile_with_projection_check(ax, tile_source, zoom, tile_name="tile", verbose=False):
     """
     Add tiles to axes with proper projection handling.
     
@@ -213,6 +289,8 @@ def add_tile_with_projection_check(ax, tile_source, zoom, tile_name="tile"):
         Zoom level for the tiles
     tile_name : str
         Name of tile source for error messages
+    verbose : bool, optional
+        Whether to print URLs and zoom levels to console (default: False)
     """
     try:
         # Check projection compatibility
@@ -224,6 +302,12 @@ def add_tile_with_projection_check(ax, tile_source, zoom, tile_name="tile"):
                 print("  This may cause distortion or errors")
         
         # Add the tiles
+        if verbose:
+            print(f"{tile_name.capitalize()} Tiles:")
+            print(f"  Zoom level: {zoom}")
+            if hasattr(tile_source, 'url'):
+                print(f"  URL template: {tile_source.url}")
+        
         ax.add_image(tile_source, zoom)
         
     except Exception as e:
