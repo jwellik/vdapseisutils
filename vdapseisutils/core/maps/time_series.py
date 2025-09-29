@@ -11,7 +11,7 @@ Last updated: 2025 September 28
 import matplotlib.pyplot as plt
 from obspy.imaging.util import _set_xaxis_obspy_dates
 
-from .defaults import TICK_DEFAULTS, AXES_DEFAULTS, CROSSSECTION_DEFAULTS
+from .defaults import TICK_DEFAULTS, AXES_DEFAULTS, CROSSSECTION_DEFAULTS, PLOT_CATALOG_DEFAULTS
 from .utils import prep_catalog_data_mpl
 from .legends import MagLegend
 from vdapseisutils.utils.timeutils import convert_timeformat
@@ -142,7 +142,8 @@ class TimeSeries:
         self.ax.scatter(convert_timeformat(t, "matplotlib"), y, **kwargs)
         self.set_ylim()
 
-    def plot_catalog(self, catalog, s="magnitude", c="time", color=None, alpha=0.5, **kwargs):
+    def plot_catalog(self, catalog, s=PLOT_CATALOG_DEFAULTS['s'], c=PLOT_CATALOG_DEFAULTS['c'], 
+                    color=PLOT_CATALOG_DEFAULTS['color'], alpha=PLOT_CATALOG_DEFAULTS['alpha'], **kwargs):
         """
         Plot earthquake catalog on the time-series plot.
         

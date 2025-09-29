@@ -13,7 +13,8 @@ import matplotlib.pyplot as plt
 import matplotlib.patheffects as pe
 
 from .defaults import (
-    HEATMAP_DEFAULTS, TICK_DEFAULTS, AXES_DEFAULTS, CROSSSECTION_DEFAULTS, default_volcano
+    HEATMAP_DEFAULTS, TICK_DEFAULTS, AXES_DEFAULTS, CROSSSECTION_DEFAULTS, default_volcano,
+    PLOT_VOLCANO_DEFAULTS, PLOT_PEAK_DEFAULTS, PLOT_CATALOG_DEFAULTS, PLOT_INVENTORY_DEFAULTS
 )
 from .utils import prep_catalog_data_mpl
 from .legends import MagLegend
@@ -231,7 +232,59 @@ class CrossSection:
         x = np.asarray(x)
         self.ax.plot(x, depth, **kwargs)
 
-    def plot_catalog(self, catalog, s="magnitude", c="time", color=None, cmap="viridis_r", alpha=0.5, **kwargs):
+    def scatter(self, lat=None, lon=None, z=None, x=None, z_dir="depth", z_unit="m", **kwargs):
+        """
+        Create scatter plot on the cross-section.
+        
+        Parameters:
+        -----------
+        lat : array-like, optional
+            Latitude coordinates
+        lon : array-like, optional
+            Longitude coordinates
+        z : array-like, optional
+            Depth/elevation values
+        x : array-like, optional
+            Distance along cross-section line (if provided, lat/lon ignored)
+        z_dir : str, optional
+            Direction of z values: "depth" (positive down) or "elev" (positive up)
+        z_unit : str, optional
+            Units of z values: "m" or "km"
+        **kwargs
+            Additional scatter arguments
+        """
+        if z is None:
+            z = np.zeros_like(x if x is not None else lat)
+
+        depth = np.asarray(z)
+
+        if z_unit.lower() == "km":
+            z_unit_conv = 1
+        elif z_unit.lower() == "m":
+            z_unit_conv = 1 / 1000
+        else:
+            raise ValueError(f"Invalid z_unit '{z_unit}'. Options: 'km' or 'm'.")
+
+        if z_dir.lower() == "depth":
+            z_dir_conv = -1
+        elif z_dir.lower() == "elev":
+            z_dir_conv = 1
+        else:
+            raise ValueError(f"Invalid z_dir '{z_dir}'. Options: 'depth' or 'elev'.")
+
+        depth = depth * z_unit_conv * z_dir_conv
+
+        if x is None:
+            if lat is None or lon is None:
+                raise ValueError("Either (lat, lon) or x must be provided.")
+            x = project2line(lat, lon, P1=self.A1, P2=self.A2, unit="km")
+
+        x = np.asarray(x)
+        return self.ax.scatter(x, depth, **kwargs)
+
+    def plot_catalog(self, catalog, s=PLOT_CATALOG_DEFAULTS['s'], c=PLOT_CATALOG_DEFAULTS['c'], 
+                    color=PLOT_CATALOG_DEFAULTS['color'], cmap=PLOT_CATALOG_DEFAULTS['cmap'], 
+                    alpha=PLOT_CATALOG_DEFAULTS['alpha'], **kwargs):
         """
         Plot earthquake catalog on the cross-section.
         
@@ -255,13 +308,14 @@ class CrossSection:
         else:
             c = c
 
-        x = project2line(catdata["lat"], catdata["lon"], P1=self.A1, P2=self.A2, unit="km")
-        scatter = self.ax.scatter(x, catdata["depth"], s=s, c=c, cmap=cmap, alpha=alpha, **kwargs)
+        scatter = self.scatter(lat=catdata["lat"], lon=catdata["lon"], z=catdata["depth"], 
+                              z_dir="depth", z_unit="m", s=s, c=c, cmap=cmap, alpha=alpha, **kwargs)
         self.set_depth_extent()
         self.set_horiz_extent()
         return scatter
 
-    def plot_inventory(self, inventory, marker_size=6, color='black', alpha=0.8, **kwargs):
+    def plot_inventory(self, inventory, marker_size=PLOT_INVENTORY_DEFAULTS['marker_size'], 
+                      color=PLOT_INVENTORY_DEFAULTS['color'], alpha=PLOT_INVENTORY_DEFAULTS['alpha'], **kwargs):
         """Plot seismic station inventory on the cross-section."""
         try:
             station_lats = []
@@ -276,15 +330,9 @@ class CrossSection:
                         station_elevs.append(station.elevation)
             
             if station_lats and station_lons:
-                x_coords = project2line(station_lats, station_lons, P1=self.A1, P2=self.A2, unit="km")
-                elevs = np.full_like(x_coords, station_elevs)
-                
-                self.ax.scatter(x_coords, elevs/-1000,
-                              s=marker_size, 
-                              c=color, 
-                              marker='v',
-                              alpha=alpha,
-                              **kwargs)
+                self.scatter(lat=station_lats, lon=station_lons, z=station_elevs, 
+                           z_dir="elev", z_unit="m", s=marker_size, c=color, 
+                           marker=PLOT_INVENTORY_DEFAULTS['marker'], alpha=alpha, **kwargs)
                 self.set_depth_extent()
                 self.set_horiz_extent()
             else:
@@ -293,6 +341,46 @@ class CrossSection:
         except Exception as e:
             print(f"Error plotting inventory on cross-section: {e}")
             print("Continuing without cross-section inventory plot...")
+
+    def plot_volcano(self, lat, lon, elev, **kwargs):
+        """
+        Plot volcano location on the cross-section.
+        
+        Parameters:
+        -----------
+        lat : float
+            Latitude of the volcano
+        lon : float
+            Longitude of the volcano
+        elev : float
+            Elevation of the volcano in meters
+        **kwargs
+            Additional plotting arguments to override defaults
+        """
+        # Merge defaults with user kwargs  
+        plot_kwargs = {**PLOT_VOLCANO_DEFAULTS, **kwargs}
+        
+        self.scatter(lat=lat, lon=lon, z=elev, z_dir="elev", z_unit="m", **plot_kwargs)
+
+    def plot_peak(self, lat, lon, elev, **kwargs):
+        """
+        Plot peak location on the cross-section.
+        
+        Parameters:
+        -----------
+        lat : float
+            Latitude of the peak
+        lon : float
+            Longitude of the peak
+        elev : float
+            Elevation of the peak in meters
+        **kwargs
+            Additional plotting arguments to override defaults
+        """
+        # Merge defaults with user kwargs
+        plot_kwargs = {**PLOT_PEAK_DEFAULTS, **kwargs}
+        
+        self.scatter(lat=lat, lon=lon, z=elev, z_dir="elev", z_unit="m", **plot_kwargs)
 
     def plot_heatmap(self, *args, grid_size=HEATMAP_DEFAULTS['grid_size'], 
                      cmap=HEATMAP_DEFAULTS['cmap'], alpha=HEATMAP_DEFAULTS['alpha'], 

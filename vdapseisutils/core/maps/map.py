@@ -15,7 +15,8 @@ import cartopy.io.img_tiles as cimgt
 import cartopy.feature as cfeature
 
 from .defaults import (
-    HEATMAP_DEFAULTS, TICK_DEFAULTS, AXES_DEFAULTS, GRID_DEFAULTS, default_volcano
+    HEATMAP_DEFAULTS, TICK_DEFAULTS, AXES_DEFAULTS, GRID_DEFAULTS, default_volcano,
+    PLOT_VOLCANO_DEFAULTS, PLOT_PEAK_DEFAULTS, PLOT_CATALOG_DEFAULTS, PLOT_INVENTORY_DEFAULTS
 )
 from .utils import prep_catalog_data_mpl, choose_scale_bar_length
 from vdapseisutils.utils.geoutils import backazimuth, radial_extent2map_extent
@@ -488,7 +489,9 @@ class Map:
         """Plot scatter data on the map."""
         self.ax.scatter(lon, lat, size, color, transform=transform, **kwargs)
 
-    def plot_catalog(self, catalog, s="magnitude", c="time", color=None, cmap="viridis_r", alpha=0.5, transform=ccrs.Geodetic(), **kwargs):
+    def plot_catalog(self, catalog, s=PLOT_CATALOG_DEFAULTS['s'], c=PLOT_CATALOG_DEFAULTS['c'], 
+                    color=PLOT_CATALOG_DEFAULTS['color'], cmap=PLOT_CATALOG_DEFAULTS['cmap'], 
+                    alpha=PLOT_CATALOG_DEFAULTS['alpha'], transform=ccrs.Geodetic(), **kwargs):
         """
         Plot earthquake catalog on the map.
         
@@ -528,7 +531,8 @@ class Map:
                      bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, pad=2),
                      transform=transform)
 
-    def plot_inventory(self, inventory, marker_size=8, color='black', alpha=0.8, 
+    def plot_inventory(self, inventory, marker_size=PLOT_INVENTORY_DEFAULTS['marker_size'], 
+                      color=PLOT_INVENTORY_DEFAULTS['color'], alpha=PLOT_INVENTORY_DEFAULTS['alpha'], 
                       transform=ccrs.Geodetic(), **kwargs):
         """Plot seismic station inventory on the map."""
         try:
@@ -545,7 +549,7 @@ class Map:
                 self.ax.scatter(station_lons, station_lats, 
                               s=marker_size, 
                               c=color, 
-                              marker='v',
+                              marker=PLOT_INVENTORY_DEFAULTS['marker'],
                               alpha=alpha,
                               transform=transform,
                               **kwargs)
@@ -555,6 +559,50 @@ class Map:
         except Exception as e:
             print(f"Error plotting inventory: {e}")
             print("Continuing without inventory plot...")
+
+    def plot_volcano(self, lat, lon, elev, transform=ccrs.Geodetic(), **kwargs):
+        """
+        Plot volcano location on the map.
+        
+        Parameters:
+        -----------
+        lat : float
+            Latitude of the volcano
+        lon : float
+            Longitude of the volcano
+        elev : float
+            Elevation of the volcano (in meters, used for reference but not plotted)
+        transform : cartopy.crs.Projection, optional
+            Coordinate reference system for the data (default: ccrs.Geodetic())
+        **kwargs
+            Additional plotting arguments to override defaults
+        """
+        # Merge defaults with user kwargs
+        plot_kwargs = {**PLOT_VOLCANO_DEFAULTS, **kwargs}
+        
+        self.ax.scatter(lon, lat, transform=transform, **plot_kwargs)
+
+    def plot_peak(self, lat, lon, elev, transform=ccrs.Geodetic(), **kwargs):
+        """
+        Plot peak location on the map.
+        
+        Parameters:
+        -----------
+        lat : float
+            Latitude of the peak
+        lon : float
+            Longitude of the peak
+        elev : float
+            Elevation of the peak (in meters, used for reference but not plotted)
+        transform : cartopy.crs.Projection, optional
+            Coordinate reference system for the data (default: ccrs.Geodetic())
+        **kwargs
+            Additional plotting arguments to override defaults
+        """
+        # Merge defaults with user kwargs
+        plot_kwargs = {**PLOT_PEAK_DEFAULTS, **kwargs}
+        
+        self.ax.scatter(lon, lat, transform=transform, **plot_kwargs)
 
     def plot_heatmap(self, *args, grid_size=HEATMAP_DEFAULTS['grid_size'], 
                      cmap=HEATMAP_DEFAULTS['cmap'], alpha=HEATMAP_DEFAULTS['alpha'], 

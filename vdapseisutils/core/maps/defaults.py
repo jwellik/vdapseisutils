@@ -104,6 +104,36 @@ agung = {
 
 default_volcano = agung
 
+# Shared plotting method defaults for consistency across classes
+PLOT_CATALOG_DEFAULTS = {
+    's': "magnitude",
+    'c': "time", 
+    'color': None,
+    'cmap': "viridis_r",
+    'alpha': 0.5
+}
+
+PLOT_INVENTORY_DEFAULTS = {
+    'marker_size': 6,
+    'color': 'black',
+    'alpha': 0.8,
+    'marker': 'v'
+}
+
+PLOT_VOLCANO_DEFAULTS = {
+    'marker': '^',
+    'color': 'orangered',
+    'markersize': 8,
+    'edgecolor': 'black'
+}
+
+PLOT_PEAK_DEFAULTS = {
+    'marker': '^',
+    'color': 'floralwhite', 
+    'markersize': 6,
+    'edgecolor': 'black'
+}
+
 
 def _test_defaults():
     """Simple test to verify defaults module loads correctly."""

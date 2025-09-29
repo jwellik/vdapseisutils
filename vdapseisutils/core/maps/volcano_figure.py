@@ -296,6 +296,54 @@ class VolcanoFigure(plt.Figure):
         self.xs2_obj.plot_inventory(inventory, marker_size=cross_section_marker_size, 
                                    color=color, alpha=alpha, **kwargs)
 
+    def plot_volcano(self, lat, lon, elev, transform=ccrs.Geodetic(), **kwargs):
+        """
+        Plot volcano location on all subplots (map and cross-sections).
+        
+        Parameters:
+        -----------
+        lat : float
+            Latitude of the volcano
+        lon : float
+            Longitude of the volcano
+        elev : float
+            Elevation of the volcano in meters
+        transform : cartopy.crs.Projection, optional
+            Coordinate reference system for map data (default: ccrs.Geodetic())
+        **kwargs
+            Additional plotting arguments to override defaults
+        """
+        # Plot on the main map
+        self.map_obj.plot_volcano(lat, lon, elev, transform=transform, **kwargs)
+        
+        # Plot on both cross-sections  
+        self.xs1_obj.plot_volcano(lat, lon, elev, **kwargs)
+        self.xs2_obj.plot_volcano(lat, lon, elev, **kwargs)
+
+    def plot_peak(self, lat, lon, elev, transform=ccrs.Geodetic(), **kwargs):
+        """
+        Plot peak location on all subplots (map and cross-sections).
+        
+        Parameters:
+        -----------
+        lat : float
+            Latitude of the peak
+        lon : float
+            Longitude of the peak
+        elev : float
+            Elevation of the peak in meters
+        transform : cartopy.crs.Projection, optional
+            Coordinate reference system for map data (default: ccrs.Geodetic())
+        **kwargs
+            Additional plotting arguments to override defaults
+        """
+        # Plot on the main map
+        self.map_obj.plot_peak(lat, lon, elev, transform=transform, **kwargs)
+        
+        # Plot on both cross-sections
+        self.xs1_obj.plot_peak(lat, lon, elev, **kwargs)
+        self.xs2_obj.plot_peak(lat, lon, elev, **kwargs)
+
     def plot_heatmap(self, *args, **kwargs):
         """
         Plot a heatmap on the map and cross-sections.
