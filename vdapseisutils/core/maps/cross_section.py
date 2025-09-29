@@ -309,7 +309,7 @@ class CrossSection:
             c = c
 
         scatter = self.scatter(lat=catdata["lat"], lon=catdata["lon"], z=catdata["depth"], 
-                              z_dir="depth", z_unit="m", s=s, c=c, cmap=cmap, alpha=alpha, **kwargs)
+                              z_dir="elev", z_unit="km", s=s, c=c, cmap=cmap, alpha=alpha, **kwargs)
         self.set_depth_extent()
         self.set_horiz_extent()
         return scatter
@@ -393,10 +393,15 @@ class CrossSection:
                 lat = catdata["lat"].values
                 lon = catdata["lon"].values
                 depth = catdata["depth"].values
+                # Catalog depths are already in km and negative (below sea level)
+                depth_km = np.asarray(depth)
             elif len(args) >= 2:
                 lat = np.asarray(args[0])
                 lon = np.asarray(args[1])
                 depth = np.asarray(args[2]) if len(args) > 2 else None
+                # Assume raw depth data is in meters and positive (below sea level)
+                depth_km = np.asarray(depth) / 1000.0
+                depth_km = -depth_km
             else:
                 raise ValueError("Usage: plot_heatmap(catalog, ...) or plot_heatmap(lat, lon, [depth], ...)")
             
@@ -409,9 +414,6 @@ class CrossSection:
             if len(x) == 0 or np.any(np.isnan(x)):
                 print("Warning: Failed to project coordinates to cross-section line")
                 return None
-            
-            depth_km = np.asarray(depth) / 1000.0
-            depth_km = -depth_km
             
             x_min, x_max = np.min(x), np.max(x)
             depth_min, depth_max = np.min(depth_km), np.max(depth_km)
