@@ -635,6 +635,31 @@ class CrossSection:
         
         return self  # Enable method chaining
 
+    def set_catalog_subtitle(self, catalog, **kwargs):
+        """
+        Add a subtitle based on catalog statistics.
+        
+        Parameters:
+        -----------
+        catalog : obspy.core.event.Catalog or VCatalog
+            ObsPy Catalog object to analyze
+        **kwargs
+            Additional text arguments passed to set_subtitle()
+        """
+        # Convert to VCatalog if needed to access short_summary_str method
+        from vdapseisutils.utils.obspyutils.catalog import VCatalog
+        
+        if not isinstance(catalog, VCatalog):
+            vcatalog = VCatalog(catalog)
+        else:
+            vcatalog = catalog
+        
+        # Get the summary string and set as subtitle
+        summary_str = vcatalog.short_summary_str()
+        self.set_subtitle(summary_str, **kwargs)
+        
+        return self  # Enable method chaining
+
 
 def _test_cross_section():
     """Simple test to verify CrossSection class works correctly."""

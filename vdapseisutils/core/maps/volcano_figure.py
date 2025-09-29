@@ -549,20 +549,30 @@ class VolcanoFigure(plt.Figure):
         """
         super().text(x, y, s, color=color, ha=ha, va=va, **kwargs)
 
-    def catalog_subtitle(self, catalog):
+    def catalog_subtitle(self, catalog, **kwargs):
         """
         Add an automatic subtitle based on catalog statistics.
         
         Parameters:
         -----------
-        catalog : obspy.core.event.Catalog
+        catalog : obspy.core.event.Catalog or VCatalog
             ObsPy Catalog object to analyze
+        **kwargs
+            Additional text arguments passed to subtitle()
         """
-        n = len(catalog)
-        magnitudes = [event.magnitudes[0].mag for event in catalog if event.magnitudes]
-        mmin = min(magnitudes)
-        mmax = max(magnitudes)
-        self.subtitle("{} Earthquakes | M{:2.1f}:M{:2.1f}".format(n, mmin, mmax))
+        # Convert to VCatalog if needed to access short_summary_str method
+        from vdapseisutils.utils.obspyutils.catalog import VCatalog
+        
+        if not isinstance(catalog, VCatalog):
+            vcatalog = VCatalog(catalog)
+        else:
+            vcatalog = catalog
+        
+        # Get the summary string and set as subtitle
+        summary_str = vcatalog.short_summary_str()
+        self.subtitle(summary_str, **kwargs)
+        
+        return self  # Enable method chaining
 
     def magnitude_legend(self, cat):
         """

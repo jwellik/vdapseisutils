@@ -241,6 +241,34 @@ class TimeSeries:
         """
         self.ax.axvline(convert_timeformat(t, "matplotlib"), *args, **kwargs)
 
+    def set_catalog_subtitle(self, catalog, **kwargs):
+        """
+        Add a subtitle based on catalog statistics.
+        
+        Parameters:
+        -----------
+        catalog : obspy.core.event.Catalog or VCatalog
+            ObsPy Catalog object to analyze
+        **kwargs
+            Additional text arguments passed to figure text
+        """
+        # Convert to VCatalog if needed to access short_summary_str method
+        from vdapseisutils.utils.obspyutils.catalog import VCatalog
+        
+        if not isinstance(catalog, VCatalog):
+            vcatalog = VCatalog(catalog)
+        else:
+            vcatalog = catalog
+        
+        # Get the summary string and add as text to figure
+        summary_str = vcatalog.short_summary_str()
+        
+        # Add text to the figure (TimeSeries doesn't have set_subtitle method)
+        self.figure.text(0.5, 0.90, summary_str, ha='center', va='top', 
+                        fontsize='medium', transform=self.figure.transFigure, **kwargs)
+        
+        return self  # Enable method chaining
+
 
 def _test_time_series():
     """Simple test to verify TimeSeries class works correctly."""

@@ -1284,3 +1284,49 @@ class VCatalogUtilsMixin:
         event = self.events[event_index]
         self._sort_picks_for_event(event, event_index, verbose)
 
+    def short_summary_str(self):
+        """
+        Generate a short summary string for the catalog.
+        
+        Returns
+        -------
+        str
+            Formatted string in the format: "{n} Events | {start}-{end} | M{min}:M{max}"
+            Magnitude part is only included if there are magnitudes
+        """
+        if not self.events:
+            return "0 Events"
+        
+        n = len(self.events)
+        
+        # Get time range
+        origin_times = self.extract_origin_times()
+        if not origin_times:
+            return f"{n} Events | No origin times"
+        
+        start_time = min(origin_times)
+        end_time = max(origin_times)
+        
+        # Format times as yyyy/mm/dd
+        start_str = start_time.strftime("%Y/%m/%d")
+        end_str = end_time.strftime("%Y/%m/%d")
+        
+        # If start and end are the same, just use start
+        if start_str == end_str:
+            date_range = start_str
+        else:
+            date_range = f"{start_str}-{end_str}"
+        
+        # Get magnitude range
+        magnitudes = []
+        for event in self:
+            if event.magnitudes:
+                magnitudes.append(event.magnitudes[0].mag)
+        
+        if magnitudes:
+            mmin = min(magnitudes)
+            mmax = max(magnitudes)
+            return f"{n} Events | {date_range} | M{mmin:.1f}:M{mmax:.1f}"
+        else:
+            return f"{n} Events | {date_range}"
+
