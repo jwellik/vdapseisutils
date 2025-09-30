@@ -160,7 +160,7 @@ class Helicorder(plt.Figure):
 
         self.size = figsize
         self.width, self.height = self.size  # Does not consider dpi
-        self.title = kwargs.get('title', self.stream[0].id)
+        self.title = title if title is not None else self.stream[0].id
 
         # Calculate vertical scaling range (one_bar_range) based on input data and user input
         self.one_bar_range = self._calculate_vertical_scaling_range(one_bar_range)
