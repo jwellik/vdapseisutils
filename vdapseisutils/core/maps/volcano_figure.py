@@ -526,12 +526,14 @@ class VolcanoFigure(plt.Figure):
         """
         super().text(x, y, s, ha=ha, va=va, **kwargs)
 
-    def reftext(self, x=0.025, y=0.025, s="", color="grey", ha="left", va="center", **kwargs):
+    def reftext(self, text=None, x=0.025, y=0.025, s="", color="grey", ha="left", va="center", **kwargs):
         """
         Add reference text (e.g., citation) to the figure.
         
         Parameters:
         -----------
+        text : str, optional
+            Reference text (for backward compatibility with positional argument)
         x : float, optional
             X position in figure coordinates (default: 0.025)
         y : float, optional
@@ -547,6 +549,10 @@ class VolcanoFigure(plt.Figure):
         **kwargs
             Additional text arguments
         """
+        # Handle backward compatibility: if text is provided as first positional argument
+        if text is not None:
+            s = text
+        
         super().text(x, y, s, color=color, ha=ha, va=va, **kwargs)
 
     def catalog_subtitle(self, catalog, **kwargs):
