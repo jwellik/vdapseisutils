@@ -37,6 +37,7 @@ from obspy import UTCDateTime
 from vdapseisutils.utils.obspyutils.catalogutils import catalog2txyzm
 from vdapseisutils.style.colors import greyscale, swarm_colors, earthworm_colors, obspy_dayplot
 from vdapseisutils.style import load_custom_rc
+from vdapseisutils.core.maps.defaults import TITLE_DEFAULTS
 load_custom_rc("swarmmplrc")
 
 cmap = "viridis_r"
@@ -190,6 +191,19 @@ class Helicorder(plt.Figure):
         # set axes labes and tick labels
         fig.axes[0].set_ylabel("")
         fig.axes[0].set_xlabel("")
+        
+        # Ensure title is visible with consistent styling
+        if self.title:
+            # Adjust subplot parameters to make room for title
+            fig.subplots_adjust(top=0.92)
+            fig.suptitle(self.title, 
+                        fontsize=TITLE_DEFAULTS['fontsize'],
+                        fontweight=TITLE_DEFAULTS['fontweight'],
+                        color=TITLE_DEFAULTS['color'],
+                        horizontalalignment=TITLE_DEFAULTS['ha'],
+                        verticalalignment=TITLE_DEFAULTS['va'],
+                        y=0.98)
+        
         self.set_tticks()  # By default, this adds timezone ticklabels at the bottom too
 
     def _calculate_vertical_scaling_range(self, one_bar_range):
