@@ -68,11 +68,47 @@ class Helicorder(plt.Figure):
     name = "helicorder"
 
     def __init__(self, st, interval=60, color="greyscale",
-                 one_bar_range=None, clip_threshold=None,
+                 one_bar_range=None, clip_threshold="auto",
                  title=None,
                  utc_offset_left="UTC", utc_offset_right="UTC",
                  figsize=(8, 6),
                  dpi=100, **kwargs):
+        """
+        Initialize a Helicorder plot.
+        
+        Parameters
+        ----------
+        st : obspy.Stream
+            Stream object containing seismic data
+        interval : int, optional
+            Time interval in minutes for each line (default: 60)
+        color : str, optional
+            Color scheme: "greyscale", "swarm", "earthworm", or "obspy" (default: "greyscale")
+        one_bar_range : None, str, int, or tuple, optional
+            Vertical scaling range control:
+            - None: Use 99th percentile of data (default)
+            - 'obspy': Use ObsPy's default 99.5th percentile
+            - int/float: Use absolute data value directly (e.g., 1200)
+            - (value, 'percentile'): Use specified percentile (0-100)
+            - (value, 'data'): Use absolute data value directly
+        clip_threshold : str, float, or None, optional
+            Clipping threshold for data:
+            - 'auto': Set to 3x one_bar_range and clip data (default)
+            - float: Use specified value and clip data
+            - None: Don't clip data
+        title : str, optional
+            Plot title (default: stream[0].id)
+        utc_offset_left : str, optional
+            UTC offset label for left axis (default: "UTC")
+        utc_offset_right : str, optional
+            UTC offset label for right axis (default: "UTC")
+        figsize : tuple, optional
+            Figure size in inches (default: (8, 6))
+        dpi : int, optional
+            Figure DPI (default: 100)
+        **kwargs
+            Additional keyword arguments passed to matplotlib Figure
+        """
 
         # Initialize the Figure object
         fig = kwargs.pop('fig', None)
@@ -123,8 +159,6 @@ class Helicorder(plt.Figure):
 
         self.size = figsize
         self.width, self.height = self.size  # Does not consider dpi
-        self.one_bar_range = one_bar_range  # JJW: Not currently used
-        self.clip_threshold = clip_threshold  # JJW: Not currently used?
         self.title = kwargs.get('title', st[0].id)
 
         # self.extreme_values.shape[0] --> intervals?
@@ -132,9 +166,25 @@ class Helicorder(plt.Figure):
         # self.intervals (nlines) --> # of lines on the helicorder
         # self.repeat (label_spacing) --> # of lines of spacing between yticks
 
+        # Calculate vertical scaling range (one_bar_range) based on input data and user input
+        self.one_bar_range = self._calculate_vertical_scaling_range(one_bar_range)
+        
+        # Handle clip_threshold
+        if clip_threshold == "auto":
+            self.clip_threshold = 3.0 * self.one_bar_range
+            # Clip the stream data
+            self._clip_stream_data(self.clip_threshold)
+        elif clip_threshold is not None:
+            self.clip_threshold = float(clip_threshold)
+            # Clip the stream data
+            self._clip_stream_data(self.clip_threshold)
+        else:
+            self.clip_threshold = None
+
         # Create plot with ObsPy dayplot
-        st.plot(type="dayplot", fig=fig,
+        self.stream.plot(type="dayplot", fig=fig,
                 interval=self.line_len_min, color=color,
+                vertical_scaling_range=self.one_bar_range,
                 # show_y_UTC_label=True,
                 title=title)
 
@@ -147,9 +197,141 @@ class Helicorder(plt.Figure):
         fig.axes[0].set_xlabel("")
         self.set_tticks()  # By default, this adds timezone ticklabels at the bottom too
 
+    def _calculate_vertical_scaling_range(self, one_bar_range):
+        """
+        Calculate vertical scaling range based on one_bar_range parameter.
+        This method now accounts for the interval to better match ObsPy's behavior.
+        
+        Parameters
+        ----------
+        one_bar_range : None, str, int, or tuple
+            - None: Use default 99.5th percentile calculated per interval
+            - 'obspy': Use ObsPy's default behavior (None in ObsPy)
+            - int: Use absolute data value directly (e.g., 1200)
+            - (value, 'percentile'): Use specified percentile (0-100)
+            - (value, 'data'): Use absolute data value directly
+            
+        Returns
+        -------
+        float or None
+            Vertical scaling range value for ObsPy dayplot
+        """
+        if one_bar_range is None:
+            # Calculate 99.5th percentile per interval to match ObsPy behavior
+            return self._calculate_per_interval_percentile(99.5)
+        
+        elif one_bar_range == 'obspy':
+            # Use ObsPy's default behavior (99.5th percentile per interval)
+            return None
+            
+        elif isinstance(one_bar_range, (int, float)):
+            # Integer or float: treat as data value
+            if one_bar_range <= 0:
+                raise ValueError("Data value must be positive")
+            return float(one_bar_range)
+            
+        elif isinstance(one_bar_range, tuple) and len(one_bar_range) == 2:
+            value, unit = one_bar_range
+            
+            if unit == 'percentile':
+                if not (0 <= value <= 100):
+                    raise ValueError("Percentile must be between 0 and 100")
+                return self._calculate_per_interval_percentile(value)
+                
+            elif unit == 'data':
+                if value <= 0:
+                    raise ValueError("Data value must be positive")
+                return float(value)
+                
+            else:
+                raise ValueError("Unit must be 'percentile' or 'data'")
+        else:
+            raise ValueError("one_bar_range must be None, 'obspy', int/float, or tuple (value, unit)")
+
+    def _calculate_per_interval_percentile(self, percentile):
+        """
+        Calculate the specified percentile of data within each interval,
+        then return the maximum across all intervals.
+        This better matches ObsPy's dayplot behavior.
+        
+        Parameters
+        ----------
+        percentile : float
+            Percentile to calculate (0-100)
+            
+        Returns
+        -------
+        float
+            Maximum percentile value across all intervals
+        """
+        # Calculate number of intervals
+        total_duration = self.endtime - self.starttime
+        n_intervals = int(total_duration / self.interval)
+        
+        if n_intervals <= 0:
+            # Fallback to entire stream if no intervals
+            all_data = np.concatenate([trace.data for trace in self.stream])
+            return np.percentile(np.abs(all_data), percentile)
+        
+        interval_percentiles = []
+        
+        for i in range(n_intervals):
+            # Calculate start and end time for this interval
+            interval_start = self.starttime + i * self.interval
+            interval_end = min(interval_start + self.interval, self.endtime)
+            
+            # Extract data for this interval
+            interval_data = []
+            for trace in self.stream:
+                # Find data points within this interval
+                start_idx = int((interval_start - trace.stats.starttime) * trace.stats.sampling_rate)
+                end_idx = int((interval_end - trace.stats.starttime) * trace.stats.sampling_rate)
+                
+                # Ensure indices are within bounds
+                start_idx = max(0, start_idx)
+                end_idx = min(len(trace.data), end_idx)
+                
+                if start_idx < end_idx:
+                    interval_data.extend(trace.data[start_idx:end_idx])
+            
+            if interval_data:
+                interval_percentiles.append(np.percentile(np.abs(interval_data), percentile))
+        
+        # Return the maximum percentile across all intervals
+        return max(interval_percentiles) if interval_percentiles else 0.0
+
+    def _clip_stream_data(self, clip_threshold):
+        """
+        Clip stream data to the specified threshold.
+        
+        Parameters
+        ----------
+        clip_threshold : float
+            Absolute threshold value. Data will be clipped to ±clip_threshold
+        """
+        for trace in self.stream:
+            # Ensure data is float64 to avoid casting issues
+            if trace.data.dtype != np.float64:
+                trace.data = trace.data.astype(np.float64)
+            # Clip data to the specified threshold
+            np.clip(trace.data, -clip_threshold, clip_threshold, out=trace.data)
+
     def info(self):
+        """Print helicorder information in a formatted way."""
         print("::: HELICORDER :::")
-        print(self.properties)
+        print(f"Station : {self.stream[0].id}")
+        print(f"Start   : {self.starttime.strftime('%Y/%m/%d %H:%M')}")
+        print(f"End     : {self.endtime.strftime('%Y/%m/%d %H:%M')}")
+        
+        # Calculate duration
+        duration_seconds = (self.endtime - self.starttime)
+        hours = int(duration_seconds // 3600)
+        minutes = int((duration_seconds % 3600) // 60)
+        print(f"Duration       : {hours} hrs {minutes} min")
+        
+        print(f"Interval       : {self.line_len_min} min")
+        print(f"One Bar Range  : {self.one_bar_range}")
+        print(f"Clip Threshold : {self.clip_threshold}")
         print()
 
     def plot_catalog(self, catalog, marker="o", color="red", markersize=8, markeredgecolor="black", alpha=0.5, **kwargs):
