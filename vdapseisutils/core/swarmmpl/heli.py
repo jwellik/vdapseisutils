@@ -67,7 +67,7 @@ class Helicorder(plt.Figure):
 
     name = "helicorder"
 
-    def __init__(self, st, interval=60, color="greyscale",
+    def __init__(self, st, interval=60, color="swarm",
                  one_bar_range=None, clip_threshold="auto",
                  title=None,
                  utc_offset_left="UTC", utc_offset_right="UTC",
@@ -83,7 +83,7 @@ class Helicorder(plt.Figure):
         interval : int, optional
             Time interval in minutes for each line (default: 60)
         color : str, optional
-            Color scheme: "greyscale", "swarm", "earthworm", or "obspy" (default: "greyscale")
+            Color scheme: "greyscale", "swarm", "earthworm", or "obspy" (default: "swarm")
         one_bar_range : None, str, int, or tuple, optional
             Vertical scaling range control:
             - None: Use 99th percentile of data (default)
@@ -97,7 +97,7 @@ class Helicorder(plt.Figure):
             - float: Use specified value and clip data
             - None: Don't clip data
         title : str, optional
-            Plot title (default: stream[0].id)
+            Plot title (default: stream.id)
         utc_offset_left : str, optional
             UTC offset label for left axis (default: "UTC")
         utc_offset_right : str, optional
@@ -142,7 +142,7 @@ class Helicorder(plt.Figure):
         if not self.endtime:
             self.endtime = max([trace.stats.endtime for trace in self.stream])
         # self.stream.trim(self.starttime, self.endtime)
-        self.stream.trim(self.starttime, self.endtime, pad=True)  # JJW: Pad the Stream
+        self.stream.trim(self.starttime, self.endtime, pad=True)  # Pad the Stream
         
         # force interval to be 15, 30, 60, or a multiple of 60
         if interval <= 15:
@@ -159,12 +159,7 @@ class Helicorder(plt.Figure):
 
         self.size = figsize
         self.width, self.height = self.size  # Does not consider dpi
-        self.title = kwargs.get('title', st[0].id)
-
-        # self.extreme_values.shape[0] --> intervals?
-        # self.interval (line_len_minutes)--> length of line (user provides minutes; stored as seconds)
-        # self.intervals (nlines) --> # of lines on the helicorder
-        # self.repeat (label_spacing) --> # of lines of spacing between yticks
+        self.title = kwargs.get('title', self.stream[0].id)
 
         # Calculate vertical scaling range (one_bar_range) based on input data and user input
         self.one_bar_range = self._calculate_vertical_scaling_range(one_bar_range)
