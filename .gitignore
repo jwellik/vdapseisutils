@@ -137,4 +137,4 @@ dmypy.json
 *.bak
 
 # Local files
-*_local/
+local_*/
