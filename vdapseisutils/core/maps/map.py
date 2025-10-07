@@ -600,11 +600,11 @@ class Map:
 
     def plot(self, lat, lon, *args, transform=ccrs.Geodetic(), **kwargs):
         """Plot line data on the map."""
-        self.ax.plot(lon, lat, *args, transform=transform, **kwargs)
+        return self.ax.plot(lon, lat, *args, transform=transform, **kwargs)
 
     def scatter(self, lat, lon, size, color, transform=ccrs.Geodetic(), **kwargs):
         """Plot scatter data on the map."""
-        self.ax.scatter(lon, lat, size, color, transform=transform, **kwargs)
+        return self.ax.scatter(lon, lat, size, color, transform=transform, **kwargs)
 
     def plot_catalog(self, catalog, s=PLOT_CATALOG_DEFAULTS['s'], c=PLOT_CATALOG_DEFAULTS['c'], 
                     color=PLOT_CATALOG_DEFAULTS['color'], cmap=PLOT_CATALOG_DEFAULTS['cmap'], 
@@ -668,15 +668,17 @@ class Map:
                 # Override with explicit parameters
                 plot_kwargs.update({'s': s, 'c': c, 'alpha': alpha})
                 
-                self.ax.scatter(station_lons, station_lats, 
+                return self.ax.scatter(station_lons, station_lats, 
                               transform=transform,
                               **plot_kwargs)
             else:
                 print("No valid station coordinates found in inventory")
+                return None
                 
         except Exception as e:
             print(f"Error plotting inventory: {e}")
             print("Continuing without inventory plot...")
+            return None
 
     def plot_volcano(self, lat, lon, elev=0, transform=ccrs.Geodetic(), **kwargs):
         """
@@ -698,7 +700,7 @@ class Map:
         # Merge defaults with user kwargs
         plot_kwargs = {**PLOT_VOLCANO_DEFAULTS, **kwargs}
         
-        self.ax.scatter(lon, lat, transform=transform, **plot_kwargs)
+        return self.ax.scatter(lon, lat, transform=transform, **plot_kwargs)
 
     def plot_peak(self, lat, lon, elev=0, transform=ccrs.Geodetic(), **kwargs):
         """
@@ -720,7 +722,7 @@ class Map:
         # Merge defaults with user kwargs
         plot_kwargs = {**PLOT_PEAK_DEFAULTS, **kwargs}
         
-        self.ax.scatter(lon, lat, transform=transform, **plot_kwargs)
+        return self.ax.scatter(lon, lat, transform=transform, **plot_kwargs)
 
     def plot_heatmap(self, *args, grid_size=HEATMAP_DEFAULTS['grid_size'], 
                      cmap=HEATMAP_DEFAULTS['cmap'], alpha=HEATMAP_DEFAULTS['alpha'], 

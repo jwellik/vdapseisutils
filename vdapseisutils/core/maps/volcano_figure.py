@@ -183,9 +183,10 @@ class VolcanoFigure(plt.Figure):
         **kwargs
             Additional plotting arguments
         """
-        self.map_obj.plot(lat, lon, transform=transform, **kwargs)
-        self.xs1_obj.plot(lat, lon, z=z, z_dir=z_dir, z_unit=z_unit, **kwargs)
-        self.xs2_obj.plot(lat, lon, z=z, z_dir=z_dir, z_unit=z_unit, **kwargs)
+        map_plot = self.map_obj.plot(lat, lon, transform=transform, **kwargs)
+        xs1_plot = self.xs1_obj.plot(lat, lon, z=z, z_dir=z_dir, z_unit=z_unit, **kwargs)
+        xs2_plot = self.xs2_obj.plot(lat, lon, z=z, z_dir=z_dir, z_unit=z_unit, **kwargs)
+        return map_plot, xs1_plot, xs2_plot
 
     def scatter(self, lat=[], lon=[], x=[], time=[], y=[], transform=ccrs.Geodetic(), **kwargs):
         """
@@ -208,10 +209,11 @@ class VolcanoFigure(plt.Figure):
         **kwargs
             Additional scatter arguments
         """
-        self.map_obj.scatter(lat, lon, transform=transform, **kwargs)
-        self.xs1_obj.scatter(lat, lon, **kwargs)
-        self.xs2_obj.scatter(lat, lon, **kwargs)
-        self.ts_obj.scatter(time, y, **kwargs)
+        map_scatter = self.map_obj.scatter(lat, lon, transform=transform, **kwargs)
+        xs1_scatter = self.xs1_obj.scatter(lat, lon, **kwargs)
+        xs2_scatter = self.xs2_obj.scatter(lat, lon, **kwargs)
+        ts_scatter = self.ts_obj.scatter(time, y, **kwargs)
+        return map_scatter, xs1_scatter, xs2_scatter, ts_scatter
 
     def plot_catalog(self, *args, transform=ccrs.Geodetic(), **kwargs):
         """
@@ -287,14 +289,15 @@ class VolcanoFigure(plt.Figure):
             Additional plotting arguments
         """
         # Plot inventory on the main map
-        self.map_obj.plot_inventory(inventory, s=s, c=c, 
+        map_inventory = self.map_obj.plot_inventory(inventory, s=s, c=c, 
                                  alpha=alpha, transform=transform, **kwargs)
         
         # Plot inventory on both cross-sections
-        self.xs1_obj.plot_inventory(inventory, s=cross_section_s, 
+        xs1_inventory = self.xs1_obj.plot_inventory(inventory, s=cross_section_s, 
                                    c=c, alpha=alpha, **kwargs)
-        self.xs2_obj.plot_inventory(inventory, s=cross_section_s, 
+        xs2_inventory = self.xs2_obj.plot_inventory(inventory, s=cross_section_s, 
                                    c=c, alpha=alpha, **kwargs)
+        return map_inventory, xs1_inventory, xs2_inventory
 
     def plot_volcano(self, lat, lon, elev=0, transform=ccrs.Geodetic(), **kwargs):
         """
@@ -314,11 +317,12 @@ class VolcanoFigure(plt.Figure):
             Additional plotting arguments to override defaults
         """
         # Plot on the main map
-        self.map_obj.plot_volcano(lat, lon, elev, transform=transform, **kwargs)
+        map_volcano = self.map_obj.plot_volcano(lat, lon, elev, transform=transform, **kwargs)
         
         # Plot on both cross-sections  
-        self.xs1_obj.plot_volcano(lat, lon, elev, **kwargs)
-        self.xs2_obj.plot_volcano(lat, lon, elev, **kwargs)
+        xs1_volcano = self.xs1_obj.plot_volcano(lat, lon, elev, **kwargs)
+        xs2_volcano = self.xs2_obj.plot_volcano(lat, lon, elev, **kwargs)
+        return map_volcano, xs1_volcano, xs2_volcano
 
     def plot_peak(self, lat, lon, elev=0, transform=ccrs.Geodetic(), **kwargs):
         """
@@ -338,11 +342,12 @@ class VolcanoFigure(plt.Figure):
             Additional plotting arguments to override defaults
         """
         # Plot on the main map
-        self.map_obj.plot_peak(lat, lon, elev, transform=transform, **kwargs)
+        map_peak = self.map_obj.plot_peak(lat, lon, elev, transform=transform, **kwargs)
         
         # Plot on both cross-sections
-        self.xs1_obj.plot_peak(lat, lon, elev, **kwargs)
-        self.xs2_obj.plot_peak(lat, lon, elev, **kwargs)
+        xs1_peak = self.xs1_obj.plot_peak(lat, lon, elev, **kwargs)
+        xs2_peak = self.xs2_obj.plot_peak(lat, lon, elev, **kwargs)
+        return map_peak, xs1_peak, xs2_peak
 
     def plot_heatmap(self, *args, **kwargs):
         """
@@ -356,11 +361,12 @@ class VolcanoFigure(plt.Figure):
             Additional heatmap arguments
         """
         # Plot heatmap on the main map using the stored map object
-        self.map_obj.plot_heatmap(*args, **kwargs)
+        map_heatmap = self.map_obj.plot_heatmap(*args, **kwargs)
         
         # Plot heatmap on both cross-sections
-        self.xs1_obj.plot_heatmap(*args, **kwargs)
-        self.xs2_obj.plot_heatmap(*args, **kwargs)
+        xs1_heatmap = self.xs1_obj.plot_heatmap(*args, **kwargs)
+        xs2_heatmap = self.xs2_obj.plot_heatmap(*args, **kwargs)
+        return map_heatmap, xs1_heatmap, xs2_heatmap
 
     def title(self, t, **kwargs):
         """

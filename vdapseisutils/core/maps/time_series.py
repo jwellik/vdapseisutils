@@ -139,8 +139,9 @@ class TimeSeries:
         **kwargs
             Additional scatter plot arguments
         """
-        self.ax.scatter(convert_timeformat(t, "matplotlib"), y, **kwargs)
+        scatter = self.ax.scatter(convert_timeformat(t, "matplotlib"), y, **kwargs)
         self.set_ylim()
+        return scatter
 
     def plot_catalog(self, catalog, s=PLOT_CATALOG_DEFAULTS['s'], c=PLOT_CATALOG_DEFAULTS['c'], 
                     color=PLOT_CATALOG_DEFAULTS['color'], alpha=PLOT_CATALOG_DEFAULTS['alpha'], **kwargs):

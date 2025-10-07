@@ -231,7 +231,7 @@ class CrossSection:
             x = project2line(lat, lon, P1=self.A1, P2=self.A2, unit="km")
 
         x = np.asarray(x)
-        self.ax.plot(x, depth, **kwargs)
+        return self.ax.plot(x, depth, **kwargs)
 
     def scatter(self, lat=None, lon=None, z=None, x=None, z_dir="depth", z_unit="m", **kwargs):
         """
@@ -336,16 +336,19 @@ class CrossSection:
                 # Override with explicit parameters
                 plot_kwargs.update({'s': s, 'c': c, 'alpha': alpha})
                 
-                self.scatter(lat=station_lats, lon=station_lons, z=station_elevs, 
+                scatter = self.scatter(lat=station_lats, lon=station_lons, z=station_elevs, 
                            z_dir="elev", z_unit="m", **plot_kwargs)
                 self.set_depth_extent()
                 self.set_horiz_extent()
+                return scatter
             else:
                 print("No valid station coordinates found in inventory for cross-section")
+                return None
                 
         except Exception as e:
             print(f"Error plotting inventory on cross-section: {e}")
             print("Continuing without cross-section inventory plot...")
+            return None
 
     def plot_volcano(self, lat, lon, elev, **kwargs):
         """
@@ -365,7 +368,7 @@ class CrossSection:
         # Merge defaults with user kwargs  
         plot_kwargs = {**PLOT_VOLCANO_DEFAULTS, **kwargs}
         
-        self.scatter(lat=lat, lon=lon, z=elev, z_dir="elev", z_unit="m", **plot_kwargs)
+        return self.scatter(lat=lat, lon=lon, z=elev, z_dir="elev", z_unit="m", **plot_kwargs)
 
     def plot_peak(self, lat, lon, elev, **kwargs):
         """
@@ -385,7 +388,7 @@ class CrossSection:
         # Merge defaults with user kwargs
         plot_kwargs = {**PLOT_PEAK_DEFAULTS, **kwargs}
         
-        self.scatter(lat=lat, lon=lon, z=elev, z_dir="elev", z_unit="m", **plot_kwargs)
+        return self.scatter(lat=lat, lon=lon, z=elev, z_dir="elev", z_unit="m", **plot_kwargs)
 
     def plot_heatmap(self, *args, grid_size=HEATMAP_DEFAULTS['grid_size'], 
                      cmap=HEATMAP_DEFAULTS['cmap'], alpha=HEATMAP_DEFAULTS['alpha'], 
