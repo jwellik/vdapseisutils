@@ -131,3 +131,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+
+# Backup files
+*.bak
+
+# Local files
+*_local/
