@@ -463,11 +463,10 @@ class VCatalogPickQCMixin:
                                  boxprops=dict(facecolor='red', alpha=0.7),
                                  medianprops=dict(color='darkred', linewidth=2))
                 
-                # Add count label - position within current x-axis limits
-                xlim = ax.get_xlim()
-                text_x = min(xlim[1] - 0.1, max(p_data) + 0.05)
-                ax.text(text_x, i + box_width/2, f'N = {p_count}', 
-                       va='center', ha='left', fontsize=10, color='red')
+                # Add count label - position relative to axes (responsive to xlim changes)
+                ax.text(0.95, i + box_width/2, f'N = {p_count}', 
+                       va='center', ha='right', fontsize=10, color='red',
+                       transform=ax.get_yaxis_transform())
             
             # S phase box plot (blue) - positioned below (if included)
             if 'S' in include_phases and len(s_data) > 0:
@@ -476,11 +475,10 @@ class VCatalogPickQCMixin:
                                  boxprops=dict(facecolor='blue', alpha=0.7),
                                  medianprops=dict(color='darkblue', linewidth=2))
                 
-                # Add count label - position within current x-axis limits
-                xlim = ax.get_xlim()
-                text_x = min(xlim[1] - 0.1, max(s_data) + 0.05)
-                ax.text(text_x, i - box_width/2, f'N = {s_count}', 
-                       va='center', ha='left', fontsize=10, color='blue')
+                # Add count label - position relative to axes (responsive to xlim changes)
+                ax.text(0.95, i - box_width/2, f'N = {s_count}', 
+                       va='center', ha='right', fontsize=10, color='blue',
+                       transform=ax.get_yaxis_transform())
 
         # Customize the plot
         ax.set_yticks(y_pos)
