@@ -39,7 +39,7 @@ class Buurman_2010:
     - plot_fi_magnitude(): FI vs Magnitude scatter plot (requires magnitude values)
 
     Static Methods (can be used without creating an instance):
-    - calculate_spectrum(): Calculate power spectral density from a trace
+    - calculate_spectrum(): Calculate amplitude spectrum from a trace
     - calculate_frequency_index(): Calculate frequency index from a trace
     - extract_catalog_data(): Extract times, FI values, and magnitudes from catalog
     - plot_fi_timeseries_static(): Plot FI timeseries from pre-computed data
@@ -154,7 +154,10 @@ class Buurman_2010:
     @staticmethod
     def calculate_spectrum(trace, analysis_window=None):
         """
-        Calculate power spectral density from a trace.
+        Calculate amplitude spectrum from a trace.
+        
+        Uses Welch's method to compute power spectral density, then converts to
+        amplitude spectrum (matching FFT-based approach used by Buurman & West 2010).
         
         This is a static method that can be used independently of an instance.
         
@@ -170,8 +173,8 @@ class Buurman_2010:
         --------
         freqs : numpy.ndarray
             Frequency array [Hz]
-        psd_normalized : numpy.ndarray
-            Normalized power spectral density (area under curve = 1)
+        amplitude_normalized : numpy.ndarray
+            Normalized amplitude spectrum (area under curve = 1)
         """
         tr = trace
         
@@ -190,8 +193,9 @@ class Buurman_2010:
             tr_for_analysis = tr
         
         # Calculate power spectral density using Welch's method
+        # Use full data length to match FFT resolution (as in Buurman & West 2010)
         sampling_rate = tr_for_analysis.stats.sampling_rate
-        nperseg = min(len(tr_for_analysis.data), int(sampling_rate * 60))
+        nperseg = len(tr_for_analysis.data)
         
         freqs, psd = welch(tr_for_analysis.data, fs=sampling_rate, nperseg=nperseg,
                            scaling='density', detrend='linear')
@@ -200,11 +204,15 @@ class Buurman_2010:
         freqs = freqs[1:]
         psd = psd[1:]
         
-        # Normalize by area under curve
-        area = np.trapezoid(psd, freqs)
-        psd_normalized = psd / area
+        # Convert PSD (power) to amplitude spectrum by taking square root
+        # This matches the FFT-based approach used by Buurman & West (2010)
+        amplitude = np.sqrt(psd)
         
-        return freqs, psd_normalized
+        # Normalize by area under curve
+        area = np.trapezoid(amplitude, freqs)
+        amplitude_normalized = amplitude / area
+        
+        return freqs, amplitude_normalized
 
     @staticmethod
     def calculate_frequency_index(trace, Alower, Aupper, analysis_window=None):
@@ -231,13 +239,13 @@ class Buurman_2010:
             Frequency index value
         """
         # Calculate spectrum
-        freqs, psd_normalized = Buurman_2010.calculate_spectrum(trace, analysis_window)
+        freqs, amplitude_normalized = Buurman_2010.calculate_spectrum(trace, analysis_window)
         
         # Calculate frequency index
         lower_mask = (freqs >= Alower[0]) & (freqs < Alower[1])
         upper_mask = (freqs >= Aupper[0]) & (freqs < Aupper[1])
         
-        freq_index = np.log10(np.mean(psd_normalized[upper_mask]) / np.mean(psd_normalized[lower_mask]))
+        freq_index = np.log10(np.mean(amplitude_normalized[upper_mask]) / np.mean(amplitude_normalized[lower_mask]))
         
         return freq_index
 
@@ -709,8 +717,9 @@ class Buurman_2010:
                 tr_for_analysis = tr
             
             # Calculate power spectral density using Welch's method
+            # Use full data length to match FFT resolution (as in Buurman & West 2010)
             sampling_rate = tr_for_analysis.stats.sampling_rate
-            nperseg = min(len(tr_for_analysis.data), int(sampling_rate * 60))
+            nperseg = len(tr_for_analysis.data)
             
             freqs, psd = welch(tr_for_analysis.data, fs=sampling_rate, nperseg=nperseg,
                                scaling='density', detrend='linear')
@@ -719,12 +728,16 @@ class Buurman_2010:
             freqs = freqs[1:]
             psd = psd[1:]
             
+            # Convert PSD (power) to amplitude spectrum by taking square root
+            # This matches the FFT-based approach used by Buurman & West (2010)
+            amplitude = np.sqrt(psd)
+            
             # Normalize by area under curve
-            area = np.trapezoid(psd, freqs)
-            psd_normalized = psd / area
+            area = np.trapezoid(amplitude, freqs)
+            amplitude_normalized = amplitude / area
             
             # Calculate frequency index
-            freq_index = self._calculate_frequency_index(freqs, psd_normalized)
+            freq_index = self._calculate_frequency_index(freqs, amplitude_normalized)
             
             # Get time (use starttime of the trace)
             time = tr.stats.starttime
@@ -1295,8 +1308,9 @@ class Buurman_2010:
             tr_for_analysis = tr
         
         # Calculate power spectral density using Welch's method
+        # Use full data length to match FFT resolution (as in Buurman & West 2010)
         sampling_rate = tr_for_analysis.stats.sampling_rate
-        nperseg = min(len(tr_for_analysis.data), int(sampling_rate * 60))
+        nperseg = len(tr_for_analysis.data)
         
         freqs, psd = welch(tr_for_analysis.data, fs=sampling_rate, nperseg=nperseg,
                            scaling='density', detrend='linear')
@@ -1305,12 +1319,16 @@ class Buurman_2010:
         freqs = freqs[1:]
         psd = psd[1:]
         
+        # Convert PSD (power) to amplitude spectrum by taking square root
+        # This matches the FFT-based approach used by Buurman & West (2010)
+        amplitude = np.sqrt(psd)
+        
         # Normalize by area under curve
-        area = np.trapezoid(psd, freqs)
-        psd_normalized = psd / area
+        area = np.trapezoid(amplitude, freqs)
+        amplitude_normalized = amplitude / area
         
         # Calculate frequency index
-        freq_index = self._calculate_frequency_index(freqs, psd_normalized)
+        freq_index = self._calculate_frequency_index(freqs, amplitude_normalized)
         return freq_index
 
     def _plot_stream(self, stream_info, waveform_y_position=None):
@@ -1350,8 +1368,9 @@ class Buurman_2010:
             tr_for_analysis = tr
 
         # Calculate power spectral density using Welch's method
+        # Use full data length to match FFT resolution (as in Buurman & West 2010)
         sampling_rate = tr_for_analysis.stats.sampling_rate
-        nperseg = min(len(tr_for_analysis.data), int(sampling_rate * 60))  # 60 second windows
+        nperseg = len(tr_for_analysis.data)
 
         freqs, psd = welch(tr_for_analysis.data, fs=sampling_rate, nperseg=nperseg,
                            scaling='density', detrend='linear')
@@ -1360,17 +1379,21 @@ class Buurman_2010:
         freqs = freqs[1:]
         psd = psd[1:]
 
+        # Convert PSD (power) to amplitude spectrum by taking square root
+        # This matches the FFT-based approach used by Buurman & West (2010)
+        amplitude = np.sqrt(psd)
+
         # Normalize by area under curve
-        area = np.trapezoid(psd, freqs)
-        psd_normalized = psd / area
+        area = np.trapezoid(amplitude, freqs)
+        amplitude_normalized = amplitude / area
 
         # Calculate frequency index (if we have spectrum/freq index axes, or if using FI spacing in fig2)
         freq_index = None
         if self.ax1 is not None or self.ax2 is not None:
-            freq_index = self._calculate_frequency_index(freqs, psd_normalized)
+            freq_index = self._calculate_frequency_index(freqs, amplitude_normalized)
         elif self.ax_wave is not None and self._waveform_spacing_mode == "fi":
             # For fig2 with FI spacing, calculate FI even without spectrum/FI axes
-            freq_index = self._calculate_frequency_index(freqs, psd_normalized)
+            freq_index = self._calculate_frequency_index(freqs, amplitude_normalized)
 
         # Determine color based on user preference
         if color == "auto":
@@ -1454,7 +1477,7 @@ class Buurman_2010:
 
         # Plot the spectrum if spectrum axis exists (using 'k' to match figure_for_margarita)
         if self.ax1 is not None:
-            self.ax1.plot(freqs, psd_normalized, color='k', linewidth=1.5,
+            self.ax1.plot(freqs, amplitude_normalized, color='k', linewidth=1.5,
                             label=f'{tr.stats.station}.{tr.stats.channel}')
 
         # Plot frequency index if frequency index axis exists (using 'k' to match figure_for_margarita)
@@ -1508,7 +1531,7 @@ class Buurman_2010:
         
         return selected_color
 
-    def _calculate_frequency_index(self, freqs, psd):
+    def _calculate_frequency_index(self, freqs, amplitude_spectrum):
         """
         Calculate frequency index based on spectral content in defined bands.
 
@@ -1520,8 +1543,8 @@ class Buurman_2010:
         upper_mask = (freqs >= self.Aupper[0]) & (freqs < self.Aupper[1])  # create mask
 
         # Calculate frequency index (log ratio)
-        # freq_index = np.log10(np.mean(psd[upper_mask].sum(axis=1)) / np.mean(psd[lower_mask].sum(axis=1)))
-        freq_index = np.log10(np.mean(psd[upper_mask]) / np.mean(psd[lower_mask]))
+        # freq_index = np.log10(np.mean(amplitude_spectrum[upper_mask].sum(axis=1)) / np.mean(amplitude_spectrum[lower_mask].sum(axis=1)))
+        freq_index = np.log10(np.mean(amplitude_spectrum[upper_mask]) / np.mean(amplitude_spectrum[lower_mask]))
 
         return freq_index
 
@@ -2093,13 +2116,15 @@ class Buurman_2010:
             raise ValueError("No figure has been created. Call plot_fig2(), plot_fig3(), or plot_fig23() first.")
         self.fig.savefig(filename, dpi=dpi, bbox_inches='tight')
 
-    def make_movie(self, filename, fps=10, figsize=(8, 6), dpi=100):
+    def make_movie(self, filename, fps=None, figsize=(12, 8), dpi=100, duration=30, 
+                   example_waveform=None, title_waveform=None, title_timeseries=None):
         """
-        Create and save a movie showing timeseries data appearing in real-time.
+        Create and save a movie showing all figure panels with animated timeseries and FI vs Magnitude.
         
-        This method creates an animated movie where data points appear progressively
-        over time, simulating real-time data acquisition. The movie shows all catalogs
-        that have been added using add_catalog().
+        This method creates an animated movie with all panels from plot_all():
+        - Panels A-C (waveform, spectra, frequency index): Static, shown once
+        - Panel D (FI vs Magnitude): Animated, points appear progressively
+        - Panel E (Timeseries): Animated, points appear progressively
         
         Parameters:
         -----------
@@ -2107,12 +2132,22 @@ class Buurman_2010:
             Output filename for the movie. Should have .mp4 or .gif extension.
             For .mp4, requires ffmpeg to be installed.
             For .gif, uses Pillow writer.
-        fps : float, default=10
-            Frames per second for the movie.
-        figsize : tuple, default=(8, 6)
+        fps : float or None, default=None
+            Frames per second for the movie. If None, calculated to make movie duration
+            equal to `duration` parameter.
+        figsize : tuple, default=(12, 8)
             Figure size (width, height) in inches.
         dpi : int, default=100
             Resolution (dots per inch) for the movie frames.
+        duration : float, default=30
+            Target duration in seconds. Used to calculate fps if fps is None.
+        example_waveform : obspy.Trace or None, optional
+            Trace to display in waveform, spectra, and FI panels (panels A-C).
+            If None, uses stored streams.
+        title_waveform : str or None, optional
+            Title for the waveform panel. If None, no title is added.
+        title_timeseries : str or None, optional
+            Title for the timeseries panel. If None, no title is added.
             
         Returns:
         --------
@@ -2129,16 +2164,22 @@ class Buurman_2010:
         if len(self._catalogs) == 0:
             raise ValueError("No catalogs found. Add catalogs using add_catalog() before making a movie.")
         
+        print(f"Creating movie: {filename}...")
+        print(f"  Format: {filename.split('.')[-1].upper()}")
+        
         # Collect all data points from all catalogs and sort by time
+        # Pre-compute everything once to avoid repeated lookups in animate()
         all_times = []
         all_fi_values = []
         all_catalog_indices = []  # Track which catalog each point belongs to
         all_scatter_kwargs = []
+        all_magnitudes = []  # Pre-compute magnitudes to avoid searching in animate()
         
         for cat_idx, cat in enumerate(self._catalogs):
             times = cat['times']
             fi_values = cat['fi_values']
             scatter_kwargs = cat['scatter_kwargs'].copy()
+            magnitudes = cat['magnitudes']
             
             # Convert times to matplotlib dates if needed
             if len(times) > 0:
@@ -2148,38 +2189,171 @@ class Buurman_2010:
                     time_dates = times
                 
                 # Add all points from this catalog
-                for t, fi in zip(time_dates, fi_values):
+                # Since times and fi_values are in the same order, we can use index directly
+                for idx, (t, fi) in enumerate(zip(time_dates, fi_values)):
                     all_times.append(t)
                     all_fi_values.append(fi)
                     all_catalog_indices.append(cat_idx)
                     all_scatter_kwargs.append(scatter_kwargs.copy())
+                    # Pre-compute magnitude if available (using same index)
+                    if magnitudes is not None and idx < len(magnitudes):
+                        all_magnitudes.append(magnitudes[idx])
+                    else:
+                        all_magnitudes.append(None)
         
         if len(all_times) == 0:
             raise ValueError("No data points found in catalogs.")
         
         # Sort all points by time
         sorted_indices = np.argsort(all_times)
-        all_times = [all_times[i] for i in sorted_indices]
-        all_fi_values = [all_fi_values[i] for i in sorted_indices]
-        all_catalog_indices = [all_catalog_indices[i] for i in sorted_indices]
+        all_times = np.array([all_times[i] for i in sorted_indices])
+        all_fi_values = np.array([all_fi_values[i] for i in sorted_indices])
+        all_catalog_indices = np.array([all_catalog_indices[i] for i in sorted_indices])
         all_scatter_kwargs = [all_scatter_kwargs[i] for i in sorted_indices]
+        all_magnitudes = [all_magnitudes[i] for i in sorted_indices]
         
-        # Create figure for animation
+        # Pre-compute catalog groupings for efficient slicing
+        # Group indices by catalog for fast lookup
+        catalog_groups = {}
+        for cat_idx in range(len(self._catalogs)):
+            catalog_groups[cat_idx] = np.where(all_catalog_indices == cat_idx)[0]
+        
+        # Determine number of frames (one per data point)
+        n_frames = len(all_times)
+        
+        # Calculate fps if not provided
+        if fps is None:
+            fps = n_frames / duration
+            print(f"  Calculated FPS: {fps:.2f} (for {duration}s duration)")
+        else:
+            print(f"  Using provided FPS: {fps}")
+        
+        print(f"  Frames: {n_frames}")
+        print(f"  Estimated duration: {n_frames/fps:.1f} seconds")
+        
+        # Create figure with same layout as plot_all()
+        # Reset state
+        self._waveform_highlight_added = False
+        self._waveform_freq_indices = []
+        
         fig = plt.figure(figsize=figsize)
-        ax = fig.add_subplot(1, 1, 1)
+        gs = gridspec.GridSpec(2, 2, figure=fig,
+                               height_ratios=[1.5, 1], width_ratios=[1, 1],
+                               hspace=0.3, wspace=0.3)
         
-        # Setup axis labels
-        ax.set_xlabel('TIME', fontsize=10, color='grey')
-        ax.set_ylabel('FI', fontsize=10, color='grey')
-        ax.tick_params(axis='both', colors='grey', labelsize=10)
-        ax.grid(True, alpha=0.3)
+        # ========== Upper left: Buurman_fig23 (nested GridSpec) ==========
+        # Create a nested GridSpec within the top left cell for Buurman_fig23 layout
+        gs_buurman = gridspec.GridSpecFromSubplotSpec(2, 2, subplot_spec=gs[0, 0],
+                                                       height_ratios=[2.5, 5], width_ratios=[7, 1],
+                                                       hspace=0.3, wspace=0.2)
+        
+        # Top: Waveform (spans both columns)
+        ax_wave = fig.add_subplot(gs_buurman[0, :])
+        ax_wave.set_ylabel('AMPLITUDE', fontsize=10, color='grey')
+        ax_wave.set_xlabel('')
+        ax_wave.set_yticks([])
+        ax_wave.tick_params(axis='both', colors='grey', labelsize=10)
+        if title_waveform is not None:
+            ax_wave.set_title(title_waveform, fontsize=10, color='grey')
+        # Add panel label A.
+        ax_wave.text(0.02, 0.98, 'A.', transform=ax_wave.transAxes,
+                     fontsize=10, color='black', weight='bold',
+                     verticalalignment='top', horizontalalignment='left')
+        
+        # Bottom left: Spectrum
+        ax1 = fig.add_subplot(gs_buurman[1, 0])
+        ax1.set_xlabel('FREQUENCY (HZ)', fontsize=10, color='grey')
+        ax1.set_ylabel('AMPLITUDE, NORMALIZED', fontsize=10, color='grey')
+        ax1.set_xscale('log')
+        ax1.set_xlim(0.1, 50)
+        ax1.tick_params(axis='both', colors='grey', labelsize=10)
+        # Add panel label B.
+        ax1.text(0.02, 0.98, 'B.', transform=ax1.transAxes,
+                 fontsize=10, color='black', weight='bold',
+                 verticalalignment='top', horizontalalignment='left')
+        
+        # Add shaded regions for frequency bands
+        if len(self.Alower) >= 1 and len(self.Aupper) >= 1:
+            ax1.axvspan(self.Alower[0], self.Alower[1], alpha=self.highlight_alpha,
+                        color='k', label='$A_{lower}$')
+        if len(self.Alower) >= 2 and len(self.Aupper) >= 2:
+            ax1.axvspan(self.Aupper[0], self.Aupper[1], alpha=self.highlight_alpha,
+                        color='k', label='$A_{upper}$')
+        
+        # Bottom right: Frequency Index
+        ax2 = fig.add_subplot(gs_buurman[1, 1])
+        ax2.set_xlabel('FI', fontsize=10, color='grey')
+        ax2.set_ylabel('')
+        ax2.set_xlim(-0.5, 0.5)
+        ax2.yaxis.tick_right()
+        ax2.yaxis.set_label_position('right')
+        ax2.set_xticks([])
+        ax2.set_xticklabels([])
+        ax2.tick_params(axis='both', colors='grey', labelsize=10)
+        # Add panel label C.
+        ax2.text(0.02, 0.98, 'C.', transform=ax2.transAxes,
+                 fontsize=10, color='black', weight='bold',
+                 verticalalignment='top', horizontalalignment='left')
         
         # Add threshold lines (if thresholds are set)
         if self.thresholds is not None:
-            for threshold in self.thresholds:
-                ax.axhline(y=threshold, color="black", linestyle='--', alpha=0.7)
+            for i, threshold in enumerate(self.thresholds):
+                ax2.axhline(y=threshold, color="black", linestyle='--', alpha=0.7)
         
-        # Set axis limits based on all data
+        # ========== Upper right: FI vs Magnitude (ANIMATED) ==========
+        ax_fi_mag = fig.add_subplot(gs[0, 1])
+        ax_fi_mag.set_ylabel('MAGNITUDE', fontsize=10, color='grey')
+        ax_fi_mag.set_xlabel('FI', fontsize=10, color='grey')
+        ax_fi_mag.set_title('FI VS MAGNITUDE', fontsize=10, color='grey')
+        ax_fi_mag.grid(True, alpha=0.3)
+        ax_fi_mag.tick_params(axis='both', colors='grey', labelsize=10)
+        # Add panel label D.
+        ax_fi_mag.text(0.02, 0.98, 'D.', transform=ax_fi_mag.transAxes,
+                       fontsize=10, color='black', weight='bold',
+                       verticalalignment='top', horizontalalignment='left')
+        
+        # Set axis limits for FI vs Magnitude
+        mag_values = [m for m in all_magnitudes if m is not None]
+        fi_values_with_mag = [all_fi_values[i] for i in range(len(all_fi_values)) if all_magnitudes[i] is not None]
+        if len(mag_values) > 0:
+            mag_min = min(mag_values)
+            mag_max = max(mag_values)
+            mag_range = mag_max - mag_min
+            if mag_range > 0:
+                y_margin = mag_range * 0.1
+                ax_fi_mag.set_ylim(mag_min - y_margin, mag_max + y_margin)
+            else:
+                ax_fi_mag.set_ylim(mag_min - 0.5, mag_max + 0.5)
+        
+        if len(fi_values_with_mag) > 0:
+            fi_min_mag = min(fi_values_with_mag)
+            fi_max_mag = max(fi_values_with_mag)
+            fi_range_mag = fi_max_mag - fi_min_mag
+            if fi_range_mag > 0:
+                x_margin = fi_range_mag * 0.1
+                ax_fi_mag.set_xlim(fi_min_mag - x_margin, fi_max_mag + x_margin)
+            else:
+                ax_fi_mag.set_xlim(fi_min_mag - 0.5, fi_max_mag + 0.5)
+        
+        # ========== Bottom row: Time Series of FI (ANIMATED, spans both columns) ==========
+        ax_fi_timeseries = fig.add_subplot(gs[1, :])
+        ax_fi_timeseries.set_xlabel('TIME', fontsize=10, color='grey')
+        ax_fi_timeseries.set_ylabel('FI', fontsize=10, color='grey')
+        if title_timeseries is not None:
+            ax_fi_timeseries.set_title(title_timeseries, fontsize=10, color='grey')
+        ax_fi_timeseries.grid(True, alpha=0.3)
+        ax_fi_timeseries.tick_params(axis='both', colors='grey', labelsize=10)
+        # Add panel label E.
+        ax_fi_timeseries.text(0.02, 0.98, 'E.', transform=ax_fi_timeseries.transAxes,
+                              fontsize=10, color='black', weight='bold',
+                              verticalalignment='top', horizontalalignment='left')
+        
+        # Add threshold lines to timeseries (if thresholds are set)
+        if self.thresholds is not None:
+            for i, threshold in enumerate(self.thresholds):
+                ax_fi_timeseries.axhline(y=threshold, color="black", linestyle='--', alpha=0.7)
+        
+        # Set axis limits for timeseries based on all data
         if len(all_times) > 0:
             time_min = min(all_times)
             time_max = max(all_times)
@@ -2190,86 +2364,107 @@ class Buurman_2010:
             time_range = time_max - time_min
             fi_range = fi_max - fi_min
             if time_range > 0:
-                ax.set_xlim(time_min - 0.05 * time_range, time_max + 0.05 * time_range)
+                ax_fi_timeseries.set_xlim(time_min - 0.05 * time_range, time_max + 0.05 * time_range)
             else:
-                ax.set_xlim(time_min - 1, time_max + 1)
+                ax_fi_timeseries.set_xlim(time_min - 1, time_max + 1)
             
             if fi_range > 0:
-                ax.set_ylim(fi_min - 0.1 * fi_range, fi_max + 0.1 * fi_range)
+                ax_fi_timeseries.set_ylim(fi_min - 0.1 * fi_range, fi_max + 0.1 * fi_range)
             else:
-                ax.set_ylim(fi_min - 0.5, fi_max + 0.5)
+                ax_fi_timeseries.set_ylim(fi_min - 0.5, fi_max + 0.5)
         
         # Format x-axis using ObsPy's date formatting if needed
         if len(all_times) > 0:
-            # Check if we need ObsPy date formatting
             if isinstance(self._catalogs[0]['times'][0], UTCDateTime):
-                _set_xaxis_obspy_dates(ax)
+                _set_xaxis_obspy_dates(ax_fi_timeseries)
+        
+        # Plot static panels (A-C) - waveform, spectra, FI
+        # Temporarily set axes for _plot_stream
+        self.ax_wave = ax_wave
+        self.ax1 = ax1
+        self.ax2 = ax2
+        self.fig = fig
+        
+        if example_waveform is not None:
+            # Use example_waveform for panels A-C
+            if isinstance(example_waveform, Trace):
+                tr = example_waveform
+            elif isinstance(example_waveform, Stream):
+                tr = example_waveform.merge()[0]
+            else:
+                raise TypeError("example_waveform must be a Trace or Stream object")
+            
+            # Create temporary stream_info for example_waveform
+            example_stream_info = {
+                'trace': tr,
+                'color': 'auto',
+                'analysis_window': self.analysis_window,
+                'magnitude': None
+            }
+            self._plot_stream(example_stream_info)
+        else:
+            # Use stored streams (backward compatibility)
+            for stream_info in self._streams:
+                self._plot_stream(stream_info)
+        
+        # Align y-labels
+        fig.align_ylabels([ax_wave, ax1, ax_fi_timeseries])
+        
+        # Apply custom limits if set
+        self._apply_limits()
         
         _tight_layout_safe(fig)
         
-        # Animation function
+        # Animation function - only updates panels D and E
         def animate(frame):
             # Calculate how many points to show up to this frame
-            # Show points progressively: frame 0 shows 1 point, frame 1 shows 2 points, etc.
             n_points = min(frame + 1, len(all_times))
             
-            # Clear only scatter plots (PathCollection objects), keep lines like threshold lines
-            collections_to_remove = [col for col in ax.collections if isinstance(col, PathCollection)]
+            # Clear only scatter plots (PathCollection objects) from animated panels
+            # Panel D (FI vs Magnitude)
+            collections_to_remove = [col for col in ax_fi_mag.collections if isinstance(col, PathCollection)]
             for col in collections_to_remove:
                 col.remove()
             
-            # Group points by catalog for plotting
-            catalog_data = {}
-            for i in range(n_points):
-                cat_idx = all_catalog_indices[i]
-                if cat_idx not in catalog_data:
-                    catalog_data[cat_idx] = {
-                        'times': [],
-                        'fi_values': [],
-                        'magnitudes': [],
-                        'scatter_kwargs': all_scatter_kwargs[i].copy()
-                    }
-                
-                catalog_data[cat_idx]['times'].append(all_times[i])
-                catalog_data[cat_idx]['fi_values'].append(all_fi_values[i])
-                
-                # Get magnitude if available
-                cat = self._catalogs[cat_idx]
-                if cat['magnitudes'] is not None:
-                    # Find original index in catalog
-                    orig_times = cat['times']
-                    if isinstance(orig_times[0], UTCDateTime):
-                        orig_time_dates = [t.matplotlib_date for t in orig_times]
-                    else:
-                        orig_time_dates = orig_times
-                    
-                    # Find matching index
-                    for j, orig_t in enumerate(orig_time_dates):
-                        if abs(orig_t - all_times[i]) < 1e-6:  # Small tolerance for float comparison
-                            catalog_data[cat_idx]['magnitudes'].append(cat['magnitudes'][j])
-                            break
+            # Panel E (Timeseries)
+            collections_to_remove = [col for col in ax_fi_timeseries.collections if isinstance(col, PathCollection)]
+            for col in collections_to_remove:
+                col.remove()
             
-            # Plot points for each catalog
-            for cat_idx, data in catalog_data.items():
-                if len(data['times']) > 0:
-                    scatter_kwargs = data['scatter_kwargs'].copy()
-                    
-                    # Handle magnitudes if available (for scatter size)
-                    if len(data['magnitudes']) == len(data['times']) and len(data['magnitudes']) > 0:
-                        scatter_sizes = [max(48.75 * mag - 43.75, 0) for mag in data['magnitudes']]
-                        scatter_kwargs['s'] = scatter_sizes
-                    
-                    # Ensure facecolor is used
-                    if 'facecolor' not in scatter_kwargs and 'c' not in scatter_kwargs and 'color' not in scatter_kwargs:
-                        scatter_kwargs['facecolor'] = 'k'
-                    
-                    # Create scatter plot
-                    ax.scatter(data['times'], data['fi_values'], **scatter_kwargs)
+            # Plot points for each catalog using pre-computed data
+            for cat_idx in range(len(self._catalogs)):
+                # Get indices for this catalog that are within n_points
+                cat_indices = catalog_groups[cat_idx]
+                visible_indices = cat_indices[cat_indices < n_points]
+                
+                if len(visible_indices) == 0:
+                    continue
+                
+                # Get data for visible points
+                times_subset = all_times[visible_indices]
+                fi_subset = all_fi_values[visible_indices]
+                magnitudes_subset = [all_magnitudes[i] for i in visible_indices]
+                
+                # Get scatter kwargs (same for all points in a catalog)
+                scatter_kwargs = all_scatter_kwargs[visible_indices[0]].copy()
+                
+                # Handle magnitudes if available (for scatter size)
+                if all(m is not None for m in magnitudes_subset):
+                    scatter_sizes = [max(48.75 * mag - 43.75, 0) for mag in magnitudes_subset]
+                    scatter_kwargs['s'] = scatter_sizes
+                
+                # Ensure facecolor is used
+                if 'facecolor' not in scatter_kwargs and 'c' not in scatter_kwargs and 'color' not in scatter_kwargs:
+                    scatter_kwargs['facecolor'] = 'k'
+                
+                # Plot on timeseries panel (E)
+                ax_fi_timeseries.scatter(times_subset, fi_subset, **scatter_kwargs)
+                
+                # Plot on FI vs Magnitude panel (D) - only if magnitudes available
+                if all(m is not None for m in magnitudes_subset):
+                    ax_fi_mag.scatter(fi_subset, magnitudes_subset, **scatter_kwargs)
             
             return []
-        
-        # Determine number of frames (one per data point)
-        n_frames = len(all_times)
         
         # Create animation
         anim = animation.FuncAnimation(fig, animate, frames=n_frames, 
@@ -2302,8 +2497,10 @@ class Buurman_2010:
             raise ValueError("Filename must end with .mp4 or .gif")
         
         # Save animation
+        print(f"  Rendering and saving movie...")
         anim.save(filename, writer=writer, dpi=dpi)
         plt.close(fig)
+        print(f"Movie saved successfully: {filename}")
 
 
 # Example usage:
