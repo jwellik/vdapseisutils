@@ -10,7 +10,16 @@ Last updated: 2025 September 28
 
 import numpy as np
 import matplotlib.pyplot as plt
-from .defaults import AXES_DEFAULTS
+
+# Handle relative imports for both module and script execution
+try:
+    from .defaults import AXES_DEFAULTS
+except ImportError:
+    # Running as script - add package root to path and use absolute imports
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
+    from vdapseisutils.core.maps.defaults import AXES_DEFAULTS
 
 
 class MagLegend:

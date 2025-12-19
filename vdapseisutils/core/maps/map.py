@@ -14,12 +14,26 @@ import cartopy.crs as ccrs
 import cartopy.io.img_tiles as cimgt
 import cartopy.feature as cfeature
 
-from .defaults import (
-    HEATMAP_DEFAULTS, TICK_DEFAULTS, AXES_DEFAULTS, GRID_DEFAULTS, default_volcano,
-    PLOT_VOLCANO_DEFAULTS, PLOT_PEAK_DEFAULTS, PLOT_CATALOG_DEFAULTS, PLOT_INVENTORY_DEFAULTS,
-    WORLD_LOCATION_MAP_DEFAULTS, TITLE_DEFAULTS, SUBTITLE_DEFAULTS
-)
-from .utils import prep_catalog_data_mpl, choose_scale_bar_length
+# Handle relative imports for both module and script execution
+try:
+    from .defaults import (
+        HEATMAP_DEFAULTS, TICK_DEFAULTS, AXES_DEFAULTS, GRID_DEFAULTS, default_volcano,
+        PLOT_VOLCANO_DEFAULTS, PLOT_PEAK_DEFAULTS, PLOT_CATALOG_DEFAULTS, PLOT_INVENTORY_DEFAULTS,
+        WORLD_LOCATION_MAP_DEFAULTS, TITLE_DEFAULTS, SUBTITLE_DEFAULTS
+    )
+    from .utils import prep_catalog_data_mpl, choose_scale_bar_length
+except ImportError:
+    # Running as script - add package root to path and use absolute imports
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
+    from vdapseisutils.core.maps.defaults import (
+        HEATMAP_DEFAULTS, TICK_DEFAULTS, AXES_DEFAULTS, GRID_DEFAULTS, default_volcano,
+        PLOT_VOLCANO_DEFAULTS, PLOT_PEAK_DEFAULTS, PLOT_CATALOG_DEFAULTS, PLOT_INVENTORY_DEFAULTS,
+        WORLD_LOCATION_MAP_DEFAULTS, TITLE_DEFAULTS, SUBTITLE_DEFAULTS
+    )
+    from vdapseisutils.core.maps.utils import prep_catalog_data_mpl, choose_scale_bar_length
+
 from vdapseisutils.utils.geoutils import backazimuth, radial_extent2map_extent
 
 

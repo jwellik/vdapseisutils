@@ -12,11 +12,23 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 
-from .defaults import default_volcano, TITLE_DEFAULTS, SUBTITLE_DEFAULTS
-from .map import Map
-from .cross_section import CrossSection
-from .time_series import TimeSeries
-from .utils import prep_catalog_data_mpl
+# Handle relative imports for both module and script execution
+try:
+    from .defaults import default_volcano, TITLE_DEFAULTS, SUBTITLE_DEFAULTS
+    from .map import Map
+    from .cross_section import CrossSection
+    from .time_series import TimeSeries
+    from .utils import prep_catalog_data_mpl
+except ImportError:
+    # Running as script - add package root to path and use absolute imports
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
+    from vdapseisutils.core.maps.defaults import default_volcano, TITLE_DEFAULTS, SUBTITLE_DEFAULTS
+    from vdapseisutils.core.maps.map import Map
+    from vdapseisutils.core.maps.cross_section import CrossSection
+    from vdapseisutils.core.maps.time_series import TimeSeries
+    from vdapseisutils.core.maps.utils import prep_catalog_data_mpl
 from vdapseisutils.utils.geoutils import radial_extent2map_extent
 
 

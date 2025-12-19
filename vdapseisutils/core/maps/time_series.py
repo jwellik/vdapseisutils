@@ -11,9 +11,19 @@ Last updated: 2025 September 28
 import matplotlib.pyplot as plt
 from obspy.imaging.util import _set_xaxis_obspy_dates
 
-from .defaults import TICK_DEFAULTS, AXES_DEFAULTS, CROSSSECTION_DEFAULTS, PLOT_CATALOG_DEFAULTS
-from .utils import prep_catalog_data_mpl
-from .legends import MagLegend
+# Handle relative imports for both module and script execution
+try:
+    from .defaults import TICK_DEFAULTS, AXES_DEFAULTS, CROSSSECTION_DEFAULTS, PLOT_CATALOG_DEFAULTS
+    from .utils import prep_catalog_data_mpl
+    from .legends import MagLegend
+except ImportError:
+    # Running as script - add package root to path and use absolute imports
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
+    from vdapseisutils.core.maps.defaults import TICK_DEFAULTS, AXES_DEFAULTS, CROSSSECTION_DEFAULTS, PLOT_CATALOG_DEFAULTS
+    from vdapseisutils.core.maps.utils import prep_catalog_data_mpl
+    from vdapseisutils.core.maps.legends import MagLegend
 from vdapseisutils.utils.timeutils import convert_timeformat
 
 
