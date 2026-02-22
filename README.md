@@ -18,40 +18,44 @@ Pending tasks:
 - DataSource: A wrapper for ObsPy Clients with a more universal usage (automatically determines Client type).
 
 ## Installation
-This package is not quite ready yet for installation with pip. Instead, download the repository and add it to your path before running other Python code.
 
-Download the [zip file](https://github.com/jwellik/vdapseisutils/archive/main.zip) or use `git` to clone the entire repository to a working directory (e.g., mine is `/home/jwellik/PYTHON/vdapseisutils`).
+This package is not yet on PyPI. Clone the repo and use [uv](https://docs.astral.sh/uv/) to create the environment and install the package (Python 3.11+).
 
-VDAPSEISUTILS runs on Python 3.12. The suite of codes in this repository is comprehensive. Thus, many dependencies are required to run all of them. Common packages include: 
+**One-time setup**
 
-[numpy](http://www.numpy.org/) | [scipy](http://www.scipy.org/) | [matplotlib](http://www.matplotlib.org/) | [obspy](http://www.obspy.org/) | [pytables](http://www.pytables.org/) | [pandas](http://pandas.pydata.org/) | [bokeh](http://bokeh.pydata.org/) | [cartopy](http://scitools.org.uk/cartopy/) | [timezonefinder](https://pypi.org/project/timezonefinder/)
+This project uses a named environment **vseis311**. Set the env path, then sync:
 
-Other git repositories are also installed as dependencies:
-- Claudio Satriano's [nllgrid](https://github.com/claudiodsf/nllgrid)
-
-All of these dependencies can be easily installed via [Anaconda](https://www.continuum.io/) on the command line. I *highly* recommend using a virtual environment so that your environment does not conflict with any other Python packages you may be using. This can be done with the following commands:
+```bash
+git clone https://github.com/jwellik/vdapseisutils.git
+cd vdapseisutils
+export UV_PROJECT_ENVIRONMENT=vseis311
+uv sync
 ```
-$ conda config --add channels conda-forge
-$ conda create -n seismology312 python=3.12 obspy pandas cartopy pygmt bokeh
-$ conda activate seismology312
-$ conda install -c conda-forge timezonefinder unidecode geopy
-$ conda install -c conda-forge nllgrid
-$ cd <path to vdapseisutils>
-$ pip install .
+
+To make that permanent in this repo (optional), use [direnv](https://direnv.net/): run `direnv allow` once; the project’s `.envrc` will set `UV_PROJECT_ENVIRONMENT=vseis311` whenever you `cd` here.
+
+**Activate and run Python**
+
+```bash
+source vseis311/bin/activate
+python
 ```
+
+You activate by sourcing the *script inside* the environment directory (`vseis311/bin/activate`). There is no global `activate` command that takes a name—that’s Conda’s interface. With Python’s venv (and uv), the environment is just a folder; you always run `source <env-dir>/bin/activate` (e.g. `source vseis311/bin/activate` or `source .venv/bin/activate` if you didn’t set a custom name).
+
+Optional: run without activating: `uv run python ...`, `uv run pytest`, etc.
 
 ## Usage
+
 This package is still in development. If you have trouble with these codes, let me know.
+
+```bash
+source vseis311/bin/activate
+cd gallery
+python
+>>> from vdapseisutils.gallery import Mapping_tutorial
+>>> Mapping_tutorial.main()   # graphics forwarding if remote
 ```
-$ cd /home/jwellik/PYTHON
-$ mv vdapseisutils-main vdapseisutils
-$ cd /home/jwellik/PYTHON/vdapseisutils/gallery
-$ conda activate seismology312
-$ python
->>> import sys
->>> sys.path.append("/home/jwellik/PYTHON")  # Add all codes in the repository to your path
->>> from vdapseisutils.gallery import Mapping_tutorial.py
->>> Mapping_tutorial.main()  # Make sure your terminal has graphics forwarding
-```
-This will run a script that reads .arc files from Wy'East/Mt Hood, Oregon and plots them on a map and cross sections. Look at the [Gallery](https://github.com/jwellik/vdapseisutils/tree/main/gallery) for more examlpes and detailed usage.
+
+This runs a script that reads .arc files from Wy'East/Mt Hood, Oregon and plots them on a map and cross sections. See the [Gallery](https://github.com/jwellik/vdapseisutils/tree/main/gallery) for more examples and usage.
 

@@ -15,6 +15,20 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+dependencies = [
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "obspy",
+    "pandas",
+    "tables",
+    "bokeh",
+    "cartopy",
+    "timezonefinder",
+    "unidecode",
+    "geopy",
+    "nllgrid",
+]
 
 [project.urls]
 Homepage = "https://github.com/jwellik/vdapseisutils"
