@@ -819,11 +819,16 @@ class VInventory(Inventory):
                 print(f"  All clients failed for {nsl_key}")
 
         if verbose:
+            channel_ids = sorted(set(tr.id for tr in combined_stream))
+            n = len(channel_ids)
             print(f"\n--- Summary ---")
-            print(f"Total traces retrieved: {len(combined_stream)}")
+            print(f"Stations with data: {n}")
             if combined_stream:
                 networks_found = set(tr.stats.network for tr in combined_stream)
                 print(f"Networks: {', '.join(sorted(networks_found))}")
+            for ch_id in channel_ids:
+                samples = sum(len(tr.data) for tr in combined_stream if tr.id == ch_id)
+                print(f"{ch_id}: {samples} samples")
 
         return combined_stream
 
