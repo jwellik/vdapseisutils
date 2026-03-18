@@ -1,7 +1,11 @@
 from obspy import UTCDateTime
 import datetime
 from zoneinfo import ZoneInfo
-from timezonefinder import TimezoneFinder
+try:
+    # Optional dependency: only required for local-time conversions.
+    from timezonefinder import TimezoneFinder
+except ModuleNotFoundError:  # pragma: no cover
+    TimezoneFinder = None
 import numpy as np
 
 # Observatory timezone mapping
@@ -171,6 +175,12 @@ class VUTCDateTime(UTCDateTime):
         """
         if time is None:
             time = self.datetime
+
+        if TimezoneFinder is None:
+            raise ModuleNotFoundError(
+                "timezonefinder is required for to_local_time(), but it's not installed. "
+                "Install `timezonefinder` or avoid local-time conversion calls."
+            )
         
         # Find timezone for location
         tf = TimezoneFinder(in_memory=True)

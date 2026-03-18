@@ -6,7 +6,11 @@ from matplotlib import dates as mdates
 from pandas import Timestamp as pdTimestamp
 from numpy import datetime64 as npdatetime64
 
-from timezonefinder import TimezoneFinder
+try:
+    # Optional dependency; only needed for timezone-aware conversions.
+    from timezonefinder import TimezoneFinder
+except ModuleNotFoundError:  # pragma: no cover
+    TimezoneFinder = None
 from zoneinfo import ZoneInfo
 
 
@@ -83,6 +87,13 @@ def convert_timeformat(input, format="UTCDateTime"):
         raise Exception("Input time format ({}) not understood or supported.".format(type(input)))
 
     return output
+
+
+def _require_timezonefinder():
+    if TimezoneFinder is None:
+        raise ModuleNotFoundError(
+            "timezonefinder is required for this timeutils operation, but it's not installed."
+        )
 
 
 def interval_range(start, stop, freq="1D", dtype="UTCDateTime", **kwargs):
@@ -295,6 +306,7 @@ def parse_timezone(input):
         lat = input[0]
         lon = input[1]
         t = datetime.datetime(input[2]) if len(input) == 3 else datetime.datetime.now()
+        _require_timezonefinder()
         tf = TimezoneFinder(in_memory=True)
         iana_tz_id = tf.timezone_at(lat=lat, lng=lon)
         utcoffset = iana_tz_id.utcoffset(t)
