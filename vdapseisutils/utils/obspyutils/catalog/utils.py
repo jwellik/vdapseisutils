@@ -28,12 +28,13 @@ class VCatalogUtilsMixin:
         list of obspy.core.utcdatetime.UTCDateTime
             List of origin times from all events in the catalog
         """
+        from .origin import get_primary_origin
+
         origin_times = []
         for event in self:
-            if event.preferred_origin():
-                origin_times.append(event.preferred_origin().time)
-            elif len(event.origins) > 0:
-                origin_times.append(event.origins[0].time)
+            o = get_primary_origin(event)
+            if o is not None and o.time is not None:
+                origin_times.append(o.time)
         return origin_times
 
     def print_all(self):

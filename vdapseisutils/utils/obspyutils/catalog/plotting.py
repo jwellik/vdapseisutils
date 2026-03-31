@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as np
 from obspy.imaging.util import _set_xaxis_obspy_dates
 from vdapseisutils.utils.magnitude import MagnitudeUtils
+from vdapseisutils.utils.obspyutils.catalog.origin import get_primary_origin
 
 
 class VCatalogPlottingMixin:
@@ -149,8 +150,8 @@ class VCatalogPlottingMixin:
         mags = []
         depths = []
         for event in self:
-            if event.origins:
-                o = event.origins[0]
+            o = get_primary_origin(event)
+            if o is not None:
                 lons.append(o.longitude if hasattr(o, 'longitude') and o.longitude is not None else np.nan)
                 lats.append(o.latitude if hasattr(o, 'latitude') and o.latitude is not None else np.nan)
                 depths.append(o.depth if hasattr(o, 'depth') and o.depth is not None else np.nan)

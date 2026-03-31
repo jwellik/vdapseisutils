@@ -8,14 +8,17 @@ Author: Jay Wellik, jwellik@vdap.org
 Last updated: 2025 September 28
 """
 
-import numpy as np
-from vdapseisutils.utils.obspyutils.catalogutils import catalog2txyzm
 import pandas as pd
+
+from vdapseisutils.compute.catalog import prepare_catalog_points_from_time_format
 
 
 def prep_catalog_data_mpl(catalog, s="magnitude", c="time", maglegend=None, time_format="matplotlib"):
     """
     PREPCATALOG Converts ObsPy Catalog object to DataFrame w fields appropriate for swarmmpl
+
+    Uses :func:`~vdapseisutils.compute.catalog.prepare_catalog_points_from_time_format`
+    (backend-neutral) then applies swarmmpl depth sign and magnitude marker sizes.
 
     TODO Allow for custom MagLegends
     TODO Add color column
@@ -25,14 +28,15 @@ def prep_catalog_data_mpl(catalog, s="magnitude", c="time", maglegend=None, time
     """
     # Import here to avoid circular imports
     from .legends import MagLegend
-    
+
     if maglegend is None:
         maglegend = MagLegend()
 
-    ## Get info out of Events object
-    # returns time(UTCDateTime), lat, lon, depth(km, positive below sea level), mag
-    catdata = catalog2txyzm(catalog, time_format=time_format)
-    catdata = pd.DataFrame(catdata).sort_values("time")
+    catdata = prepare_catalog_points_from_time_format(
+        catalog, time_format=time_format, origin_policy="preferred_or_first"
+    )
+    catdata = catdata.sort_values("time")
+    catdata = catdata.copy()
     catdata["depth"] *= -1  # below sea level values are negative for swarmmpl purposes
     catdata["size"] = maglegend.mag2s(catdata["mag"])  # converts magnitudes to point size for scatter plot
     return catdata

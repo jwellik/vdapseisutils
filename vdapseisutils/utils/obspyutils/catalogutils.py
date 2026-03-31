@@ -192,14 +192,24 @@ def sort_catalog(catalog, key='magnitude', reverse=False):
 def catalog2basics(*args, **kwargs):
     return catalog2txyzm(*args, **kwargs)
 
-def catalog2txyzm(cat, depth_unit="km", z_dir="depth", time_format="UTCDateTime", verbose=False, filename=False, **to_csv_kwargs):
-    """Returns time(UTCDateTime), lat, lon, depth(kilometers), and mag from ObsPy Catalog object
+def catalog2txyzm(
+    cat,
+    depth_unit="km",
+    z_dir="depth",
+    time_format="UTCDateTime",
+    verbose=False,
+    filename=False,
+    origin_policy="preferred_or_first",
+    **to_csv_kwargs,
+):
+    """Returns time, lat, lon, depth (km or m), and mag from ObsPy Catalog object.
 
-    - 'time' is returned as a UTCDateTime object
-    - 'time_format' can be specified as 'UTCDateTime', 'matplotlib', 'datetime', or a string represented by strftime:
-        https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
-    - 'depth_unit' can be specified as 'km' or 'm'
-    - depths below sea level are positive
+    - ``time_format``: ``'UTCDateTime'``, ``'matplotlib'``, ``'datetime'``, or a strftime pattern.
+    - ``depth_unit``: ``'km'`` or ``'m'``; depths below sea level are positive (depth mode).
+    - ``origin_policy``: ``'preferred_or_first'`` (default; aligns maps and VCatalog),
+      ``'first'``, or ``'last'`` (legacy last-origin behavior).
+
+    Implementation delegates to :func:`vdapseisutils.compute.catalog.prepare_catalog_points_from_time_format`.
 
     Print to a txt file by specifying filename=<targetfile.txt>
     Manipulate the text file by specifying any keyword arguments understood by Pandas DataFrame to_csv()
@@ -207,62 +217,28 @@ def catalog2txyzm(cat, depth_unit="km", z_dir="depth", time_format="UTCDateTime"
     The dictionary is still returned
     e.g., >>> catalog2basics(catalog, filename="./catalog.txt", sep="\t")
     """
+    from vdapseisutils.compute.catalog import prepare_catalog_points_from_time_format
 
-    # Adjust for depth_unit
-    if depth_unit == "m":
-        dconvert = 1
-    elif depth_unit == "km":
-        dconvert = 1000
-    else:
-        if verbose: print("'depth_unit' not understood. Default value 'km' is used.")
-        dconvert = 1000
-
-    # Assume depths are depths (positive down); multiply by -1 if given as elevations (positive up)
-    if z_dir == "depth":
-        z_dir_convert = 1
-    elif z_dir == "elev":
-        z_dir_convert = -1
-    else:
-        if verbose: print("'depth_unit' not understood. Default value 'depth' is used.")
-        z_dir_convert = 1
-
-    # Adjust for time_format
-    def convert_time_format(utcdatetime):
-        if time_format == "UTCDateTime":
-            return utcdatetime
-        elif time_format == "matplotlib":
-            return utcdatetime.matplotlib_date
-        elif time_format == "datetime":
-            return utcdatetime.datetime
-        else:
-            return utcdatetime.strftime(time_format)
-
-    # Get info out of Events object
-    time = []
-    lat = []
-    lon = []
-    depth = []
-    mag = []
-    for event in cat:
-
-        try:
-            lat.append(event.origins[-1].latitude)
-            lon.append(event.origins[-1].longitude)
-            depth.append(event.origins[-1].depth / dconvert * z_dir_convert)  # meters (by default)
-            if event.magnitudes:
-                mag.append(event.magnitudes[-1].mag if event.magnitudes[-1].mag is not None else -1)  # -1 is the default
-            else:
-                mag.append(-1)
-            time.append(convert_time_format(event.origins[-1].time))
-        except Exception as err:
-            print(f"Skipping event due to error: {err}")
-
-
-    data = dict({"time": time, "lat": lat, "lon": lon, "depth": depth, "mag": mag})
+    df = prepare_catalog_points_from_time_format(
+        cat,
+        time_format=time_format,
+        origin_policy=origin_policy,
+        depth_unit=depth_unit,
+        z_dir=z_dir,
+        verbose=verbose,
+    )
+    data = {
+        "time": df["time"].tolist(),
+        "lat": df["lat"].tolist(),
+        "lon": df["lon"].tolist(),
+        "depth": df["depth"].tolist(),
+        "mag": df["mag"].tolist(),
+    }
 
     if filename:
         pd.DataFrame(data).to_csv(filename, index=False, **to_csv_kwargs)
-        if verbose: print("Catalog printed : {}".format(filename))
+        if verbose:
+            print("Catalog printed : {}".format(filename))
 
     return data
 
