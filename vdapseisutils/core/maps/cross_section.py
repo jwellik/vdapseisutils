@@ -17,7 +17,7 @@ try:
     from .defaults import (
         HEATMAP_DEFAULTS, TICK_DEFAULTS, AXES_DEFAULTS, CROSSSECTION_DEFAULTS, default_volcano,
         PLOT_VOLCANO_DEFAULTS, PLOT_PEAK_DEFAULTS, PLOT_CATALOG_DEFAULTS, PLOT_INVENTORY_DEFAULTS,
-        TITLE_DEFAULTS, SUBTITLE_DEFAULTS
+        TITLE_DEFAULTS, SUBTITLE_DEFAULTS, ensure_maps_mpl_style,
     )
     from .utils import prep_catalog_data_mpl
     from .legends import MagLegend
@@ -29,7 +29,7 @@ except ImportError:
     from vdapseisutils.core.maps.defaults import (
         HEATMAP_DEFAULTS, TICK_DEFAULTS, AXES_DEFAULTS, CROSSSECTION_DEFAULTS, default_volcano,
         PLOT_VOLCANO_DEFAULTS, PLOT_PEAK_DEFAULTS, PLOT_CATALOG_DEFAULTS, PLOT_INVENTORY_DEFAULTS,
-        TITLE_DEFAULTS, SUBTITLE_DEFAULTS
+        TITLE_DEFAULTS, SUBTITLE_DEFAULTS, ensure_maps_mpl_style,
     )
     from vdapseisutils.core.maps.utils import prep_catalog_data_mpl
     from vdapseisutils.core.maps.legends import MagLegend
@@ -49,6 +49,7 @@ class CrossSection:
                  origin=None, radius_km=25.0, azimuth=270, map_extent=None,
                  depth_extent=(-50., 4.), resolution="auto", max_n=100,
                  label="A", width=None, maglegend=MagLegend(), verbose=False, **kwargs):
+        ensure_maps_mpl_style()
 
         # Create figure if none provided
         if fig is None:

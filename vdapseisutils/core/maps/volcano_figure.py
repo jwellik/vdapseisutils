@@ -14,7 +14,7 @@ import cartopy.crs as ccrs
 
 # Handle relative imports for both module and script execution
 try:
-    from .defaults import default_volcano, TITLE_DEFAULTS, SUBTITLE_DEFAULTS
+    from .defaults import default_volcano, TITLE_DEFAULTS, SUBTITLE_DEFAULTS, ensure_maps_mpl_style
     from .map import Map
     from .cross_section import CrossSection
     from .time_series import TimeSeries
@@ -24,7 +24,7 @@ except ImportError:
     import sys
     from pathlib import Path
     sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
-    from vdapseisutils.core.maps.defaults import default_volcano, TITLE_DEFAULTS, SUBTITLE_DEFAULTS
+    from vdapseisutils.core.maps.defaults import default_volcano, TITLE_DEFAULTS, SUBTITLE_DEFAULTS, ensure_maps_mpl_style
     from vdapseisutils.core.maps.map import Map
     from vdapseisutils.core.maps.cross_section import CrossSection
     from vdapseisutils.core.maps.time_series import TimeSeries
@@ -53,6 +53,7 @@ class VolcanoFigure(plt.Figure):
                  hillshade=False,
                  dpi=300,
                  **kwargs):
+        ensure_maps_mpl_style()
 
         # Set default DPI in kwargs if not already specified
         if 'dpi' not in kwargs:

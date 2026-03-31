@@ -13,7 +13,7 @@ from obspy.imaging.util import _set_xaxis_obspy_dates
 
 # Handle relative imports for both module and script execution
 try:
-    from .defaults import TICK_DEFAULTS, AXES_DEFAULTS, CROSSSECTION_DEFAULTS, PLOT_CATALOG_DEFAULTS
+    from .defaults import TICK_DEFAULTS, AXES_DEFAULTS, CROSSSECTION_DEFAULTS, PLOT_CATALOG_DEFAULTS, ensure_maps_mpl_style
     from .utils import prep_catalog_data_mpl
     from .legends import MagLegend
 except ImportError:
@@ -21,7 +21,7 @@ except ImportError:
     import sys
     from pathlib import Path
     sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
-    from vdapseisutils.core.maps.defaults import TICK_DEFAULTS, AXES_DEFAULTS, CROSSSECTION_DEFAULTS, PLOT_CATALOG_DEFAULTS
+    from vdapseisutils.core.maps.defaults import TICK_DEFAULTS, AXES_DEFAULTS, CROSSSECTION_DEFAULTS, PLOT_CATALOG_DEFAULTS, ensure_maps_mpl_style
     from vdapseisutils.core.maps.utils import prep_catalog_data_mpl
     from vdapseisutils.core.maps.legends import MagLegend
 from vdapseisutils.utils.timeutils import convert_timeformat
@@ -38,6 +38,7 @@ class TimeSeries:
     def __init__(self, fig=None, trange=None, axis_type="depth",
                  depth_extent=(-50., 4.), maglegend=MagLegend(),
                  colorbar=False, verbose=False, **kwargs):
+        ensure_maps_mpl_style()
 
         # Create figure if none provided
         if fig is None:

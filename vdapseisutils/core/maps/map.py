@@ -19,7 +19,7 @@ try:
     from .defaults import (
         HEATMAP_DEFAULTS, TICK_DEFAULTS, AXES_DEFAULTS, GRID_DEFAULTS, default_volcano,
         PLOT_VOLCANO_DEFAULTS, PLOT_PEAK_DEFAULTS, PLOT_CATALOG_DEFAULTS, PLOT_INVENTORY_DEFAULTS,
-        WORLD_LOCATION_MAP_DEFAULTS, TITLE_DEFAULTS, SUBTITLE_DEFAULTS
+        WORLD_LOCATION_MAP_DEFAULTS, TITLE_DEFAULTS, SUBTITLE_DEFAULTS, ensure_maps_mpl_style,
     )
     from .utils import prep_catalog_data_mpl, choose_scale_bar_length
 except ImportError:
@@ -30,7 +30,7 @@ except ImportError:
     from vdapseisutils.core.maps.defaults import (
         HEATMAP_DEFAULTS, TICK_DEFAULTS, AXES_DEFAULTS, GRID_DEFAULTS, default_volcano,
         PLOT_VOLCANO_DEFAULTS, PLOT_PEAK_DEFAULTS, PLOT_CATALOG_DEFAULTS, PLOT_INVENTORY_DEFAULTS,
-        WORLD_LOCATION_MAP_DEFAULTS, TITLE_DEFAULTS, SUBTITLE_DEFAULTS
+        WORLD_LOCATION_MAP_DEFAULTS, TITLE_DEFAULTS, SUBTITLE_DEFAULTS, ensure_maps_mpl_style,
     )
     from vdapseisutils.core.maps.utils import prep_catalog_data_mpl, choose_scale_bar_length
 
@@ -310,7 +310,8 @@ class Map:
 
     def __init__(self, fig=None, origin=(default_volcano["lat"], default_volcano["lon"]), 
                  radial_extent_km=50.0, map_extent=None, **kwargs):
-        
+        ensure_maps_mpl_style()
+
         # Create figure if none provided
         if fig is None:
             # Extract figure-specific kwargs
