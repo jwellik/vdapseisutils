@@ -142,3 +142,4 @@ dmypy.json
 # Local files
 local_*/
 vdapseisutils/dev/
+.DS_Store
