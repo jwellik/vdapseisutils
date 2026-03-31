@@ -8,9 +8,13 @@ Author: Jay Wellik, jwellik@vdap.org
 Last updated: 2025-01-27
 """
 
-import os
+import io
 import ssl
 import urllib.request
+
+import numpy as np
+from PIL import Image
+
 import cartopy.io.img_tiles as cimgt
 
 
@@ -41,6 +45,51 @@ def _create_ssl_context(ssl_verify=False):
             return ssl.create_default_context()
 
 
+class _GoogleTilesWithOpener(cimgt.GoogleTiles):
+    """
+    GoogleTiles that uses a dedicated urllib opener (no global install_opener).
+    """
+
+    def __init__(self, *, opener, desired_tile_form="RGB", style="street", url=None, cache=False):
+        self._vdap_opener = opener
+        super().__init__(desired_tile_form=desired_tile_form, style=style, url=url, cache=cache)
+
+    def get_image(self, tile):
+        from urllib.request import HTTPError, Request, URLError
+
+        if self.cache_path is not None:
+            filename = "_".join([str(i) for i in tile]) + ".npy"
+            cached_file = self._cache_dir / filename
+        else:
+            cached_file = None
+
+        if cached_file in self.cache:
+            img = np.load(cached_file, allow_pickle=False)
+        else:
+            url = self._image_url(tile)
+            try:
+                request = Request(url, headers={"User-Agent": self.user_agent})
+                fh = self._vdap_opener.open(request)
+                try:
+                    im_data = io.BytesIO(fh.read())
+                finally:
+                    fh.close()
+                img = Image.open(im_data)
+
+            except (HTTPError, URLError) as err:
+                print(err)
+                img = Image.fromarray(
+                    np.full((256, 256, 3), (250, 250, 250), dtype=np.uint8)
+                )
+
+            img = img.convert(self.desired_tile_form)
+            if self.cache_path is not None:
+                np.save(cached_file, img, allow_pickle=False)
+                self.cache.add(cached_file)
+
+        return img, self.tileextent(tile), "lower"
+
+
 def _create_tile_with_ssl_context(url, cache=False, ssl_verify=False):
     """
     Create a GoogleTiles object with SSL context handling.
@@ -60,18 +109,14 @@ def _create_tile_with_ssl_context(url, cache=False, ssl_verify=False):
         Configured tile source
     """
     ssl_context = _create_ssl_context(ssl_verify)
-    
-    # Create custom opener if SSL context is needed
-    if ssl_context:
-        https_handler = urllib.request.HTTPSHandler(context=ssl_context)
-        opener = urllib.request.build_opener(https_handler)
-        # Set as default opener for urllib
-        urllib.request.install_opener(opener)
-    
-    return cimgt.GoogleTiles(
-        cache=cache,
+    https_handler = urllib.request.HTTPSHandler(context=ssl_context)
+    opener = urllib.request.build_opener(https_handler)
+    return _GoogleTilesWithOpener(
+        opener=opener,
+        desired_tile_form="RGB",
+        style="street",
         url=url,
-        desired_tile_form='RGB'
+        cache=cache,
     )
 
 
