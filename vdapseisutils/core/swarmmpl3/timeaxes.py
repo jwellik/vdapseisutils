@@ -22,6 +22,12 @@ try:
 except ImportError:
     convert_timeformat = None
 
+try:
+    from vdapseisutils.compute.waveforms import compute_spectrogram, prepare_waveform_series
+except ImportError:
+    compute_spectrogram = None
+    prepare_waveform_series = None
+
 
 class TimeAxes:
     """
@@ -80,18 +86,23 @@ class TimeAxes:
         """
         if not isinstance(trace, Trace):
             raise TypeError("Input must be an ObsPy Trace object")
-            
-        # Convert times to datetime objects for plotting
-        times = [trace.stats.starttime.datetime + timedelta(seconds=t) for t in trace.times()]
-        
+
+        if prepare_waveform_series is None:
+            raise ImportError("vdapseisutils.compute.waveforms is required for TimeAxes.plot_waveform")
+
+        ser = prepare_waveform_series(trace, relative_offset_s=0.0)
+        times = [
+            (ser.starttime + timedelta(seconds=float(t))).datetime for t in ser.times_s
+        ]
+
         # Store time extent
         self._time_extent = (trace.stats.starttime, trace.stats.endtime)
-        
+
         # Auto-populate metadata from trace if not already set
         self._update_metadata_from_trace(trace)
-        
+
         # Plot the waveform
-        self.ax.plot(times, trace.data, color=color, **kwargs)
+        self.ax.plot(times, ser.amplitudes, color=color, **kwargs)
         
         # Set xlim to data extent (unless preserving existing xlim)
         if not preserve_xlim:
@@ -130,68 +141,52 @@ class TimeAxes:
         **kwargs : dict
             Additional arguments
         """
-        from scipy.signal import spectrogram
-        from obspy.imaging.spectrogram import _nearest_pow_2
-        
+        if compute_spectrogram is None:
+            raise ImportError("vdapseisutils.compute.waveforms is required for TimeAxes.plot_spectrogram")
+
         if not isinstance(trace, Trace):
             raise TypeError("Input must be an ObsPy Trace object")
-            
+
         if cmap is None:
             if vdap_colors is not None:
                 cmap = vdap_colors.inferno_u
             else:
                 cmap = "inferno"  # matplotlib default
-            
-        # Resample if needed
+
         tr_work = trace.copy()
         if samp_rate:
             tr_work.resample(float(samp_rate))
-        else:
-            samp_rate = tr_work.stats.sampling_rate
-            
-        # Calculate spectrogram
-        fs = tr_work.stats.sampling_rate
-        signal = tr_work.data
-        
-        nfft = int(_nearest_pow_2(wlen * samp_rate))
-        
-        if len(signal) < nfft:
-            raise ValueError(f'Input signal too short ({len(signal)} samples, '
-                           f'window length {wlen} seconds, nfft {nfft} samples)')
-                           
-        nlap = int(nfft * float(overlap))
-        signal = signal - signal.mean()
-        
-        frequencies, times_spec, Sxx = spectrogram(signal, fs=fs, nperseg=nfft, 
-                                                  noverlap=nlap, scaling='spectrum')
-        
-        # Process power values
-        if dbscale:
-            Sxx = 10 * np.log10(Sxx[1:, :])
-        else:
-            Sxx = np.sqrt(Sxx[1:, :])
-        frequencies = frequencies[1:]
-        
-        # Convert times to datetime objects
+
+        spec = compute_spectrogram(
+            tr_work,
+            samp_rate=None,
+            wlen=wlen,
+            overlap=overlap,
+            dbscale=dbscale,
+        )
+        frequencies = spec.frequencies_hz
+        Sxx = spec.power
+        fs = spec.sampling_rate_hz
+
         start_date = tr_work.stats.starttime.datetime
-        times_plot = [start_date + timedelta(seconds=t) for t in times_spec]
-        
+        times_plot = [start_date + timedelta(seconds=float(t)) for t in spec.times_s]
+
         # Store time extent
         self._time_extent = (tr_work.stats.starttime, tr_work.stats.endtime)
-        
+
         # Auto-populate metadata from trace if not already set
         self._update_metadata_from_trace(trace)
-        
+
         # Plot spectrogram
         self.ax.pcolormesh(times_plot, frequencies, Sxx, shading='auto', cmap=cmap, **kwargs)
-        
+
         # Set xlim to data extent
         self.ax.set_xlim(times_plot[0], times_plot[-1])
-        
+
         # Configure axes
         if log_power:
             self.ax.set_yscale('log')
-        self.ax.set_ylim(0.1, samp_rate / 2.0)
+        self.ax.set_ylim(0.1, fs / 2.0)
         self.ax.yaxis.set_ticks_position("right")
         self.ax.set_xlabel("")
         self.ax.set_ylabel("")

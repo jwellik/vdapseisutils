@@ -9,6 +9,12 @@ Submodules: ``catalog``, ``waveforms``, ``maps`` (map-adjacent pure helpers when
 
 from . import catalog, maps, waveforms
 from .catalog import prepare_catalog_points, prepare_catalog_points_from_time_format
+from .waveforms import (
+    SpectrogramResult,
+    WaveformSeriesResult,
+    compute_spectrogram,
+    prepare_waveform_series,
+)
 
 __all__ = [
     "catalog",
@@ -16,4 +22,8 @@ __all__ = [
     "waveforms",
     "prepare_catalog_points",
     "prepare_catalog_points_from_time_format",
+    "SpectrogramResult",
+    "WaveformSeriesResult",
+    "compute_spectrogram",
+    "prepare_waveform_series",
 ]

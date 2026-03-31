@@ -100,6 +100,7 @@ from obspy import Stream, UTCDateTime
 from vdapseisutils.core.datasource.waveID import waveID
 from vdapseisutils.style import colors as vdap_colors
 from vdapseisutils.utils.timeutils import convert_timeformat
+from vdapseisutils.compute.waveforms import compute_spectrogram, prepare_waveform_series
 from vdapseisutils.core.maps.maps import prep_catalog_data_mpl
 
 
@@ -228,13 +229,14 @@ def plot_wave(tr, tick_type="datetime", relative_offset=0, color="k", ax=None, *
     if not ax:
         fig, ax = plt.subplots(1, 1, figsize=figsize_default)
 
-    # Convert time values to datetime objects
+    ser = prepare_waveform_series(tr, relative_offset_s=float(relative_offset))
     if tick_type == "datetime":
-        times_w = [(tr.stats.starttime + timedelta(seconds=t)).datetime for t in
-                   tr.times()]  # time vector for the waveform (w)
-    else:  # "relative"
-        times_w = [relative_offset + t for t in tr.times()]
-    ax.plot(times_w, tr.data, color=color, **kwargs)
+        times_w = [
+            (ser.starttime + timedelta(seconds=float(t))).datetime for t in ser.times_s
+        ]
+    else:
+        times_w = list(ser.times_s)
+    ax.plot(times_w, ser.amplitudes, color=color, **kwargs)
     ax.yaxis.set_ticks_position("right")
     ax.ticklabel_format(axis="y", style='sci', scilimits=(0, 0))
     # ax.yaxis.set_major_formatter(mpl.ticker.StrMethodFormatter("{:2.1f}"))
@@ -248,75 +250,36 @@ def plot_spectrogram(tr, samp_rate=None, wlen=2.0, overlap=0.86, dbscale=True, l
 
     # TODO Don't make spectrogram if data are empty or if all NaN
 
-    import numpy as np
     import matplotlib.pyplot as plt
-    from scipy.signal import spectrogram
-    from datetime import timedelta
-    from obspy.imaging.spectrogram import _nearest_pow_2
 
     if samp_rate:
         tr.resample(float(samp_rate))
-    else:
-        samp_rate = tr.stats.sampling_rate
 
-    # data and sample rates
-    fs = tr.stats.sampling_rate
-    signal = tr.data
+    spec = compute_spectrogram(
+        tr,
+        samp_rate=None,
+        wlen=wlen,
+        overlap=overlap,
+        dbscale=dbscale,
+    )
+    frequencies = spec.frequencies_hz
+    Sxx = spec.power
+    fs = spec.sampling_rate_hz
+    times = spec.times_s
 
-    # Determine variables
-    if not wlen:
-        wlen = 128 / samp_rate
-
-    npts = len(signal)
-
-    nfft = int(_nearest_pow_2(wlen * samp_rate))
-
-    if npts < nfft:
-        msg = (f'Input signal too short ({npts} samples, window length '
-               f'{wlen} seconds, nfft {nfft} samples, sampling rate '
-               f'{samp_rate} Hz)')
-        raise ValueError(msg)
-
-    # if mult is not None:
-    #     mult = int(_nearest_pow_2(mult))
-    #     mult = mult * nfft
-    nlap = int(nfft * float(overlap))
-
-    signal = signal - signal.mean()
-
-    frequencies, times, Sxx = spectrogram(signal, fs=fs, nperseg=nfft, noverlap=nlap, scaling='spectrum')
-
-    # db scale and remove zero/offset for amplitude
-    if dbscale:
-        Sxx = 10 * np.log10(Sxx[1:, :])
-    else:
-        Sxx = np.sqrt(Sxx[1:, :])
-    frequencies = frequencies[1:]
-
-    # vmin, vmax = clip
-    # if vmin < 0 or vmax > 1 or vmin >= vmax:
-    #     msg = "Invalid parameters for clip option."
-    #     raise ValueError(msg)
-    # _range = float(Sxx.max() - Sxx.min())
-    # vmin = Sxx.min() + vmin * _range
-    # vmax = Sxx.min() + vmax * _range
-    # norm = Normalize(vmin, vmax, clip=True)
-
-    # Convert time values to datetime objects
     start_date = tr.stats.starttime.datetime
     if tick_type == "datetime":
-        times_g = [start_date + timedelta(seconds=t) for t in times]  # time vector for g_kwargs (g)
-    else:  # "relative"
-        times_g = [relative_offset + t for t in times]
+        times_g = [start_date + timedelta(seconds=float(t)) for t in times]
+    else:
+        times_g = [relative_offset + float(t) for t in times]
 
-    # Plot the g_kwargs with dates on the x-axis
     if not ax:
         fig, ax = plt.subplots(1, 1, figsize=figsize_default)
 
     ax.pcolormesh(times_g, frequencies, Sxx, shading='auto', cmap=cmap)  # plot g_kwargs
     if log_power:
         ax.set_yscale('log')  # Use a logarithmic scale for the y-axis
-    ax.set_ylim(0.1, samp_rate / 2.0)  # Set the frequency range to 0.5 - 25 Hz
+    ax.set_ylim(0.1, fs / 2.0)  # Set the frequency range to 0.5 - 25 Hz
     ax.yaxis.set_ticks_position("right")
     ax.set_xlabel("")
     ax.set_ylabel("")
