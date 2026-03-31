@@ -214,8 +214,7 @@ def plot_trace(tr, mode="wg", tick_type="datetime", relative_offset=0, fig=None,
     idx = s.index(".", 3)  # ? gets second instance of "." assuming NN.SS....
     s1, s2 = s[:idx], s[idx + 1:]
     fig.axes[-1].text(
-        # -0.01, 0.67, s1 + "\n" + s2, transform=fig.axes[-1].transAxes, rotation='horizontal',
-        -0.01, 0.67, idx, transform=fig.axes[-1].transAxes, rotation='horizontal',
+        -0.01, 0.67, s1 + "\n" + s2, transform=fig.axes[-1].transAxes, rotation='horizontal',
         horizontalalignment="right", verticalalignment='center', fontsize=fontsize_default,
     )
 

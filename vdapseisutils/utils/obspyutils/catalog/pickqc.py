@@ -5,7 +5,6 @@ This module provides methods for comparing phase arrivals between catalogs
 and visualizing the results for quality control purposes.
 """
 
-import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
@@ -211,6 +210,8 @@ class VCatalogPickQCMixin:
         axes : numpy.ndarray
             Array of axes objects
         """
+        import matplotlib.pyplot as plt
+
         # Group data by station and determine station order
         grouped = df.groupby('station')
         
@@ -360,6 +361,8 @@ class VCatalogPickQCMixin:
         ax : matplotlib.axes.Axes
             The axes object
         """
+        import matplotlib.pyplot as plt
+
         # Group data by station and determine station order
         grouped = df.groupby('station')
         

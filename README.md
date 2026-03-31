@@ -65,3 +65,7 @@ python
 
 This runs a script that reads .arc files from Wy'East/Mt Hood, Oregon and plots them on a map and cross sections. See the [Gallery](https://github.com/jwellik/vdapseisutils/tree/main/gallery) for more examples and usage.
 
+### Maps imports (API v1)
+
+Map classes are implemented under `vdapseisutils.core.maps` (e.g. `map.py`, `volcano_figure.py`). The module `vdapseisutils.core.maps.maps` is a **compatibility shim** that re-exports those symbols; existing imports such as `from vdapseisutils.core.maps.maps import Map` remain valid. Prefer `from vdapseisutils.core.maps import Map` in new code. Backend-neutral compute will grow under `vdapseisutils.compute` (see the package docstring there).
+

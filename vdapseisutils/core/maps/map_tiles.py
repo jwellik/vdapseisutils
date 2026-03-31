@@ -314,3 +314,14 @@ def add_tile_with_projection_check(ax, tile_source, zoom, tile_name="tile", verb
         print(f"Error adding {tile_name} tiles: {e}")
         print("This might be due to projection mismatch or network issues")
         raise
+
+
+class ShadedReliefESRI(cimgt.GoogleTiles):
+    """Deprecated ESRI shaded relief tiles (legacy; prefer other tile sources)."""
+
+    def _image_url(self, tile):
+        x, y, z = tile
+        return (
+            "https://server.arcgisonline.com/ArcGIS/rest/services/"
+            "World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}.jpg"
+        ).format(z=z, y=y, x=x)
