@@ -33,6 +33,7 @@ dependencies = [
 # PyTables (tables) needs a system HDF5 install. On macOS: brew install hdf5, then set HDF5_DIR.
 # Only install this extra if you need HDF5/PyTables support.
 tables = ["tables"]
+dev = ["pytest"]
 
 [project.urls]
 Homepage = "https://github.com/jwellik/vdapseisutils"
@@ -41,3 +42,7 @@ Homepage = "https://github.com/jwellik/vdapseisutils"
 where = ["."]
 include = ["vdapseisutils*"]
 exclude = ["tests*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

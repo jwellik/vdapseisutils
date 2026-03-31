@@ -470,7 +470,7 @@ class ClipboardClass(plt.Figure):
                 xlabel = "Time (s)"
         else:
             if self.taxis["tick_type"] == "datetime":
-                self.taxis["xlim"] = self.time_extent
+                self.taxis["xlim"] = [tuple(row) for row in self.taxis["time_lim"]]
                 xlabel = "Time"
             else:
                 self.taxis["xlim"] = [(0, tr.stats.endtime - tr.stats.starttime) for tr in st]  # length of maximum start:end extent in seconds
@@ -504,6 +504,9 @@ class ClipboardClass(plt.Figure):
             for i, xlim in enumerate(self.taxis["time_lim"]):
                 self.taxis["time_lim"][i] = (
                 self.taxis["time_lim"][i][0], self.taxis["time_lim"][i][0] + max_length_t)  # reset time_lim
+
+        # Per-trace (start, end) in datetime units; mirrors taxis["time_lim"] after force_length adjustments.
+        self.time_extent = [tuple(row) for row in self.taxis["time_lim"]]
 
         # set xlim (Actually set the xlim on the plot axes)
         for i, sf in enumerate(self.subfigs):
@@ -639,19 +642,25 @@ class TimeSeries(plt.Axes):
             print(all_values)
 
 
-    def plot(self, t, data,  *args, units="datetime", **kwargs):
-        self.scatter(convert_timeformat(t, "datetime"), data, *args, **kwargs)
-        self.time_lim.append([min(convert_timeformat(t, "datetime")), max(convert_timeformat(t, "datetime"))])
+    def plot(self, t, data, *args, units="datetime", **kwargs):
+        td = convert_timeformat(t, "datetime")
+        super().plot(td, data, *args, **kwargs)
+        self.time_lim.append([min(td), max(td)])
         self._set_xlim_auto()
 
     def scatter(self, t, data, *args, units="datetime", **kwargs):
-        self.scatter(convert_timeformat(t, "datetime"), data, *args, **kwargs)
-        self.time_lim.append([min(convert_timeformat(t, "datetime")), max(convert_timeformat(t, "datetime"))])
+        td = convert_timeformat(t, "datetime")
+        super().scatter(td, data, *args, **kwargs)
+        self.time_lim.append([min(td), max(td)])
+        self._set_xlim_auto()
 
     def axvline(self, t, *args, units="datetime", **kwargs):
-        self.axvline(convert_timeformat(t, "datetime"), *args, **kwargs)
-    def axvspan(self, t, *args, units="datetime", **kwargs):
-        self.axvspan(convert_timeformat(t, "datetime"), *args, **kwargs)
+        x = convert_timeformat(t, "datetime")[0]
+        super().axvline(x, *args, **kwargs)
+
+    def axvspan(self, xmin, xmax, *args, units="datetime", **kwargs):
+        span = convert_timeformat([xmin, xmax], "datetime")
+        super().axvspan(span[0], span[1], *args, **kwargs)
 
     def plot_catalog(self, catalog, yaxis_type="depth", s="magnitude", c="time", alpha=0.5, **kwargs):
 
@@ -686,9 +695,11 @@ class TimeSeries(plt.Axes):
         self._set_xlim_auto()
 
     def imshow(self, t, img, **kwargs):
-        xmin, xmax = convert_timeformat(min(t), "datetime"), convert_timeformat(max(t), "datetime")
-        self.imshow(img, **kwargs)
-        self.set_xlim(xmin, xmax)  # ? set xextent?
+        t_sorted = sorted(t)
+        span = convert_timeformat([t_sorted[0], t_sorted[-1]], "datetime")
+        xmin, xmax = span[0], span[1]
+        super().imshow(img, **kwargs)
+        self.set_xlim(xmin, xmax)
 
 
 

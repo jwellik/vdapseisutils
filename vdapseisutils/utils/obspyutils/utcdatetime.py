@@ -403,12 +403,12 @@ class VUTCDateTime(UTCDateTime):
     def pandas_timestamp(self):
         """Convert to pandas Timestamp."""
         import pandas as pd
-        return pd.Timestamp(self)
+        return pd.Timestamp(self.datetime)
     
     @property
     def matplotlib_date(self):
-        """Convert to matplotlib date number."""
-        return self.matplotlib_date
+        """Convert to matplotlib date number (delegates to ObsPy UTCDateTime)."""
+        return float(super().matplotlib_date)
     
     @property
     def datetime_obj(self):
@@ -465,21 +465,21 @@ class VUTCDateTime(UTCDateTime):
         Various types depending on format
         """
         format_map = {
-            "pandas": self.pandas_timestamp,
-            "matplotlib": self.matplotlib_date,
-            "datetime": self.datetime_obj,
-            "timestamp": self.timestamp_seconds,
-            "numpy": self.numpy_datetime64,
-            "nonlinloc": self.nonlinloc_str,
-            "hypoinverse": self.hypoinverse_str,
-            "compact": self.compact_str,
-            "iso": self.iso_str,
+            "pandas": lambda: self.pandas_timestamp,
+            "matplotlib": lambda: self.matplotlib_date,
+            "datetime": lambda: self.datetime_obj,
+            "timestamp": lambda: self.timestamp_seconds,
+            "numpy": lambda: self.numpy_datetime64,
+            "nonlinloc": lambda: self.nonlinloc_str,
+            "hypoinverse": lambda: self.hypoinverse_str,
+            "compact": lambda: self.compact_str,
+            "iso": lambda: self.iso_str,
         }
         
         if format_type.lower() not in format_map:
             raise ValueError(f"Unknown format: {format_type}. Available: {list(format_map.keys())}")
         
-        return format_map[format_type.lower()]
+        return format_map[format_type.lower()]()
     
     @classmethod
     def convert_list(cls, time_list, format_type="UTCDateTime"):
