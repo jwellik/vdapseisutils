@@ -638,7 +638,7 @@ def _test_volcano_figure():
         # Test info method
         print("✓ VolcanoFigure info:")
         vf.info()
-        
+
         return True
         
     except Exception as e:

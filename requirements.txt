@@ -1,0 +1,15 @@
+# vdapseisutils dependencies (from pyproject.toml)
+numpy
+scipy
+matplotlib
+obspy
+pandas
+bokeh
+cartopy
+timezonefinder
+unidecode
+geopy
+nllgrid
+
+# Optional: PyTables (needs system HDF5, e.g. brew install hdf5)
+# tables

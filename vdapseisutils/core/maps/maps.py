@@ -1060,7 +1060,6 @@ class Map:
         add_arcgis_terrain(
             self.ax, 
             zoom=zoom, 
-            style=style, 
             cache=cache, 
             radial_extent_km=self.properties.get("radial_extent_km")
         )

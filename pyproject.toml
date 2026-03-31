@@ -21,7 +21,6 @@ dependencies = [
     "matplotlib",
     "obspy",
     "pandas",
-    "tables",
     "bokeh",
     "cartopy",
     "timezonefinder",
@@ -29,6 +28,11 @@ dependencies = [
     "geopy",
     "nllgrid",
 ]
+
+[project.optional-dependencies]
+# PyTables (tables) needs a system HDF5 install. On macOS: brew install hdf5, then set HDF5_DIR.
+# Only install this extra if you need HDF5/PyTables support.
+tables = ["tables"]
 
 [project.urls]
 Homepage = "https://github.com/jwellik/vdapseisutils"

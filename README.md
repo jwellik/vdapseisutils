@@ -45,6 +45,12 @@ You activate by sourcing the *script inside* the environment directory (`vseis31
 
 Optional: run without activating: `uv run python ...`, `uv run pytest`, etc.
 
+**Optional: PyTables (HDF5)**  
+The package does not require `tables` (PyTables) by default. If you need it, install the system HDF5 library first, then the extra:
+
+- **macOS (Homebrew):** `brew install hdf5`, then `export HDF5_DIR=$(brew --prefix hdf5)` and `pip install ".[tables]"` (or `uv sync --extra tables`).
+- **Conda:** `conda install hdf5` then `pip install ".[tables]"`.
+
 ## Usage
 
 This package is still in development. If you have trouble with these codes, let me know.
