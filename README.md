@@ -73,6 +73,8 @@ Map classes are implemented under `vdapseisutils.core.maps` (e.g. `map.py`, `vol
 
 **Maps matplotlib style (no import-time rc):** Pure style dicts live in `vdapseisutils.core.maps.defaults_constants`. Importing that module does not load Matplotlib or change `rcParams`. To apply the maps theme globally, call `vdapseisutils.core.maps.defaults.register_maps_mpl_style()` once (e.g. at app startup). Map constructors (`Map`, `CrossSection`, `VolcanoFigure`, `TimeSeries`) call `ensure_maps_mpl_style()` so figures still get the intended defaults when those classes are used without a prior explicit registration.
 
+**Maps / volcano layout (narrative + examples, API v1 §11):** See [`docs/maps_volcano_api_v1.md`](docs/maps_volcano_api_v1.md) for how `Map`, `VolcanoFigure`, `CrossSection`, `TimeSeries`, and `MagLegend` fit together, import paths, `register_pyplot()` (`plt.eqmap` / `plt.volcano`), and catalog compute via `vdapseisutils.compute.catalog.prepare_catalog_points`. Runnable offline examples from the repo root: `python examples/map_minimal.py`, `python examples/volcano_figure_layout.py`, `python examples/cross_section_standalone.py` (or `uv run python …`).
+
 **Waveform and spectrogram compute:** Shared, backend-neutral helpers live in `vdapseisutils.compute.waveforms`: `prepare_waveform_series` returns a `WaveformSeriesResult` (time axis and data); `compute_spectrogram` returns a `SpectrogramResult` (frequency, time offset, power) using the SciPy spectrogram path aligned with Swarm-style plots. `swarmmpl` and `swarmmpl3` plotting code calls these helpers then draws; use the same APIs if you need arrays without Matplotlib.
 
 ### Pyplot helpers (`register_pyplot`)
