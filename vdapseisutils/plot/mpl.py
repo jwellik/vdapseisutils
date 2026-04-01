@@ -19,8 +19,8 @@ _wrappers: Tuple[Callable[..., Any], ...] | None = None
 def _build_pyplot_constructors() -> Tuple[Callable[..., Any], ...]:
     from vdapseisutils.core.maps.map import Map
     from vdapseisutils.core.maps.volcano_figure import VolcanoFigure
-    from vdapseisutils.core.swarmmpl.clipboard import Clipboard, ClipboardClass
-    from vdapseisutils.core.swarmmpl.heli import Helicorder
+    from vdapseisutils.plot.swarm import Clipboard, ClipboardClass
+    from vdapseisutils.plot.swarm import Helicorder
 
     def helicorder(*args, **kwargs):
         return Helicorder(*args, **kwargs)
@@ -60,12 +60,11 @@ def _build_pyplot_constructors() -> Tuple[Callable[..., Any], ...]:
     swarm.__name__ = "swarm"
     swarm.__qualname__ = "swarm"
     swarm.__doc__ = (
-        "Interim ``plt.swarm`` constructor (API v1 §3).\n\n"
-        "There is no dedicated ``SwarmFigure`` class yet. This entry point "
-        "delegates to the same backend as ``plt.clipboard`` "
-        "(:func:`vdapseisutils.core.swarmmpl.clipboard.Clipboard`), so §8 "
-        "swarm consolidation can swap internals later without changing the "
-        "pyplot name."
+        "``plt.swarm`` constructor (API v1 §3).\n\n"
+        "Returns a :class:`vdapseisutils.plot.swarm.SwarmFigure` instance "
+        "(alias of :class:`vdapseisutils.plot.swarm.ClipboardClass`), same "
+        "backend as ``plt.clipboard`` "
+        "(:func:`vdapseisutils.plot.swarm.Clipboard`)."
     )
 
     return (helicorder, clipboard, eqmap, volcano, swarm)
@@ -78,12 +77,11 @@ def register_pyplot() -> None:
 
     Adds:
 
-    - ``plt.helicorder`` → :class:`vdapseisutils.core.swarmmpl.heli.Helicorder`
-    - ``plt.clipboard`` → same object as
-      :func:`vdapseisutils.core.swarmmpl.clipboard.Clipboard`
+    - ``plt.helicorder`` → :class:`vdapseisutils.plot.swarm.Helicorder`
+    - ``plt.clipboard`` → same object as :func:`vdapseisutils.plot.swarm.Clipboard`
     - ``plt.eqmap`` → :class:`vdapseisutils.core.maps.map.Map`
     - ``plt.volcano`` → :class:`vdapseisutils.core.maps.volcano_figure.VolcanoFigure`
-    - ``plt.swarm`` → interim alias; same backend as ``plt.clipboard`` (see its docstring)
+    - ``plt.swarm`` → same as ``plt.clipboard``; returns :class:`vdapseisutils.plot.swarm.SwarmFigure`
 
     Canonical spec: ``API_V1_CANONICAL.md`` §3.
     """
