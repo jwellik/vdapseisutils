@@ -45,4 +45,6 @@ exclude = ["tests*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# "." helps editable installs; ``tests/conftest.py`` also forces the repo root and purges
+# a mistaken ``vdapseisutils`` import when a parent directory shadows the real package.
 pythonpath = ["."]
