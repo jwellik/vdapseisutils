@@ -87,5 +87,32 @@ vsmpl.register_pyplot()
 fig = plt.helicorder(...)   # or plt.clipboard / plt.eqmap / plt.volcano / plt.swarm
 ```
 
-After `register_pyplot()`, those names construct the corresponding project types (`Helicorder`, clipboard figure, `Map`, `VolcanoFigure`; `plt.swarm` is an interim alias to the clipboard backend—see `vdapseisutils.plot.mpl`).
+After `register_pyplot()`, those names construct the corresponding project types (`Helicorder`, clipboard / `SwarmFigure`, `Map`, `VolcanoFigure`; `plt.swarm` matches `plt.clipboard`—see `vdapseisutils.plot.mpl`).
+
+### Swarm imports (API v1)
+
+Swarm-style plotting (multi-trace clipboard, helicorder, v3 time axes / panels) has one **canonical** import path. Legacy `swarmmpl`, `swarmmpl2`, and `swarmmpl3` remain importable as shims but emit `DeprecationWarning` and are scheduled for removal no earlier than **v0.2.0**. Policy and migration expectations are in [`.local/api-v1-coord/API_V1_CANONICAL.md`](.local/api-v1-coord/API_V1_CANONICAL.md) **§8** (Swarm consolidation).
+
+**Canonical (new code):**
+
+```python
+from vdapseisutils.plot.swarm import (
+    Helicorder,
+    Clipboard,          # legacy factory → ClipboardClass / SwarmFigure
+    ClipboardClass,
+    SwarmFigure,        # alias of ClipboardClass (API v1 §3)
+    TimeAxes,
+    Panel,
+    SwarmClipboard,     # v3 panel clipboard (distinct from the legacy Clipboard factory)
+)
+```
+
+**Deprecated (still works):**
+
+```python
+from vdapseisutils.core.swarmmpl.clipboard import Clipboard, ClipboardClass
+import vdapseisutils.core.swarmmpl3  # or swarmmpl / swarmmpl2
+```
+
+Prefer `clipboard_figure` if you want an explicit name for the legacy factory; it is the same callable as `Clipboard`.
 
