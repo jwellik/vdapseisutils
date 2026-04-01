@@ -7,7 +7,7 @@ for creating visually appealing terrain visualizations.
 """
 
 import matplotlib.pyplot as plt
-from vdapseisutils.core.maps.maps import Map
+from vdapseisutils.core.maps import Map
 
 def demo_hillshade_modes():
     """Demonstrate different hillshade blending modes."""

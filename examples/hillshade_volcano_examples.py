@@ -16,7 +16,7 @@ from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import numpy as np
 
 # Import the hillshade function
-from vdapseisutils.core.maps.maps import add_hillshade_pygmt
+from vdapseisutils.core.maps.map import add_hillshade_pygmt
 from vdapseisutils.utils.geoutils import radial_extent2map_extent
 
 def create_volcano_hillshade_map(lon, lat, name, radius_km, resolution="auto", 

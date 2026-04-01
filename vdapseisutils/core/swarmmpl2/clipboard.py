@@ -9,7 +9,7 @@ from obspy import Stream, UTCDateTime
 from vdapseisutils.core.datasource.waveID import waveID
 from vdapseisutils.style import colors as vdap_colors
 from vdapseisutils.utils.timeutils import convert_timeformat
-from vdapseisutils.core.maps.maps import prep_catalog_data_mpl
+from vdapseisutils.core.maps.utils import prep_catalog_data_mpl
 
 # Plot defaults
 spectrogram_defaults = {"samp_rate": 50, "wlen": 6, "overlap": 0.5, "dbscale": True, "log_power": False,

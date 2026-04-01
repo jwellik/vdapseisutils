@@ -10,7 +10,9 @@ from obspy import Trace, UTCDateTime
 
 def test_maps_shim_same_objects_as_split_modules():
     from vdapseisutils.core.maps import map as map_mod
-    from vdapseisutils.core.maps import maps as maps_shim
+
+    with pytest.warns(DeprecationWarning, match="vdapseisutils.core.maps.maps is deprecated"):
+        from vdapseisutils.core.maps import maps as maps_shim
 
     assert maps_shim.Map is map_mod.Map
     assert maps_shim.add_hillshade_pygmt is map_mod.add_hillshade_pygmt

@@ -1,16 +1,34 @@
 """
-Backward-compatible re-exports for the split ``vdapseisutils.core.maps`` package.
+Deprecated compatibility re-exports for the split ``vdapseisutils.core.maps`` package.
 
-Implementations live in ``map.py``, ``cross_section.py``, ``volcano_figure.py``,
-``time_series.py``, ``legends.py``, ``utils.py``, ``map_tiles.py``, and
-``defaults.py``. Prefer ``from vdapseisutils.core.maps import Map`` in new code;
-this module remains so existing imports such as
-``from vdapseisutils.core.maps.maps import Map, prep_catalog_data_mpl`` keep working.
+**Do not import this module in new code.** Implementations live in ``map.py``,
+``cross_section.py``, ``volcano_figure.py``, ``time_series.py``, ``legends.py``,
+``utils.py``, ``map_tiles.py``, and ``defaults.py``. Use for example::
 
-See ``.local/api-v1-coord/API_V1_CANONICAL.md`` §7 and §13.2 (maps shim strategy).
+    from vdapseisutils.core.maps import Map, VolcanoFigure, CrossSection, TimeSeries, MagLegend
+    from vdapseisutils.core.maps.utils import prep_catalog_data_mpl
+    from vdapseisutils.core.maps.map import Map, add_hillshade_pygmt
+
+This stub remains only so old ``from vdapseisutils.core.maps.maps import ...`` paths
+still resolve; importing it emits :exc:`DeprecationWarning` and the module will be
+removed in a future release.
+
+See ``.local/api-v1-coord/API_V1_CANONICAL.md`` §13.5.
 """
 
+from __future__ import annotations
+
+import warnings
+
 import matplotlib as mpl
+
+warnings.warn(
+    "vdapseisutils.core.maps.maps is deprecated: import from vdapseisutils.core.maps "
+    "(package), or from vdapseisutils.core.maps.map, .utils, .cross_section, etc. "
+    "This module will be removed in a future release.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 from .cross_section import CrossSection
 from .defaults import (

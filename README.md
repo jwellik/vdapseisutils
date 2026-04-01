@@ -67,7 +67,7 @@ This runs a script that reads .arc files from Wy'East/Mt Hood, Oregon and plots 
 
 ### Maps imports (API v1)
 
-Map classes are implemented under `vdapseisutils.core.maps` (e.g. `map.py`, `volcano_figure.py`). The module `vdapseisutils.core.maps.maps` is a **compatibility shim** that re-exports those symbols; existing imports such as `from vdapseisutils.core.maps.maps import Map` remain valid. Prefer `from vdapseisutils.core.maps import Map` in new code. Backend-neutral compute will grow under `vdapseisutils.compute` (see the package docstring there).
+Map classes are implemented under `vdapseisutils.core.maps` (e.g. `map.py`, `volcano_figure.py`). The module `vdapseisutils.core.maps.maps` is **deprecated**: importing it emits `DeprecationWarning` and re-exports the same symbols for now; it will be removed in a future release. Prefer `from vdapseisutils.core.maps import Map` (and `from vdapseisutils.core.maps.utils import prep_catalog_data_mpl`, etc.). Backend-neutral compute lives under `vdapseisutils.compute` (see the package docstring there).
 
 **Catalog points and origins:** Use `vdapseisutils.compute.catalog.prepare_catalog_points` (or `prepare_catalog_points_from_time_format` for legacy `time_format` strings) for matplotlib-free tables of hypocenter data. `vdapseisutils.utils.obspyutils.catalog.origin.get_primary_origin` selects the QuakeML preferred origin when present, otherwise the first origin—the same rule used for VCatalog event-rate extraction, scatter maps, and `catalog2txyzm` by default. Pass `origin_policy="last"` to `catalog2txyzm` if you need the old “last origin in the list” behavior.
 

@@ -101,7 +101,7 @@ from vdapseisutils.core.datasource.waveID import waveID
 from vdapseisutils.style import colors as vdap_colors
 from vdapseisutils.utils.timeutils import convert_timeformat
 from vdapseisutils.compute.waveforms import compute_spectrogram, prepare_waveform_series
-from vdapseisutils.core.maps.maps import prep_catalog_data_mpl
+from vdapseisutils.core.maps.utils import prep_catalog_data_mpl
 
 
 # Plot defaults

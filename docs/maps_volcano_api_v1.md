@@ -12,12 +12,11 @@ This page summarizes the **map stack** types named in `.local/api-v1-coord/API_V
 
 ## Import paths
 
-Canonical implementations live under **`vdapseisutils.core.maps`** (split modules). The module **`vdapseisutils.core.maps.maps`** is a **shim** that re-exports the same symbols for older import paths.
+Canonical implementations live under **`vdapseisutils.core.maps`** (split modules). The module **`vdapseisutils.core.maps.maps`** is **deprecated** (importing it emits `DeprecationWarning` and will be removed); use the package or submodule imports below.
 
 ```python
 from vdapseisutils.core.maps import Map, VolcanoFigure, CrossSection, TimeSeries, MagLegend
-# Equivalent for legacy code:
-from vdapseisutils.core.maps.maps import Map, VolcanoFigure, CrossSection, TimeSeries, MagLegend
+from vdapseisutils.core.maps.utils import prep_catalog_data_mpl
 ```
 
 The top-level package **`vdapseisutils`** also re-exports **`VolcanoFigure`**, **`Map`**, **`CrossSection`**, **`TimeSeries`**, and **`MagLegend`** from `vdapseisutils/__init__.py` (see that file for the current list).
