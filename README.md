@@ -75,3 +75,17 @@ Map classes are implemented under `vdapseisutils.core.maps` (e.g. `map.py`, `vol
 
 **Waveform and spectrogram compute:** Shared, backend-neutral helpers live in `vdapseisutils.compute.waveforms`: `prepare_waveform_series` returns a `WaveformSeriesResult` (time axis and data); `compute_spectrogram` returns a `SpectrogramResult` (frequency, time offset, power) using the SciPy spectrogram path aligned with Swarm-style plots. `swarmmpl` and `swarmmpl3` plotting code calls these helpers then draws; use the same APIs if you need arrays without Matplotlib.
 
+### Pyplot helpers (`register_pyplot`)
+
+You can attach VDAPSeisUtils figure constructors to Matplotlib’s pyplot module (API v1 section 3 in `.local/api-v1-coord/API_V1_CANONICAL.md`):
+
+```python
+import matplotlib.pyplot as plt
+import vdapseisutils.plot.mpl as vsmpl
+
+vsmpl.register_pyplot()
+fig = plt.helicorder(...)   # or plt.clipboard / plt.eqmap / plt.volcano / plt.swarm
+```
+
+After `register_pyplot()`, those names construct the corresponding project types (`Helicorder`, clipboard figure, `Map`, `VolcanoFigure`; `plt.swarm` is an interim alias to the clipboard backend—see `vdapseisutils.plot.mpl`).
+
