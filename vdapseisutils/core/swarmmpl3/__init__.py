@@ -1,5 +1,8 @@
 """
-swarmmpl3: Enhanced time-series plotting for seismic data
+swarmmpl3: Enhanced time-series plotting for seismic data (deprecated).
+
+Prefer :mod:`vdapseisutils.plot.swarm` (API v1 §8). There, the v3 panel clipboard
+class is exposed as :class:`vdapseisutils.plot.swarm.SwarmClipboard`.
 
 A more structured and object-oriented approach to plotting ObsPy Stream and Trace objects
 with waveforms and spectrograms.
@@ -14,6 +17,12 @@ Convenience functions:
     swarmg: Plot spectrogram only  
     swarmwg: Plot waveform + spectrogram panel
 """
+
+from __future__ import annotations
+
+from vdapseisutils.core._swarm_deprecation import warn_swarm_legacy_package
+
+warn_swarm_legacy_package(legacy_qualname="vdapseisutils.core.swarmmpl3")
 
 from .timeaxes import TimeAxes
 from .panel import Panel
