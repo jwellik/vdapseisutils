@@ -66,9 +66,9 @@ def sortStreamByNSLClist(st_in, nslc_list, verbose=False):
 def createEmptyTrace(nslc, t1, t2, sampling_rate=100, dtype='int32'):
     from obspy import Trace
     # from vdapseisutils.core.datasource.nslcutils import str2nslc
-    from vdapseisutils.core.datasource.waveID import waveID
+    from vdapseisutils.obspy_ext import VStreamID
 
-    net, sta, loc, cha = waveID(nslc).parts()  # get network, station, location, channel
+    net, sta, loc, cha = VStreamID(nslc).parts()  # get network, station, location, channel
 
     stmp = Trace()
     stmp.stats['network'] = net

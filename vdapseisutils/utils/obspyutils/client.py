@@ -170,7 +170,7 @@ class VClient:
         - starttime and endtime can be strings or UTCDateTime
         - Bulk requests are only used if self.use_bulk is True (automatically False for Earthworm clients)
         """
-        from vdapseisutils.core.datasource.waveID import waveID
+        from vdapseisutils.obspy_ext import VStreamID
         from obspy import UTCDateTime
         # Handle id/waveformID as positional or keyword
         id_ = kwargs.pop('id', None) or kwargs.pop('waveformID', None)
@@ -186,7 +186,7 @@ class VClient:
         if isinstance(id_, list) and self.use_bulk:
             bulk_args = []
             for idstr in id_:
-                net, sta, loc, cha = waveID(idstr).network, waveID(idstr).station, waveID(idstr).location, waveID(idstr).channel
+                net, sta, loc, cha = VStreamID(idstr).network, VStreamID(idstr).station, VStreamID(idstr).location, VStreamID(idstr).channel
                 t1 = kwargs.get('starttime', None)
                 t2 = kwargs.get('endtime', None)
                 # Always cast to UTCDateTime
@@ -198,7 +198,7 @@ class VClient:
             # Fallback: call get_waveforms for each id and merge streams
             streams = []
             for idstr in id_:
-                net, sta, loc, cha = waveID(idstr).network, waveID(idstr).station, waveID(idstr).location, waveID(idstr).channel
+                net, sta, loc, cha = VStreamID(idstr).network, VStreamID(idstr).station, VStreamID(idstr).location, VStreamID(idstr).channel
                 t1 = kwargs.get('starttime', None)
                 t2 = kwargs.get('endtime', None)
                 t1 = UTCDateTime(t1) if t1 is not None else None
@@ -210,7 +210,7 @@ class VClient:
                 merged += st
             return merged
         elif isinstance(id_, str):
-            net, sta, loc, cha = waveID(id_).network, waveID(id_).station, waveID(id_).location, waveID(id_).channel
+            net, sta, loc, cha = VStreamID(id_).network, VStreamID(id_).station, VStreamID(id_).location, VStreamID(id_).channel
             t1 = kwargs.get('starttime', None)
             t2 = kwargs.get('endtime', None)
             t1 = UTCDateTime(t1) if t1 is not None else None

@@ -6,7 +6,7 @@ from obspy.geodetics import FlinnEngdahl
 
 # from vdapseisutils.utils.obspyutils import hypoinverse
 # from vdapseisutils.utils.obspyutils.inventoryutils import convertNSLCstr
-from vdapseisutils.core.datasource.waveID import waveID
+from vdapseisutils.obspy_ext import VStreamID
 
 def example():
     cat = Catalog()
@@ -365,7 +365,7 @@ def catalog2swarm(catalog, nslc, tags=["default"], filename="swarm_tagger.csv", 
 
     df = pd.DataFrame(catalog2txyzm(catalog, time_format="%Y-%m-%d %H:%M:%S.%f"))  # Get time, lat, lon, depth, magnitude
     df = df[["time"]]  # Keep only the "time" column
-    df["nslc"] = waveID(nslc).string(order="scnl", sep=" ")  # Create STA CHA NET LOC from NET.STA.LOC.CHA
+    df["nslc"] = VStreamID(nslc).string(order="scnl", sep=" ")  # Create STA CHA NET LOC from NET.STA.LOC.CHA
     df["tag"] = tags
 
     df.to_csv(filename, index=False, header=False, mode=mode)  # Write to CSV with specified mode

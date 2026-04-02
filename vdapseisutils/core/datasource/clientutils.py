@@ -61,7 +61,7 @@ def get_waveforms_from_client(client, nslc_list, t1, t2,
 
     from numpy import dtype
     from obspy import UTCDateTime, Stream
-    from vdapseisutils.core.datasource.waveID import waveID
+    from vdapseisutils.obspy_ext import VStreamID
     from vdapseisutils.utils.obspyutils.streamutils import createEmptyTrace
     from vdapseisutils.utils import timeutils
 
@@ -80,7 +80,7 @@ def get_waveforms_from_client(client, nslc_list, t1, t2,
     # Loop through list of NSLCs
     for nslc in nslc_list:
 
-        net, sta, loc, cha = waveID(nslc).parts()  # separate string into multiple arguments
+        net, sta, loc, cha = VStreamID(nslc).parts()  # separate string into multiple arguments
 
         st_nslc = Stream()
 

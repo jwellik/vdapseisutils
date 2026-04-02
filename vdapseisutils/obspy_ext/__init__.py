@@ -21,4 +21,6 @@ Team conventions (T0 — do not re-litigate in subtasks)
 Subpackages ``client`` and ``io`` are populated in later tasks (T1–T6).
 """
 
-__all__: list[str] = []
+from vdapseisutils.obspy_ext.stream_id import VStreamID, parse_wave_id, waveID
+
+__all__: list[str] = ["VStreamID", "parse_wave_id", "waveID"]

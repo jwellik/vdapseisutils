@@ -97,7 +97,6 @@ import matplotlib.dates as mdates
 
 from obspy import Stream, Trace, UTCDateTime
 
-from vdapseisutils.core.datasource.waveID import waveID
 from vdapseisutils.style import colors as vdap_colors
 from vdapseisutils.utils.timeutils import convert_timeformat
 from vdapseisutils.compute.waveforms import compute_spectrogram, prepare_waveform_series

@@ -1,5 +1,5 @@
 from obspy import Stream, Trace, Catalog, Inventory
-from vdapseisutils.core.datasource.waveID import waveID
+from vdapseisutils.obspy_ext import VStreamID
 
 
 import os
@@ -398,7 +398,7 @@ class InventoryV(Inventory):
                 else:
                     "Swarm parameter ({},{}) not processed.".format(key, value)
             # d["nslc"] = convertNSLCstr(scnl, order="scnl", sep=" ", neworder="nslc", newsep=".")
-            d["nslc"] = waveID(scnl, order="scnl", sep=" ").nslc()  # Convert "S C N L" to "N.S.L.C"
+            d["nslc"] = VStreamID(scnl, order="scnl", sep=" ").nslc()  # Convert "S C N L" to "N.S.L.C"
             d["local_depth"] = local_depth_default  # Add local_depth default
 
             if verbose:
@@ -420,7 +420,7 @@ class InventoryV(Inventory):
         for cha in self.get_contents()['channels']:
             coords = self.get_coordinates(cha)
             # cha = convertNSLCstr(cha, order='nslc', sep='.', neworder='scnl', newsep=' ')
-            cha = waveID(cha).scnl(sep=" ")
+            cha = VStreamID(cha).scnl(sep=" ")
             cha_str = swarm_format.format(cha, coords['longitude'], coords['latitude'], coords['elevation'])
             channel_strings.append(cha_str)
 

@@ -1,6 +1,6 @@
 # import swarmmpl, sandbox, utils
 
-from vdapseisutils.core.datasource.waveID import waveID
+from vdapseisutils.obspy_ext import VStreamID, waveID
 from vdapseisutils.core.maps import Map, CrossSection, MagLegend, TimeSeries, VolcanoFigure
 from vdapseisutils.core.swarmmpl.heli import Helicorder
 from vdapseisutils.utils.obspyutils.obspy import Stream, Trace, Catalog, Inventory

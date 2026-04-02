@@ -8,7 +8,7 @@ file format conversions and data export/import functionality.
 import pandas as pd
 from obspy import UTCDateTime
 from obspy.core.event import Event, Origin, Magnitude, Catalog
-from vdapseisutils.core.datasource.waveID import waveID
+from vdapseisutils.obspy_ext import VStreamID
 
 
 class VCatalogConversionMixin:
@@ -136,7 +136,7 @@ class VCatalogConversionMixin:
                     t = event.origins[0].time.datetime.strftime("%Y-%m-%d %H:%M:%S.%f")
                 else:
                     continue  # skip events without origin
-                scnl = waveID(nslc_val).string(order="scnl", sep=" ")
+                scnl = VStreamID(nslc_val).string(order="scnl", sep=" ")
                 writer.writerow([t, scnl, tag])
 
     @staticmethod
@@ -315,7 +315,7 @@ class VCatalogConversionMixin:
                     t_str = t.datetime.strftime("%Y-%m-%d %H:%M:%S.%f")
                 else:
                     t_str = t.strftime("%Y-%m-%d %H:%M:%S.%f")
-                scnl_str = waveID(scnl).string(order="scnl", sep=" ")
+                scnl_str = VStreamID(scnl).string(order="scnl", sep=" ")
                 writer.writerow([t_str, scnl_str, tag])
         return filename
 
