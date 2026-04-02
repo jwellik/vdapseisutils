@@ -103,6 +103,9 @@ from vdapseisutils.utils.timeutils import convert_timeformat
 from vdapseisutils.compute.waveforms import compute_spectrogram, prepare_waveform_series
 from vdapseisutils.core.maps.utils import prep_catalog_data_mpl
 
+from .panel import Panel
+from .timeaxes import TimeAxes
+
 
 # Plot defaults
 spectrogram_defaults = {"samp_rate": 50, "wlen": 6, "overlap": 0.5, "dbscale": True, "log_power": False,

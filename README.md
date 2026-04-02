@@ -122,3 +122,5 @@ from vdapseisutils.core.swarmmpl import Panel, TimeAxes
 
 Prefer `clipboard_figure` if you want an explicit name for the legacy factory; it is the same callable as `Clipboard`.
 
+**Swarm runnable on-ramp (API v1 §11-style):** For a short, offline script that constructs **`Helicorder`** and **`SwarmClipboard`** on synthetic waveforms (no FDSN), run from the repo root: `python examples/swarm_clipboard_minimal.py` (or `uv run python …`). That mirrors how map workflows point to `examples/map_minimal.py` and friends; deeper layout and naming notes remain under **Pyplot helpers** (`register_pyplot`) and `vdapseisutils.plot.swarm` / `core/swarmmpl` source.
+
