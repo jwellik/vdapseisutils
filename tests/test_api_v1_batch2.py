@@ -67,7 +67,7 @@ def test_plot_trace_nslc_label_text():
 
 def test_pickqc_has_no_module_level_pyplot_import():
     """pickqc must not import pyplot at module import time (pandas may still load mpl)."""
-    import vdapseisutils.utils.obspyutils.catalog.pickqc as pq
+    import vdapseisutils.obspy_ext.catalog.pickqc as pq
 
     tree = ast.parse(Path(pq.__file__).read_text(encoding="utf-8"))
     for node in tree.body:

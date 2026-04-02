@@ -259,13 +259,13 @@ class VClient:
         return getattr(self._client, name)
 
     def get_stations(self, *args, **kwargs):
-        from vdapseisutils.utils.obspyutils.inventory import VInventory
+        from vdapseisutils.obspy_ext.inventory import VInventory
 
         inventory = self._client.get_stations(*args, **kwargs)
         return VInventory(inventory)
 
     def get_events(self, *args, **kwargs):
-        from vdapseisutils.utils.obspyutils.catalog import VCatalog
+        from vdapseisutils.obspy_ext.catalog import VCatalog
 
         catalog = self._client.get_events(*args, **kwargs)
         return VCatalog(catalog)
@@ -273,12 +273,12 @@ class VClient:
     def get_waveforms(self, *args, **kwargs):
         """
         Download waveforms via :func:`~vdapseisutils.obspy_ext.client._fetch.get_waveforms_from_client`
-        (chunking, dtype handling, empty-trace behavior). Returns a :class:`~vdapseisutils.utils.obspyutils.stream.core.VStream`.
+        (chunking, dtype handling, empty-trace behavior). Returns a :class:`~vdapseisutils.obspy_ext.stream.VStream`.
         """
         from obspy import UTCDateTime
 
         from vdapseisutils.obspy_ext.client._fetch import get_waveforms_from_client
-        from vdapseisutils.utils.obspyutils.stream.core import VStream
+        from vdapseisutils.obspy_ext.stream import VStream
 
         fetch_kw, kw = _split_waveform_kwargs(kwargs)
 
@@ -356,10 +356,10 @@ class VClient:
     def get_waveforms_bulk(self, bulk, **kwargs):
         """
         Bulk download via :func:`~vdapseisutils.obspy_ext.client._fetch.get_waveforms_bulk_from_client`.
-        Returns :class:`~vdapseisutils.utils.obspyutils.stream.core.VStream`.
+        Returns :class:`~vdapseisutils.obspy_ext.stream.VStream`.
         """
         from vdapseisutils.obspy_ext.client._fetch import get_waveforms_bulk_from_client
-        from vdapseisutils.utils.obspyutils.stream.core import VStream
+        from vdapseisutils.obspy_ext.stream import VStream
 
         fetch_kw, client_kw = _split_waveform_kwargs(kwargs)
         st = get_waveforms_bulk_from_client(
@@ -371,8 +371,8 @@ class VClient:
         return VStream(st)
 
     def get_waveforms_from_inventory(self, inventory, **kwargs):
-        from vdapseisutils.utils.obspyutils.inventory import VInventory
-        from vdapseisutils.utils.obspyutils.stream.core import VStream
+        from vdapseisutils.obspy_ext.inventory import VInventory
+        from vdapseisutils.obspy_ext.stream import VStream
 
         st = VInventory.get_waveforms_from_inventory(
             self._client, inventory, **kwargs

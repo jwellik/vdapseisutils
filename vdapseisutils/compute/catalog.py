@@ -13,7 +13,7 @@ import pandas as pd
 from obspy import UTCDateTime
 from obspy.core.event import Catalog
 
-from vdapseisutils.utils.obspyutils.catalog.origin import get_primary_origin
+from vdapseisutils.obspy_ext.catalog.origin import get_primary_origin
 
 TimeEncoding = Literal["utcdatetime", "utc", "mpl_date", "datetime", "datetime64"]
 OriginPolicy = Literal["preferred_or_first", "first", "last"]
@@ -72,7 +72,7 @@ def prepare_catalog_points(
         :class:`~datetime.datetime`), ``"datetime64"``, or any :func:`~datetime.datetime.strftime`
         pattern string (e.g. ``"%Y-%m-%d"``).
     origin_policy : str
-        ``"preferred_or_first"`` — :func:`~vdapseisutils.utils.obspyutils.catalog.origin.get_primary_origin`;
+        ``"preferred_or_first"`` — :func:`~vdapseisutils.obspy_ext.catalog.origin.get_primary_origin`;
         ``"first"`` / ``"last"`` — first or last entry in ``event.origins`` (legacy alignment).
     depth_unit : {"km", "m"}
         Units of the returned ``depth`` column (after ObsPy m → km or m conversion).

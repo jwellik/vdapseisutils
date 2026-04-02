@@ -1,19 +1,48 @@
-from vdapseisutils.utils.obspyutils import *
+"""Deprecated: prefer :mod:`vdapseisutils.obspy_ext` for extended ObsPy types and client."""
 
-# Import extended classes
-from vdapseisutils.utils.obspyutils.utcdatetime import VUTCDateTime, vutcnow, vutcrange
+from __future__ import annotations
 
-# Import catalog functionality
-from vdapseisutils.utils.obspyutils.catalog import VCatalog, VEvent
-from vdapseisutils.utils.obspyutils.inventory import VInventory
+import warnings
 
-# TODO Inherit class Inventory
-# TODO Inherit class WaveformID
-# TODO Inherit class Catalog
-# TODO Inherit class Event
-# TODO Inherit class Stream
-# TODO Inherit class Trace
+warnings.warn(
+    "Importing from vdapseisutils.utils.obspyutils is deprecated; "
+    "use vdapseisutils.obspy_ext instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
-"""
-from vdapseisutils.utils.obspyutils import UTCDateTimeV as UTCDateTime
-"""
+from vdapseisutils.obspy_ext import (
+    DataSource,
+    VCatalog,
+    VClient,
+    VEvent,
+    VInventory,
+    VStream,
+    VTrace,
+    VUTCDateTime,
+    read,
+    read_events,
+    read_inventory,
+    vutcnow,
+    vutcrange,
+)
+from vdapseisutils.obspy_ext.stream_id import VStreamID, parse_wave_id, waveID
+
+__all__ = [
+    "DataSource",
+    "VCatalog",
+    "VClient",
+    "VEvent",
+    "VInventory",
+    "VStream",
+    "VStreamID",
+    "VTrace",
+    "VUTCDateTime",
+    "parse_wave_id",
+    "read",
+    "read_events",
+    "read_inventory",
+    "vutcnow",
+    "vutcrange",
+    "waveID",
+]

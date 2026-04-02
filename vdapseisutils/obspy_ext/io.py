@@ -13,29 +13,29 @@ import obspy
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from vdapseisutils.utils.obspyutils.catalog import VCatalog
-    from vdapseisutils.utils.obspyutils.inventory import VInventory
-    from vdapseisutils.utils.obspyutils.stream.core import VStream
+    from vdapseisutils.obspy_ext.catalog import VCatalog
+    from vdapseisutils.obspy_ext.inventory import VInventory
+    from vdapseisutils.obspy_ext.stream import VStream
 
 __all__ = ["read", "read_events", "read_inventory"]
 
 
 def read(*args, **kwargs) -> VStream:
     """Read waveforms via ObsPy; returns ``VStream``."""
-    from vdapseisutils.utils.obspyutils.stream.core import VStream
+    from vdapseisutils.obspy_ext.stream import VStream
 
     return VStream(obspy.read(*args, **kwargs))
 
 
 def read_events(*args, **kwargs) -> VCatalog:
     """Read events via ObsPy; returns ``VCatalog``."""
-    from vdapseisutils.utils.obspyutils.catalog import VCatalog
+    from vdapseisutils.obspy_ext.catalog import VCatalog
 
     return VCatalog(obspy.read_events(*args, **kwargs))
 
 
 def read_inventory(*args, **kwargs) -> VInventory:
     """Read station metadata via ObsPy; returns ``VInventory``."""
-    from vdapseisutils.utils.obspyutils.inventory import VInventory
+    from vdapseisutils.obspy_ext.inventory import VInventory
 
     return VInventory(obspy.read_inventory(*args, **kwargs))

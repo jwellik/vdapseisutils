@@ -11,7 +11,7 @@ from obspy.core.stream import Stream
 from obspy.core.trace import Trace
 
 from vdapseisutils.obspy_ext.client.vclient import VClient
-from vdapseisutils.utils.obspyutils.stream.core import VStream
+from vdapseisutils.obspy_ext.stream import VStream
 
 
 class _MockWaveformClient:

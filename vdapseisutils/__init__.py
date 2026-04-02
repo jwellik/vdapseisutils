@@ -7,6 +7,5 @@ from vdapseisutils.utils.obspyutils.obspy import Stream, Trace, Catalog, Invento
 # from vdapseisutils.utils.obspyutils.client import VClient
 # from vdapseisutils.utils.obspyutils.inventory import VInventory
 # from vdapseisutils.utils.obspyutils.catalog import VCatalog
-from vdapseisutils.utils.obspyutils.inventory.core import VInventory
-from vdapseisutils.utils.obspyutils.catalog.core import VCatalog
+from vdapseisutils.obspy_ext import VCatalog, VInventory
 from vdapseisutils.utils.magnitude import MagnitudeUtils

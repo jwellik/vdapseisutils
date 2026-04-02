@@ -1255,7 +1255,7 @@ class Map:
             Additional text arguments passed to set_subtitle()
         """
         # Convert to VCatalog if needed to access short_summary_str method
-        from vdapseisutils.utils.obspyutils.catalog import VCatalog
+        from vdapseisutils.obspy_ext.catalog import VCatalog
         
         if not isinstance(catalog, VCatalog):
             vcatalog = VCatalog(catalog)

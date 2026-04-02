@@ -1,10 +1,5 @@
-"""
-VInventory module for volcano seismology workflows.
+"""Deprecated shim; use :mod:`vdapseisutils.obspy_ext.inventory`."""
 
-This module provides the VInventory class which extends ObsPy's Inventory
-with additional functionality for volcano seismology data processing.
-"""
+from vdapseisutils.obspy_ext.inventory import VInventory
 
-from .core import VInventory
-
-__all__ = ['VInventory']
+__all__ = ["VInventory"]

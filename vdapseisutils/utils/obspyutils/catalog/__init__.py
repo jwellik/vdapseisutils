@@ -1,14 +1,6 @@
-"""
-Catalog package for volcano seismology workflows.
+"""Deprecated shim; use :mod:`vdapseisutils.obspy_ext.catalog`."""
 
-This package provides the VCatalog class and related functionality for working with
-earthquake catalogs in volcano seismology applications.
-"""
+from vdapseisutils.obspy_ext.catalog import VCatalog, VEvent
 
-from .core import VCatalog, VEvent
-
-# Export the main class for easy importing
-__all__ = ['VCatalog', 'VEvent']
-
-# Version info
-__version__ = '1.0.0' 
+__all__ = ["VCatalog", "VEvent"]
+__version__ = "1.0.0"

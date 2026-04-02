@@ -10,8 +10,8 @@ from obspy.core.event.resourceid import ResourceIdentifier
 from vdapseisutils.compute.catalog import prepare_catalog_points, prepare_catalog_points_from_time_format
 from vdapseisutils.core.maps.legends import MagLegend
 from vdapseisutils.core.maps.utils import prep_catalog_data_mpl
-from vdapseisutils.utils.obspyutils.catalog.core import VCatalog
-from vdapseisutils.utils.obspyutils.catalog.origin import get_primary_origin
+from vdapseisutils.obspy_ext.catalog.core import VCatalog
+from vdapseisutils.obspy_ext.catalog.origin import get_primary_origin
 from vdapseisutils.utils.obspyutils.catalogutils import catalog2txyzm
 
 

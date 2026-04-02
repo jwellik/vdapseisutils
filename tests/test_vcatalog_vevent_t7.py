@@ -4,7 +4,7 @@ from obspy import UTCDateTime
 from obspy.core.event import Pick, read_events
 from obspy.core.event import WaveformStreamID
 
-from vdapseisutils.utils.obspyutils.catalog import VCatalog, VEvent
+from vdapseisutils.obspy_ext.catalog import VCatalog, VEvent
 
 
 def test_vcatalog_events_are_vevent_and_getitem_is_identity():

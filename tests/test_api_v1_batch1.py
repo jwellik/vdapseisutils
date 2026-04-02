@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from obspy import Stream, Trace, UTCDateTime
 
-from vdapseisutils.utils.obspyutils.utcdatetime import VUTCDateTime
+from vdapseisutils.obspy_ext.time import VUTCDateTime
 from vdapseisutils.core.swarmmpl.clipboard import ClipboardClass, TimeSeries
 
 
