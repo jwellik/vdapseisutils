@@ -5,6 +5,16 @@ This document breaks the ObsPy extension reorganization into **ordered subtasks*
 **Repository:** `vdapseisutils`  
 **End state:** Top-level package `vdapseisutils/obspy_ext/` (sibling to `core/`), replacing the scattered `utils/obspyutils/` + `core/datasource/` patterns, with deprecation shims where needed.
 
+### T0 — Locked team conventions (summary)
+
+These three rules apply to **all** follow-on tasks (T1–T12); details below expand them.
+
+1. **Package layout:** New code lives under `vdapseisutils/obspy_ext/` (not new growth in `utils/obspyutils/` or `core/datasource/` for greenfield ObsPy extension work).
+2. **Client naming:** `DataSource` is a **public alias** of `VClient` (one class, two names).
+3. **Catalog indexing:** `VCatalog.events` holds **real** `VEvent` instances; `VCatalog.__getitem__(i)` returns `self.events[i]` (slice → `VCatalog`). **No** proxy pattern or `_original_event` / dual-object indexing.
+
+The module docstring in `vdapseisutils/obspy_ext/__init__.py` repeats this for developers at import time.
+
 ---
 
 ## Agreed design decisions (do not re-litigate in sub-windows)
