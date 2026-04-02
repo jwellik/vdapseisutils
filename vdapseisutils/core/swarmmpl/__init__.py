@@ -1,5 +1,13 @@
 """Legacy Swarm-style Matplotlib helpers (deprecated).
 
+On-disk layout (API v1 §13.4 — single implementation tree):
+
+- ``clipboard.py``, ``heli.py`` — legacy multi-trace clipboard and helicorder.
+- :mod:`vdapseisutils.core.swarmmpl.v2` — v2 ``plot_trace`` / ``plot_clipboard`` helpers
+  (legacy import path: ``vdapseisutils.core.swarmmpl2``, shim).
+- :mod:`vdapseisutils.core.swarmmpl.v3` — time axes, panels, v3 clipboard
+  (legacy import path: ``vdapseisutils.core.swarmmpl3``, shim).
+
 Prefer :mod:`vdapseisutils.plot.swarm` (API v1 §8).
 """
 

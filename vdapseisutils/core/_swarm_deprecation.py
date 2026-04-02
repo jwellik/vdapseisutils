@@ -11,7 +11,7 @@ import inspect
 import warnings
 
 _CANONICAL = "vdapseisutils.plot.swarm"
-_REMOVAL = "Removal no earlier than vdapseisutils v0.2.0."
+_REMOVAL = "Removal no earlier than vdapseisutils v0.3.0."
 
 _SKIP_PREFIXES = (
     "vdapseisutils.plot.swarm",
