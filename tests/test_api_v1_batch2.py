@@ -65,31 +65,6 @@ def test_plot_trace_nslc_label_text():
     plt.close(fig)
 
 
-def test_plot_trace_nslc_label_swarmmpl2():
-    matplotlib = pytest.importorskip("matplotlib")
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-    from vdapseisutils.core.swarmmpl2.clipboard import plot_trace
-
-    tr = Trace(
-        data=np.zeros(200),
-        header={
-            "network": "YY",
-            "station": "STA",
-            "location": "01",
-            "channel": "EHZ",
-            "starttime": UTCDateTime("2021-06-01"),
-            "sampling_rate": 50.0,
-            "npts": 200,
-        },
-    )
-    fig = plot_trace(tr, mode="w", tick_type="datetime")
-    joined = "\n".join(t.get_text() for t in fig.axes[-1].texts)
-    assert "YY.STA" in joined
-    plt.close(fig)
-
-
 def test_pickqc_has_no_module_level_pyplot_import():
     """pickqc must not import pyplot at module import time (pandas may still load mpl)."""
     import vdapseisutils.utils.obspyutils.catalog.pickqc as pq

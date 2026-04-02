@@ -7,18 +7,17 @@ API v1 §8: use this package instead of ``vdapseisutils.core.swarmmpl*``.
 **Name disambiguation**
 
 - :func:`Clipboard` — legacy factory (same as ``matplotlib.pyplot.figure(..., FigureClass=ClipboardClass)``) that returns a :class:`ClipboardClass` instance.
-- :class:`SwarmClipboard` — v3 panel-based multi-trace layout (``core.swarmmpl.v3``); not the same as the legacy factory.
+- :class:`SwarmClipboard` — panel-based multi-trace layout in :mod:`vdapseisutils.core.swarmmpl.clipboard`; not the same as the legacy factory.
 
 See ``.local/api-v1-coord/API_V1_CANONICAL.md`` §8.
 """
 
 from __future__ import annotations
 
-from vdapseisutils.core.swarmmpl.clipboard import Clipboard, ClipboardClass
+from vdapseisutils.core.swarmmpl.clipboard import Clipboard, ClipboardClass, SwarmClipboard
 from vdapseisutils.core.swarmmpl.heli import Helicorder
-from vdapseisutils.core.swarmmpl.v3.clipboard import Clipboard as SwarmClipboard
-from vdapseisutils.core.swarmmpl.v3.panel import Panel
-from vdapseisutils.core.swarmmpl.v3.timeaxes import TimeAxes
+from vdapseisutils.core.swarmmpl.panel import Panel
+from vdapseisutils.core.swarmmpl.timeaxes import TimeAxes
 
 # Canonical §3 name for the legacy multi-trace figure class.
 SwarmFigure = ClipboardClass

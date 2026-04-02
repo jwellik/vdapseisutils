@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented here. The format is inspired by Keep a Changelog.
 
+## [Unreleased]
+
+### Removed
+
+- `vdapseisutils.core.swarmmpl2` and `vdapseisutils.core.swarmmpl3` packages.
+- `vdapseisutils.core.swarmmpl.v2` and `.v3` subpackages (implementation moved to top-level `core/swarmmpl/` modules).
+
+### Changed
+
+- Panel-based multi-trace layout: `SwarmClipboard` and v3 helpers live in `vdapseisutils.core.swarmmpl.clipboard`, `panel.py`, `timeaxes.py`, and `convenience.py` (no separate v3 import path).
+- `vdapseisutils.core.swarmmpl` no longer emits a package-level deprecation warning on import.
+
 ## [0.2.0] — 2026-04-01
 
 ### Added

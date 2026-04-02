@@ -79,7 +79,7 @@ Map classes are implemented under `vdapseisutils.core.maps` (e.g. `map.py`, `vol
 
 ### Upgrading from pre–API v1 layouts
 
-If you still use older import paths (`core.maps.maps`, `core.swarmmpl*`, ad-hoc copies of swarm helpers), read **[`CHANGELOG.md`](CHANGELOG.md)** for what moved in **0.2.0** and the policy sections **§8–§9** (and **§13.4–§13.5**) in [`.local/api-v1-coord/API_V1_CANONICAL.md`](.local/api-v1-coord/API_V1_CANONICAL.md) if you keep a local copy of that doc.
+If you still use older import paths (e.g. `core.maps.maps`), read **[`CHANGELOG.md`](CHANGELOG.md)** and the policy sections **§8–§9** (and **§13.4–§13.5**) in [`.local/api-v1-coord/API_V1_CANONICAL.md`](.local/api-v1-coord/API_V1_CANONICAL.md) if you keep a local copy of that doc.
 
 ### Pyplot helpers (`register_pyplot`)
 
@@ -97,7 +97,7 @@ After `register_pyplot()`, those names construct the corresponding project types
 
 ### Swarm imports (API v1)
 
-Swarm-style plotting (multi-trace clipboard, helicorder, v3 time axes / panels) has one **canonical** import path. Legacy `swarmmpl`, `swarmmpl2`, and `swarmmpl3` remain importable as shims but emit `DeprecationWarning` and are scheduled for removal no earlier than **v0.3.0**. Implementations live under `vdapseisutils.core.swarmmpl` only (v2/v3 subpackages). Policy and migration expectations are in [`.local/api-v1-coord/API_V1_CANONICAL.md`](.local/api-v1-coord/API_V1_CANONICAL.md) **§8** (Swarm consolidation).
+Swarm-style plotting (multi-trace clipboard, helicorder, time axes / panels) has one **canonical** import path: **`vdapseisutils.plot.swarm`**. Implementations live under **`vdapseisutils.core.swarmmpl`** (`clipboard.py`, `panel.py`, `timeaxes.py`, `heli.py`, …). Policy notes are in [`.local/api-v1-coord/API_V1_CANONICAL.md`](.local/api-v1-coord/API_V1_CANONICAL.md) **§8** (Swarm consolidation).
 
 **Canonical (new code):**
 
@@ -113,11 +113,11 @@ from vdapseisutils.plot.swarm import (
 )
 ```
 
-**Deprecated (still works):**
+**Core module (same types as `plot.swarm`):**
 
 ```python
-from vdapseisutils.core.swarmmpl.clipboard import Clipboard, ClipboardClass
-import vdapseisutils.core.swarmmpl3  # or swarmmpl / swarmmpl2
+from vdapseisutils.core.swarmmpl.clipboard import Clipboard, ClipboardClass, SwarmClipboard
+from vdapseisutils.core.swarmmpl import Panel, TimeAxes
 ```
 
 Prefer `clipboard_figure` if you want an explicit name for the legacy factory; it is the same callable as `Clipboard`.

@@ -1,8 +1,6 @@
-"""Canonical swarm API (API v1 §8) and legacy import deprecation."""
+"""Canonical swarm API (API v1 §8)."""
 
 from __future__ import annotations
-
-import importlib
 
 import matplotlib
 
@@ -29,26 +27,6 @@ def _trace(start: str, npts: int = 200, sampling_rate: float = 50.0) -> Trace:
             "npts": int(npts),
         },
     )
-
-
-@pytest.mark.parametrize(
-    "mod",
-    (
-        "vdapseisutils.core.swarmmpl",
-        "vdapseisutils.core.swarmmpl2",
-        "vdapseisutils.core.swarmmpl3",
-    ),
-)
-def test_legacy_swarm_package_emits_deprecation(mod: str) -> None:
-    """``reload`` re-executes package ``__init__`` so the deprecation hook runs with test stack (§8).
-
-    A plain ``import vdapseisutils.core.swarmmpl`` often does not warn: the parent
-    ``vdapseisutils`` package may load ``swarmmpl`` first while ``vdapseisutils`` is
-    still on the stack, which intentionally suppresses the warning.
-    """
-    m = importlib.import_module(mod)
-    with pytest.warns(DeprecationWarning, match="plot.swarm"):
-        importlib.reload(m)
 
 
 def test_canonical_swarm_all_exported() -> None:

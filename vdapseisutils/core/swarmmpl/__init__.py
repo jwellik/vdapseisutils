@@ -1,42 +1,53 @@
-"""Legacy Swarm-style Matplotlib helpers (deprecated).
+"""Swarm-style Matplotlib helpers (multi-trace clipboard, helicorder, TimeAxes / Panel stack).
 
-On-disk layout (API v1 §13.4 — single implementation tree):
+Public API for new code: prefer :mod:`vdapseisutils.plot.swarm` (API v1 §8).
 
-- ``clipboard.py``, ``heli.py`` — legacy multi-trace clipboard and helicorder.
-- :mod:`vdapseisutils.core.swarmmpl.v2` — v2 ``plot_trace`` / ``plot_clipboard`` helpers
-  (legacy import path: ``vdapseisutils.core.swarmmpl2``, shim).
-- :mod:`vdapseisutils.core.swarmmpl.v3` — time axes, panels, v3 clipboard
-  (legacy import path: ``vdapseisutils.core.swarmmpl3``, shim).
+Implementation modules:
 
-Prefer :mod:`vdapseisutils.plot.swarm` (API v1 §8).
+- :mod:`vdapseisutils.core.swarmmpl.clipboard` — legacy :class:`ClipboardClass` / :func:`Clipboard`,
+  :class:`TimeSeries`, plotting helpers, and panel-based :class:`SwarmClipboard`.
+- :mod:`vdapseisutils.core.swarmmpl.panel`, :mod:`vdapseisutils.core.swarmmpl.timeaxes` — v3 layout primitives.
+- :mod:`vdapseisutils.core.swarmmpl.convenience` — ``swarmw``, ``swarmg``, ``swarmwg``, ``swarm_clipboard``.
 """
 
 from __future__ import annotations
-
-from vdapseisutils.core._swarm_deprecation import warn_swarm_legacy_package
-
-warn_swarm_legacy_package(legacy_qualname="vdapseisutils.core.swarmmpl")
 
 from . import colors
 from .clipboard import (
     Clipboard,
     ClipboardClass,
+    SwarmClipboard,
     TimeSeries,
     plot_spectrogram,
     plot_trace,
     plot_wave,
     t2axiscoords,
 )
+from .convenience import (
+    swarm_clipboard,
+    swarmg,
+    swarmw,
+    swarmwg,
+)
 from .heli import Helicorder
+from .panel import Panel
+from .timeaxes import TimeAxes
 
 __all__ = [
     "Helicorder",
     "Clipboard",
     "ClipboardClass",
+    "SwarmClipboard",
     "TimeSeries",
+    "Panel",
+    "TimeAxes",
     "colors",
     "plot_spectrogram",
     "plot_trace",
     "plot_wave",
+    "swarm_clipboard",
+    "swarmg",
+    "swarmw",
+    "swarmwg",
     "t2axiscoords",
 ]
