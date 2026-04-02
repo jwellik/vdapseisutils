@@ -9,7 +9,7 @@ from copy import deepcopy
 from obspy.core.event import Event
 
 
-# Note: Event methods are now provided via VEvent wrapper class in core.py
+# Note: per-event helpers live on VEvent (subclass of ObsPy Event) in core.py
 # This eliminates the need for monkey-patching
 
 # TODO extraxt_event_id and get_eventid, duplicated code?
@@ -1261,8 +1261,8 @@ class VCatalogUtilsMixin:
         """
         Sort picks for a specific event by index in the catalog.
         
-        This method directly modifies the original event in the catalog, ensuring
-        that changes are persistent.
+        This method sorts picks on the event stored at the given index in
+        ``self.events`` (the same object returned by ``catalog[i]``).
         
         Parameters
         ----------

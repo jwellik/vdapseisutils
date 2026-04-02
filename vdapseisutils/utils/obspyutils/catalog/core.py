@@ -17,22 +17,20 @@ from .pickqc import VCatalogPickQCMixin
 
 class VEvent(Event):
     """
-    Extended Event class that includes VCatalog conversion methods.
-    
-    This class wraps a single Event and provides access to VCatalog methods
-    like to_picklog(), to_txyzm(), etc.
+    Extended :class:`~obspy.core.event.Event` with catalog helpers (e.g. ``to_picklog``,
+    ``to_txyzm``, ``get_waveforms``).
+
+    When built from an existing ``Event``, instance state is copied from that object's
+    ``__dict__`` (shallow on list fields like ``picks`` / ``origins``), then
+    :meth:`~obspy.core.event.event.Event.scope_resource_ids` is run so resource IDs
+    refer to this instance.
     """
-    
+
     def __init__(self, event=None, **kwargs):
         if event is not None:
-            # Copy all attributes from the original event
             super().__init__()
-            for attr in dir(event):
-                if not attr.startswith('_') and hasattr(event, attr):
-                    try:
-                        setattr(self, attr, getattr(event, attr))
-                    except:
-                        pass  # Skip attributes that can't be set
+            self.__dict__.update(event.__dict__)
+            self.scope_resource_ids()
         else:
             super().__init__(**kwargs)
     
@@ -180,11 +178,7 @@ class VEvent(Event):
         # Combine sorted picks with time + picks without time at the end
         sorted_picks = picks_with_time + picks_without_time
         target_event.picks = sorted_picks
-        
-        # If this VEvent is linked to a catalog, also update the original event
-        if inplace and hasattr(target_event, '_original_event') and hasattr(target_event, '_parent_catalog'):
-            target_event._original_event.picks = sorted_picks
-        
+
         if verbose:
             print(f"  Sorted {len(picks_with_time)} picks by time, {len(picks_without_time)} without time placed at end")
         
@@ -195,6 +189,15 @@ class VEvent(Event):
 class VCatalog(VCatalogConversionMixin, VCatalogPlottingMixin, VCatalogAnalysisMixin, 
                VCatalogComparisonMixin, VCatalogUtilsMixin, VCatalogPickQCMixin, Catalog):
     """Extended Catalog class for volcano seismology workflows."""
+
+    @staticmethod
+    def _as_vevent(event):
+        """Ensure ``event`` is a :class:`VEvent` (single object identity in ``self.events``)."""
+        if isinstance(event, VEvent):
+            return event
+        if not isinstance(event, Event):
+            raise TypeError("Expected obspy Event or VEvent, got %s" % type(event).__name__)
+        return VEvent(event)
 
     def __init__(self, events=None, resource_id=None, description=None,
                  comments=None, creation_info=None, catalog=None):
@@ -245,47 +248,43 @@ class VCatalog(VCatalogConversionMixin, VCatalogPlottingMixin, VCatalogAnalysisM
                 comments=comments,
                 creation_info=creation_info
             )
+        self.events = [self._as_vevent(e) for e in self.events]
 
     def __getitem__(self, index):
         """
-        Override indexing to return VEvent objects instead of plain Event objects.
-        
-        This returns VEvent objects for single indices, VCatalog for slices.
-        The returned objects maintain references to the original events for modification.
+        Return the same event objects stored in :attr:`events` (each a :class:`VEvent`).
+        Integer index → :class:`VEvent`; slice → :class:`VCatalog` over the same instances.
         """
+        if index == "extra":
+            return self.__dict__[index]
         if isinstance(index, slice):
-            # For slice operations, return a new VCatalog that references the same events
-            sliced_catalog = super().__getitem__(index)
-            new_catalog = VCatalog()
-            # Directly add the same event objects (not copies) to maintain references
-            for event in sliced_catalog.events:
-                new_catalog.events.append(event)  # Direct reference, not copy
-            return new_catalog
+            return self.__class__(events=self.events[index])
+        return self.events[index]
+
+    def __setitem__(self, index, event):
+        if isinstance(index, str):
+            super().__setitem__(index, event)
         else:
-            # For single index, return a VEvent that wraps the original event
-            # but maintains references to the original event's attributes
-            original_event = super().__getitem__(index)
-            
-            # Create a VEvent that acts as a proxy to the original event
-            vevent = VEvent()
-            
-            # Instead of copying attributes, we'll make the VEvent reference the original
-            # This is a bit tricky - we need to make sure modifications go to the original
-            vevent._original_event = original_event
-            vevent._catalog_index = index
-            vevent._parent_catalog = self
-            
-            # Copy all attributes from original event to VEvent
-            for attr_name in dir(original_event):
-                if not attr_name.startswith('_') and hasattr(original_event, attr_name):
-                    try:
-                        attr_value = getattr(original_event, attr_name)
-                        if not callable(attr_value):  # Don't copy methods
-                            setattr(vevent, attr_name, attr_value)
-                    except:
-                        pass
-            
-            return vevent
+            self.events[index] = self._as_vevent(event)
+
+    def append(self, event):
+        if not isinstance(event, Event):
+            msg = "Append only supports a single Event object as an argument."
+            raise TypeError(msg)
+        self.events.append(self._as_vevent(event))
+
+    def extend(self, event_list):
+        if isinstance(event_list, list):
+            for _i in event_list:
+                if not isinstance(_i, Event):
+                    msg = "Extend only accepts a list of Event objects."
+                    raise TypeError(msg)
+            self.events.extend(self._as_vevent(_i) for _i in event_list)
+        elif isinstance(event_list, Catalog):
+            self.extend(event_list.events)
+        else:
+            msg = "Extend only supports a list of Event objects as argument."
+            raise TypeError(msg)
 
     def __str__(self, print_all=False):
         """

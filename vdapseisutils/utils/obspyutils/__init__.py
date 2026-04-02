@@ -4,7 +4,7 @@ from vdapseisutils.utils.obspyutils import *
 from vdapseisutils.utils.obspyutils.utcdatetime import VUTCDateTime, vutcnow, vutcrange
 
 # Import catalog functionality
-from vdapseisutils.utils.obspyutils.catalog import VCatalog
+from vdapseisutils.utils.obspyutils.catalog import VCatalog, VEvent
 from vdapseisutils.utils.obspyutils.inventory import VInventory
 
 # TODO Inherit class Inventory
