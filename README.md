@@ -75,7 +75,11 @@ Map classes are implemented under `vdapseisutils.core.maps` (e.g. `map.py`, `vol
 
 **Maps / volcano layout (narrative + examples, API v1 §11):** See [`docs/maps_volcano_api_v1.md`](docs/maps_volcano_api_v1.md) for how `Map`, `VolcanoFigure`, `CrossSection`, `TimeSeries`, and `MagLegend` fit together, import paths, `register_pyplot()` (`plt.eqmap` / `plt.volcano`), and catalog compute via `vdapseisutils.compute.catalog.prepare_catalog_points`. Runnable offline examples from the repo root: `python examples/map_minimal.py`, `python examples/volcano_figure_layout.py`, `python examples/cross_section_standalone.py` (or `uv run python …`).
 
-**Waveform and spectrogram compute:** Shared, backend-neutral helpers live in `vdapseisutils.compute.waveforms`: `prepare_waveform_series` returns a `WaveformSeriesResult` (time axis and data); `compute_spectrogram` returns a `SpectrogramResult` (frequency, time offset, power) using the SciPy spectrogram path aligned with Swarm-style plots. `swarmmpl` and `swarmmpl3` plotting code calls these helpers then draws; use the same APIs if you need arrays without Matplotlib.
+**Waveform and spectrogram compute:** Shared, backend-neutral helpers live in `vdapseisutils.compute.waveforms`: `prepare_waveform_series` returns a `WaveformSeriesResult` (time axis and data); `compute_spectrogram` returns a `SpectrogramResult` (frequency, time offset, power) using the SciPy spectrogram path aligned with Swarm-style plots. `vdapseisutils.core.swarmmpl` (including the v3 time-axis stack) calls these helpers then draws; use the same APIs if you need arrays without Matplotlib.
+
+### Upgrading from pre–API v1 layouts
+
+If you still use older import paths (`core.maps.maps`, `core.swarmmpl*`, ad-hoc copies of swarm helpers), read **[`CHANGELOG.md`](CHANGELOG.md)** for what moved in **0.2.0** and the policy sections **§8–§9** (and **§13.4–§13.5**) in [`.local/api-v1-coord/API_V1_CANONICAL.md`](.local/api-v1-coord/API_V1_CANONICAL.md) if you keep a local copy of that doc.
 
 ### Pyplot helpers (`register_pyplot`)
 
@@ -93,7 +97,7 @@ After `register_pyplot()`, those names construct the corresponding project types
 
 ### Swarm imports (API v1)
 
-Swarm-style plotting (multi-trace clipboard, helicorder, v3 time axes / panels) has one **canonical** import path. Legacy `swarmmpl`, `swarmmpl2`, and `swarmmpl3` remain importable as shims but emit `DeprecationWarning` and are scheduled for removal no earlier than **v0.2.0**. Policy and migration expectations are in [`.local/api-v1-coord/API_V1_CANONICAL.md`](.local/api-v1-coord/API_V1_CANONICAL.md) **§8** (Swarm consolidation).
+Swarm-style plotting (multi-trace clipboard, helicorder, v3 time axes / panels) has one **canonical** import path. Legacy `swarmmpl`, `swarmmpl2`, and `swarmmpl3` remain importable as shims but emit `DeprecationWarning` and are scheduled for removal no earlier than **v0.3.0**. Implementations live under `vdapseisutils.core.swarmmpl` only (v2/v3 subpackages). Policy and migration expectations are in [`.local/api-v1-coord/API_V1_CANONICAL.md`](.local/api-v1-coord/API_V1_CANONICAL.md) **§8** (Swarm consolidation).
 
 **Canonical (new code):**
 

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vdapseisutils"
-version = "0.1.0"
+version = "0.2.0"
 description = "Advanced utilities for volcano seismology"
 authors = [{name = "Jay Wellik", email = "jwellik@usgs.gov"}]
 requires-python = ">=3.11"
