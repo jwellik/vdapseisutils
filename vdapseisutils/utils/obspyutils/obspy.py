@@ -221,7 +221,7 @@ class CatalogV(Catalog):
                 print(self)
 
     def read_ew_arcfiles(self, path):
-        from vdapseisutils.utils.obspyutils.catalogutils import hypoinverse
+        from vdapseisutils.utils.obspyutils.hypoinverse import hypoCatalog
 
         searchdir = path
         arcfiles = os.listdir(searchdir)
@@ -230,7 +230,7 @@ class CatalogV(Catalog):
             print("> {} ...".format(arcfile), end=" ")
 
             try:
-                arc = hypoinverse.hypoCatalog()
+                arc = hypoCatalog()
                 arc.readArcFile(arcfile)
                 self.append(arc.writeObspyCatalog()[0])
                 print("SUCCESS", end="\n")

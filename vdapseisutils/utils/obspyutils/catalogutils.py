@@ -4,9 +4,8 @@ from obspy import UTCDateTime
 from obspy.core.event import Catalog, Event, Origin, Magnitude
 from obspy.geodetics import FlinnEngdahl
 
-# from vdapseisutils.utils.obspyutils import hypoinverse
-# from vdapseisutils.utils.obspyutils.inventoryutils import convertNSLCstr
 from vdapseisutils.obspy_ext import VStreamID
+from vdapseisutils.utils.obspyutils.inventoryutils import convertNSLCstr
 
 def example():
     cat = Catalog()
