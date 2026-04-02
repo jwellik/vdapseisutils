@@ -120,7 +120,7 @@ class DataSource:
 
         import pandas as pd
         from obspy import Stream, UTCDateTime
-        from vdapseisutils.core.datasource.clientutils import get_waveforms_from_client
+        from vdapseisutils.obspy_ext.client import get_waveforms_from_client
 
         st = Stream()
         tstart = UTCDateTime(tstart)
@@ -143,7 +143,7 @@ class DataSource:
 
         import pandas as pd
         from obspy import Stream, UTCDateTime
-        from vdapseisutils.core.datasource.clientutils import get_waveforms_from_client
+        from vdapseisutils.obspy_ext.client import get_waveforms_from_client
 
         st = Stream()
         tstart = UTCDateTime(tstart)
@@ -168,7 +168,7 @@ class DataSource:
 
         import pandas as pd
         from obspy import Stream, UTCDateTime
-        from vdapseisutils.core.datasource.clientutils import get_waveforms_from_client
+        from vdapseisutils.obspy_ext.client import get_waveforms_from_client
         from vdapseisutils.utils import timeutils
 
         if verbose:
