@@ -18,15 +18,17 @@ from vdapseisutils.obspy_ext import (
     VEvent,
     VInventory,
     VStream,
+    VStreamID,
     VTrace,
     VUTCDateTime,
+    parse_wave_id,
     read,
     read_events,
     read_inventory,
     vutcnow,
     vutcrange,
+    waveID,
 )
-from vdapseisutils.obspy_ext.stream_id import VStreamID, parse_wave_id, waveID
 
 __all__ = [
     "DataSource",
