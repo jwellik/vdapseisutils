@@ -12,6 +12,26 @@ from obspy.clients.seedlink import Client as SeedlinkClient
 
 _HOST_PORT_RE = re.compile(r"^[^:\s]+:\d+$")
 
+_FETCH_OPTION_KEYS = frozenset(
+    {
+        "max_download",
+        "fill_value",
+        "create_empty_trace",
+        "empty_samp_rate",
+        "verbose",
+    }
+)
+
+
+def _split_waveform_kwargs(kwargs):
+    """Split VClient waveform options for :mod:`_fetch` vs passthrough to ObsPy client."""
+    kw = dict(kwargs)
+    fetch_kw = {}
+    for key in _FETCH_OPTION_KEYS:
+        if key in kw:
+            fetch_kw[key] = kw.pop(key)
+    return fetch_kw, kw
+
 
 def _split_host_port(serverport: str) -> tuple[str, int]:
     host, _, port_s = serverport.rpartition(":")
@@ -251,67 +271,113 @@ class VClient:
         return VCatalog(catalog)
 
     def get_waveforms(self, *args, **kwargs):
+        """
+        Download waveforms via :func:`~vdapseisutils.obspy_ext.client._fetch.get_waveforms_from_client`
+        (chunking, dtype handling, empty-trace behavior). Returns a :class:`~vdapseisutils.utils.obspyutils.stream.core.VStream`.
+        """
         from obspy import UTCDateTime
-        from obspy.core.stream import Stream
 
-        from vdapseisutils.obspy_ext import VStreamID
+        from vdapseisutils.obspy_ext.client._fetch import get_waveforms_from_client
+        from vdapseisutils.utils.obspyutils.stream.core import VStream
 
-        id_ = kwargs.pop("id", None) or kwargs.pop("waveformID", None)
-        if id_ is None and len(args) > 0 and isinstance(args[0], str) and ("." in args[0]) and len(args) < 5:
-            id_ = args[0]
-            args = args[1:]
-        if "starttime" in kwargs:
-            kwargs["starttime"] = UTCDateTime(kwargs["starttime"])
-        if "endtime" in kwargs:
-            kwargs["endtime"] = UTCDateTime(kwargs["endtime"])
-        if isinstance(id_, list) and self.use_bulk:
-            bulk_args = []
-            for idstr in id_:
-                wid = VStreamID(idstr)
-                net, sta, loc, cha = wid.network, wid.station, wid.location, wid.channel
-                t1 = kwargs.get("starttime", None)
-                t2 = kwargs.get("endtime", None)
-                t1 = UTCDateTime(t1) if t1 is not None else None
-                t2 = UTCDateTime(t2) if t2 is not None else None
-                bulk_args.append((net, sta, loc, cha, t1, t2))
-            return self._client.get_waveforms_bulk(bulk_args, **kwargs)
+        fetch_kw, kw = _split_waveform_kwargs(kwargs)
+
+        id_ = kw.pop("id", None) or kw.pop("waveformID", None)
+        args_list = list(args)
+
+        if id_ is None and (
+            len(args_list) > 0
+            and isinstance(args_list[0], str)
+            and ("." in args_list[0])
+            and len(args_list) < 5
+        ):
+            id_ = args_list[0]
+            args_list = args_list[1:]
+
+        if "starttime" in kw:
+            kw["starttime"] = UTCDateTime(kw["starttime"])
+        if "endtime" in kw:
+            kw["endtime"] = UTCDateTime(kw["endtime"])
+
+        nslc_list = None
+        t1 = t2 = None
+
         if isinstance(id_, list):
-            streams = []
-            for idstr in id_:
-                wid = VStreamID(idstr)
-                net, sta, loc, cha = wid.network, wid.station, wid.location, wid.channel
-                t1 = kwargs.get("starttime", None)
-                t2 = kwargs.get("endtime", None)
-                t1 = UTCDateTime(t1) if t1 is not None else None
-                t2 = UTCDateTime(t2) if t2 is not None else None
-                streams.append(self._client.get_waveforms(net, sta, loc, cha, t1, t2, **kwargs))
-            merged = Stream()
-            for st in streams:
-                merged += st
-            return merged
-        if isinstance(id_, str):
-            wid = VStreamID(id_)
-            net, sta, loc, cha = wid.network, wid.station, wid.location, wid.channel
-            t1 = kwargs.get("starttime", None)
-            t2 = kwargs.get("endtime", None)
-            t1 = UTCDateTime(t1) if t1 is not None else None
-            t2 = UTCDateTime(t2) if t2 is not None else None
-            return self._client.get_waveforms(net, sta, loc, cha, t1, t2, **kwargs)
+            nslc_list = [str(x) for x in id_]
+            t1 = kw.pop("starttime", None)
+            t2 = kw.pop("endtime", None)
+        elif isinstance(id_, str):
+            nslc_list = [id_]
+            t1 = kw.pop("starttime", None)
+            t2 = kw.pop("endtime", None)
+        elif len(args_list) >= 6:
+            net, sta, loc, cha, t1, t2 = args_list[:6]
+            t1 = UTCDateTime(t1)
+            t2 = UTCDateTime(t2)
+            loc = loc if loc is not None else ""
+            nslc_list = [f"{net}.{sta}.{loc}.{cha}"]
+            args_list = args_list[6:]
+        elif (
+            all(k in kw for k in ("network", "station", "channel"))
+            and "starttime" in kw
+            and "endtime" in kw
+        ):
+            net = kw.pop("network")
+            sta = kw.pop("station")
+            if "location" in kw:
+                loc = kw.pop("location")
+            elif "location_code" in kw:
+                loc = kw.pop("location_code")
+            else:
+                loc = "*"
+            cha = kw.pop("channel")
+            t1 = UTCDateTime(kw.pop("starttime"))
+            t2 = UTCDateTime(kw.pop("endtime"))
+            nslc_list = [f"{net}.{sta}.{loc}.{cha}"]
 
-        new_args = list(args)
+        if nslc_list is not None and t1 is not None and t2 is not None:
+            st = get_waveforms_from_client(
+                self._client,
+                nslc_list,
+                t1,
+                t2,
+                **fetch_kw,
+                **kw,
+            )
+            return VStream(st)
+
+        new_args = list(args_list)
         if len(new_args) >= 5:
             new_args[4] = UTCDateTime(new_args[4])
         if len(new_args) >= 6:
             new_args[5] = UTCDateTime(new_args[5])
-        return self._client.get_waveforms(*new_args, **kwargs)
+        return VStream(self._client.get_waveforms(*new_args, **kw))
 
-    def get_waveforms_bulk(self, *args, **kwargs):
-        return self._client.get_waveforms_bulk(*args, **kwargs)
+    def get_waveforms_bulk(self, bulk, **kwargs):
+        """
+        Bulk download via :func:`~vdapseisutils.obspy_ext.client._fetch.get_waveforms_bulk_from_client`.
+        Returns :class:`~vdapseisutils.utils.obspyutils.stream.core.VStream`.
+        """
+        from vdapseisutils.obspy_ext.client._fetch import get_waveforms_bulk_from_client
+        from vdapseisutils.utils.obspyutils.stream.core import VStream
+
+        fetch_kw, client_kw = _split_waveform_kwargs(kwargs)
+        st = get_waveforms_bulk_from_client(
+            self._client,
+            bulk,
+            **fetch_kw,
+            **client_kw,
+        )
+        return VStream(st)
 
     def get_waveforms_from_inventory(self, inventory, **kwargs):
         from vdapseisutils.utils.obspyutils.inventory import VInventory
+        from vdapseisutils.utils.obspyutils.stream.core import VStream
 
-        return VInventory.get_waveforms_from_inventory(self._client, inventory, **kwargs)
+        st = VInventory.get_waveforms_from_inventory(
+            self._client, inventory, **kwargs
+        )
+        return VStream(st)
 
     def __repr__(self):
         if self._client:

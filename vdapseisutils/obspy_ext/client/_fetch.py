@@ -45,8 +45,8 @@ def get_waveforms_from_client(client, nslc_list, t1, t2,
                               fill_value=None,
                               create_empty_trace=False,
                               empty_samp_rate=100,
-                              verbose=False
-                              ):
+                              verbose=False,
+                              **client_kwargs):
     """
     TODO The print status message prints t1 and t2 as what they should be, not necessarily what's actually returned
         (Winston, and maybe other datasources, sometimes return +/-1 sample on either end of the request)
@@ -93,7 +93,9 @@ def get_waveforms_from_client(client, nslc_list, t1, t2,
         for dt1, dt2 in zip(dtstarts, dtends):
 
             try:
-                st_nslc_small = client.get_waveforms(net, sta, loc, cha, dt1, dt2)  # Call ObsPy function
+                st_nslc_small = client.get_waveforms(
+                    net, sta, loc, cha, dt1, dt2, **client_kwargs
+                )  # Call ObsPy function
 
                 # Stolen from Aaron Wech, I think
                 # Deal w error when sub-traces have different dtypes
@@ -142,3 +144,55 @@ def get_waveforms_from_client(client, nslc_list, t1, t2,
     # st_all = sortStreamByNSLClist(st_all, nslc_list)
 
     return st_all
+
+
+def get_waveforms_bulk_from_client(
+    client,
+    bulk,
+    max_download="1D",
+    fill_value=None,
+    create_empty_trace=False,
+    empty_samp_rate=100,
+    verbose=False,
+    **client_kwargs,
+):
+    """
+    Download waveforms for many NSLC/time windows using :func:`get_waveforms_from_client`.
+
+    ``bulk`` follows ObsPy's ``get_waveforms_bulk`` row shape:
+    ``(network, station, location, channel, starttime, endtime)``. Rows are grouped by
+    identical ``(starttime, endtime)`` so each group uses one chunked fetch pass.
+    """
+    from collections import defaultdict
+
+    from obspy import Stream, UTCDateTime
+
+    # Use numeric window keys; UTCDateTime is not reliably hashable across ObsPy versions.
+    groups = defaultdict(list)
+    for row in bulk:
+        if len(row) < 6:
+            raise ValueError(
+                "Each bulk row must be (network, station, location, channel, starttime, endtime)"
+            )
+        net, sta, loc, cha, t1, t2 = row[:6]
+        t1 = UTCDateTime(t1)
+        t2 = UTCDateTime(t2)
+        loc_s = loc if loc is not None else ""
+        nslc = f"{net}.{sta}.{loc_s}.{cha}"
+        groups[(float(t1), float(t2))].append(nslc)
+
+    out = Stream()
+    for (t1f, t2f), nslc_list in groups.items():
+        out += get_waveforms_from_client(
+            client,
+            nslc_list,
+            UTCDateTime(t1f),
+            UTCDateTime(t2f),
+            max_download=max_download,
+            fill_value=fill_value,
+            create_empty_trace=create_empty_trace,
+            empty_samp_rate=empty_samp_rate,
+            verbose=verbose,
+            **client_kwargs,
+        )
+    return out
