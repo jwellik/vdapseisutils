@@ -18,15 +18,19 @@ Team conventions (T0 — do not re-litigate in subtasks)
    objects). No proxy objects, no ``_original_event`` / hidden “real” event for
    indexing.
 
-Subpackages ``client`` and ``io`` are populated in later tasks (T1–T6).
+Subpackage ``client`` and module ``io`` (read helpers) are populated across T1–T6.
 """
 
 from vdapseisutils.obspy_ext.client import DataSource, VClient
+from vdapseisutils.obspy_ext.io import read, read_events, read_inventory
 from vdapseisutils.obspy_ext.stream_id import VStreamID, parse_wave_id, waveID
 
 __all__: list[str] = [
     "DataSource",
     "VClient",
+    "read",
+    "read_events",
+    "read_inventory",
     "VStreamID",
     "parse_wave_id",
     "waveID",
