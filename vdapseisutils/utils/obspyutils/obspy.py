@@ -9,7 +9,7 @@ import numpy as np
 
 class StreamV(Stream):
 
-    from vdapseisutils.utils.obspyutils import streamutils
+    from vdapseisutils.obspy_ext import stream_ops
 
     def __init__(self):
         print("VDAPSEISUTILS Stream")
@@ -18,26 +18,26 @@ class StreamV(Stream):
         print("Booyah!")
 
     def same_data_type(self):
-        return streamutils.same_data_type(self)
+        return stream_ops.same_data_type(self)
 
     def preprocess(self, *args, **kwargs):
-        return streamutils.preprocess(self)
+        return stream_ops.preprocess(self)
 
     def remove_winston_gaps(self, *args, **kwargs):
-        return streamutils.removeWinstonGaps(self, *args, **kwargs)
+        return stream_ops.removeWinstonGaps(self, *args, **kwargs)
 
     def clip(self, clip_threshold):
-        return streamutils.clip(self, clip_threshold)
+        return stream_ops.clip(self, clip_threshold)
 
     def sort_by_nslc(self, nslc_list, verbose=False):
-        return streamutils.sortStreamByNSLClist(self, nslc_list, verbose=verbose)
+        return stream_ops.sortStreamByNSLClist(self, nslc_list, verbose=verbose)
 
     def add_empty_trace(self, *args, **kwargs):
-        return streamutils.createEmptyTrace(*args, **kwargs)
+        return stream_ops.createEmptyTrace(*args, **kwargs)
 
     def idselect(self, ids):
         # TODO Deprecate. Use obspy.stream.select(id=...) instead
-        return streamutils.idselect(self, ids)
+        return stream_ops.idselect(self, ids)
 
     def ffrsam(self, window_length=60, step=None, freq=None):
         """Computes frequency filtered RSAM using RMS

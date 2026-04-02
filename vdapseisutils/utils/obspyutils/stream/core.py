@@ -14,6 +14,8 @@ from obspy import Stream, Trace
 import numpy as np
 from typing import Optional, List, Tuple, Union, Any
 
+from vdapseisutils.obspy_ext.stream_ops import preprocess_stream, round_trace_sampling_rates
+
 
 class VTrace(Trace):
     """
@@ -114,14 +116,11 @@ class VStream(Stream):
             raise TypeError(f"Invalid numpy dtype: {dtype}. Must be a valid numpy data type.")
         
         for tr in self:
-            # Convert data type if it doesn't match target
             if tr.data.dtype != target_dtype:
                 tr.data = tr.data.astype(target_dtype)
-            
-            # Handle sampling rate rounding issues
-            if tr.stats.sampling_rate != np.round(tr.stats.sampling_rate):
-                tr.stats.sampling_rate = np.round(tr.stats.sampling_rate)
-        
+
+        round_trace_sampling_rates(self)
+
         return self
 
     def preprocess(self, 
@@ -175,32 +174,20 @@ class VStream(Stream):
         >>> # Method chaining example
         >>> processed = st.preprocess(resample=25.0).merge(fill_value=0.0).filter('bandpass', freqmin=1.0, freqmax=10.0)
         """
-        # Ensure consistent data types across all traces
-        self.set_data_type()
-        
-        # Remove linear trends and mean
-        self.detrend('demean')
-        
-        # Resample if requested
-        if resample is not None:
-            for tr in self:
-                if tr.stats.sampling_rate != resample:
-                    tr.resample(resample)
-        
-        # Apply tapering to avoid filter edge effects
-        self.taper(max_percentage=None, max_length=taper)
-        
-        # Apply filter if specified
         if filter is not None:
             if not isinstance(filter, list) or len(filter) != 2:
                 raise ValueError("Filter must be a list of [filter_type, filter_kwargs]")
-            filter_type, filter_kwargs = filter
-            self.filter(filter_type, **filter_kwargs)
-        
-        # Trim to specified time window
+
         if trim is not None:
             if not isinstance(trim, (list, tuple)) or len(trim) != 2:
                 raise ValueError("Trim must be a tuple/list of (start_time, end_time)")
-            self.trim(trim[0], trim[1])
-        
+
+        preprocess_stream(
+            self,
+            resample=resample,
+            taper=taper,
+            filter=filter,
+            trim=trim,
+        )
+
         return self

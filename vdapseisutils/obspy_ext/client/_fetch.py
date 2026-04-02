@@ -66,7 +66,7 @@ def get_waveforms_from_client(client, nslc_list, t1, t2,
     from numpy import dtype
     from obspy import UTCDateTime, Stream
     from vdapseisutils.obspy_ext import VStreamID
-    from vdapseisutils.utils.obspyutils.streamutils import createEmptyTrace
+    from vdapseisutils.obspy_ext.stream_ops import createEmptyTrace
     from vdapseisutils.utils import timeutils
 
     STATUSMSG = '- {nslc:15} | {t1} - {t2} | {status:15} ({ntr:2} traces, {npts:7} samples)'
