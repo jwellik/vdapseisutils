@@ -101,6 +101,16 @@ def test_save_html_writes_file(tmp_path: Path):
     assert "plotly" in text.lower()
 
 
+def test_scatter_marker_sizes_use_matplotlib_area_semantics():
+    """``s`` is matplotlib pt² area; Plotly diameters must be modest px (not raw s as px)."""
+    from vdapseisutils.core.maps.plotly import cross_section_plotly as csp
+
+    assert csp._mpl_scatter_area_to_plotly_diameter_px(49.0) < 15.0  # inventory default
+    assert csp._mpl_scatter_area_to_plotly_diameter_px(64.0) < 15.0  # volcano/peak default
+    arr = csp._mpl_scatter_area_to_plotly_diameter_px([36.0, 100.0])
+    assert float(arr.max()) <= 80.0
+
+
 def test_plot_catalog_time_colorbar_and_magnitude_legend():
     """Default catalog uses time colorbar + MagLegend-sized markers; Plotly adds M… legend."""
     from vdapseisutils.core.maps.plotly.cross_section_plotly import CrossSectionPlotly

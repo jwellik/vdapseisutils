@@ -125,6 +125,24 @@ def _colorscale_from_mpl_cmap(name: str | None) -> tuple[str, bool] | None:
     return plotly_name, rev
 
 
+# Matplotlib ``scatter`` marker size *s* is area in points² (see Matplotlib docs). Plotly
+# ``marker.size`` with ``sizemode='diameter'`` is the diameter in **pixels**. Map pt → px
+# with a typical screen DPI so catalog / inventory / peak sizes match mpl CrossSection.
+_MPL_TO_PLOTLY_PX: float = 96.0 / 72.0
+
+
+def _mpl_scatter_area_to_plotly_diameter_px(s: Any) -> Any:
+    """Convert matplotlib-style scatter area *s* (pt²) to Plotly marker diameter (px)."""
+    arr = np.asarray(s, dtype=float)
+    with np.errstate(invalid="ignore"):
+        d_pt = np.sqrt(np.maximum(arr, 0.0))
+    d_px = d_pt * _MPL_TO_PLOTLY_PX
+    d_px = np.where(np.isfinite(d_px), np.clip(d_px, 2.0, 80.0), 2.0)
+    if getattr(s, "shape", ()) == () and np.ndim(s) == 0:
+        return float(d_px.ravel()[0])
+    return d_px
+
+
 def _series_to_numeric_colors(c: Any) -> Any:
     """Convert pandas datetime / categorical to plottable numeric for colorscales."""
     try:
@@ -183,11 +201,8 @@ def _scatter_kwargs_to_plotly_marker(
         m["color"] = _mpl_color_to_plotly(use_c)
 
     if s is not None:
-        if np.ndim(s) == 0:
-            m["size"] = float(s)
-        else:
-            m["size"] = np.asarray(s, dtype=float)
-            m["sizemode"] = "diameter"
+        m["size"] = _mpl_scatter_area_to_plotly_diameter_px(s)
+        m["sizemode"] = "diameter"
 
     sym = _mpl_marker_to_plotly(marker) if isinstance(marker, str) else None
     if sym:
@@ -234,6 +249,9 @@ class CrossSectionPlotly:
       use :meth:`add_magnitude_legend` or pass ``show_magnitude_legend=True`` to
       :meth:`plot_catalog`. Time-colored catalogs use a Plotly **colorbar** (continuous),
       analogous to matplotlib’s scatter colorbar for ``c="time"``.
+    - **Scatter marker size:** Matplotlib ``scatter(..., s=…)`` uses *s* as marker **area**
+      in points²; Plotly uses pixel **diameter**. Values are converted so catalog, inventory,
+      volcano, and peak markers match matplotlib ``CrossSection`` proportions on screen.
 
     Plotting methods return the same ``Figure`` instance (not ``self``).
     """
@@ -575,7 +593,7 @@ class CrossSectionPlotly:
         self._clear_magnitude_legend_traces()
         ml = self._maglegend
         for i, mag in enumerate(ml.legend_mag):
-            siz = float(ml.legend_s[i])
+            siz = _mpl_scatter_area_to_plotly_diameter_px(ml.legend_s[i])
             line_d = dict(color=edgecolor, width=linewidth)
             extra = {}
             if i == 0:

@@ -14,6 +14,7 @@
 ## What differs (by design)
 
 - **Renderer:** Plotly `Figure` only (no `Axes`). Axis titles: explicit **Distance along profile (km)** on *x*; **Depth (km)** on the **right** *y* (matplotlib leaves *x* unlabeled and appends `km` on the last tick).
+- **Scatter marker size:** Matplotlib `scatter(s=…)` uses *s* as marker area in **points²**; Plotly uses pixel **diameter**. `CrossSectionPlotly` converts *s* (including `MagLegend.mag2s` output) so catalog, inventory, volcano, and peak markers match matplotlib proportions instead of appearing oversized.
 - **Topography:** Drawn as a line trace when elevation data exist; no matplotlib spine tricks.
 
 ## Unsupported or not replicated
