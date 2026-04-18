@@ -1,0 +1,32 @@
+# Branch Summary: feature/plotly-interactive-views
+
+## Metadata
+- **Branch**: feature/plotly-interactive-views
+- **Status**: open
+- **Opened on**: 2026-04-18
+- **Closed on**: -
+- **Merged into**: -
+- **Merge strategy**: -
+P26-04-18
+
+## Accomplishments
+- Add 2-5 key accomplishments before committing.
+- Keep each bullet concise and outcome-focused.
+
+## Planned work
+- 
+
+## Executed work
+- 
+
+## Back-and-forth / iteration notes
+- 
+
+## Problems + resolutions
+- 
+
+## Validation
+- 
+
+## Final changelog-style outcome
+- 
