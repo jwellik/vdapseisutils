@@ -562,6 +562,23 @@ class CrossSectionPlotly:
             px_scale=self._marker_px_scale,
         )
 
+        # Never pass matplotlib-style kwargs through to go.Scatter (Plotly rejects e.g. colorbar_title).
+        for _bad in (
+            "colorbar_title",
+            "vmin",
+            "vmax",
+            "c",
+            "cmap",
+            "s",
+            "color",
+            "alpha",
+            "edgecolors",
+            "linewidths",
+            "marker",
+            "label",
+        ):
+            kwargs.pop(_bad, None)
+
         self.figure.add_trace(
             go.Scatter(
                 x=x_km,
