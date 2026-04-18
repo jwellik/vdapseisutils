@@ -13,7 +13,7 @@ P26-04-18
 - Created branch `feature/plotly-interactive-views` for Plotly-backed Map, CrossSection, and Clipboard work.
 - Documented mandatory branch policy and aligned copy-paste prompts in `docs/plotly_map_crosssection_clipboard_plan.md`.
 - Added optional `[plotly]` extra and a matplotlib-free cross-section data layer under `vdapseisutils.core.maps.plotly` (Part 1 foundation).
-- Added `CrossSectionPlotly` (matplotlib-like API, methods return `go.Figure`) plus tests.
+- CrossSection Plotly Part 2: `CrossSectionPlotly` core figure with `go.Heatmap` / `go.Scatter`, axis titles (distance vs depth km), styling from `CROSSSECTION_DEFAULTS` and `TICK_DEFAULTS`, `save_html` / `show`, and `examples/cross_section_plotly_standalone.py`.
 
 ## Planned work
 - CrossSection → Map → Clipboard Plotly ports per `docs/plotly_map_crosssection_clipboard_plan.md` (nine phased prompts).
@@ -22,7 +22,7 @@ P26-04-18
 ## Executed work
 - Branch created; plan committed with branch-only policy and prompt updates.
 - Part 1: `pyproject` `[plotly]` extra, `cross_section_data` + `empty_cross_section_figure`, README note, tests.
-- Part 2-style: `cross_section_plotly.CrossSectionPlotly` with `plot` / `scatter` / `plot_catalog` / `plot_inventory` / `plot_volcano` / `plot_peak` / `plot_heatmap` / titles; lazy export in `plotly` package `__init__`.
+- Part 2: `cross_section_plotly.CrossSectionPlotly` with profile scatter, heatmap/scatter/catalog paths, tick and spine styling, HTML export, tests, standalone Plotly example; lazy export in `plotly` package `__init__`.
 
 ## Back-and-forth / iteration notes
 - 

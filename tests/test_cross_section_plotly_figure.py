@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from obspy import UTCDateTime
 from obspy.core.event import Catalog, Event, Magnitude, Origin
@@ -64,3 +66,36 @@ def test_plot_catalog_returns_figure():
     fig = xs.plot_catalog(cat)
     assert fig is xs.figure
     assert len(fig.data) >= 1
+
+
+def test_axis_titles_and_tick_styling():
+    from vdapseisutils.core.maps.plotly.cross_section_plotly import CrossSectionPlotly
+
+    xs = CrossSectionPlotly(
+        origin=(46.20, -122.25),
+        azimuth=90.0,
+        radius_km=8.0,
+        depth_extent=(-12.0, 2.0),
+        layout_height=280,
+    )
+    layout = xs.figure.layout
+    assert layout.xaxis.title.text == "Distance along profile (km)"
+    assert layout.yaxis.title.text == "Depth (km)"
+    assert layout.yaxis.side == "right"
+    assert layout.xaxis.tickfont.color is not None
+
+
+def test_save_html_writes_file(tmp_path: Path):
+    from vdapseisutils.core.maps.plotly.cross_section_plotly import CrossSectionPlotly
+
+    xs = CrossSectionPlotly(
+        origin=(46.20, -122.25),
+        azimuth=90.0,
+        radius_km=8.0,
+        depth_extent=(-10.0, 2.0),
+    )
+    p = tmp_path / "xs.html"
+    xs.save_html(p)
+    assert p.is_file()
+    text = p.read_text(encoding="utf-8")
+    assert "plotly" in text.lower()

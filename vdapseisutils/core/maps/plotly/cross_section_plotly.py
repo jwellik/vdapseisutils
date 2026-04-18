@@ -10,11 +10,13 @@ Requires the optional ``[plotly]`` dependency.
 from __future__ import annotations
 
 import warnings
+from pathlib import Path
 from typing import Any
 
 import numpy as np
 
 from vdapseisutils.core.maps.defaults_constants import (
+    AXES_DEFAULTS,
     CROSSSECTION_DEFAULTS,
     HEATMAP_DEFAULTS,
     PLOT_CATALOG_DEFAULTS,
@@ -22,6 +24,7 @@ from vdapseisutils.core.maps.defaults_constants import (
     PLOT_PEAK_DEFAULTS,
     PLOT_VOLCANO_DEFAULTS,
     SUBTITLE_DEFAULTS,
+    TICK_DEFAULTS,
     TITLE_DEFAULTS,
 )
 from vdapseisutils.core.maps.legends import MagLegend
@@ -50,6 +53,23 @@ def _require_plotly() -> Any:
             "Plotly is not installed. Install with: pip install 'vdapseisutils[plotly]'"
         )
     return go
+
+
+_MPL_FONT_TOKEN_TO_PX: dict[str, int] = {
+    "xx-small": 8,
+    "x-small": 9,
+    "small": 10,
+    "medium": 11,
+    "large": 12,
+    "x-large": 14,
+    "xx-large": 16,
+}
+
+
+def _font_px(token: object, default: int = 10) -> int:
+    if isinstance(token, (int, float)):
+        return int(token)
+    return _MPL_FONT_TOKEN_TO_PX.get(str(token).lower(), default)
 
 
 def _mpl_marker_to_plotly(marker: str | None) -> str | None:
@@ -173,7 +193,27 @@ class CrossSectionPlotly:
     """
     Interactive cross-section on a :class:`plotly.graph_objects.Figure`.
 
-    High-level kwargs align with :class:`~vdapseisutils.core.maps.cross_section.CrossSection`.
+    Constructor kwargs mirror :class:`~vdapseisutils.core.maps.cross_section.CrossSection`
+    where practical (``points`` / ``origin`` + ``azimuth`` + ``radius_km``, ``depth_extent``,
+    ``label``, ``resolution``, ``max_n``, ``map_extent``, ``width``, ``verbose``, etc.).
+    The Part 1 data bundle is built via :func:`~vdapseisutils.core.maps.plotly.cross_section_data.build_cross_section_data`.
+
+    **Intentional differences from matplotlib ``CrossSection``**
+
+    - **Figure handle:** use ``figure=`` (or ``fig=`` as an alias) for a
+      :class:`plotly.graph_objects.Figure`; there is no ``Axes``. ``dpi`` and ``figsize`` are
+      ignored; use ``layout_width`` / ``layout_height`` (or ``width_px`` / ``height_px`` in
+      ``**kwargs``) for pixel dimensions (defaults 700×420).
+    - **Axes:** horizontal axis is titled **Distance along profile (km)**; matplotlib leaves the
+      x label empty and appends ``km`` only on the last tick label. Y-axis **Depth (km)** stays
+      on the **right** with label styling driven by ``TICK_DEFAULTS`` / ``CROSSSECTION_DEFAULTS``
+      where applicable.
+    - **Topography:** drawn as a :class:`plotly.graph_objects.Scatter` line when a profile
+      exists (offline / empty elevation skips it, same idea as an empty matplotlib profile).
+    - **Magnitude legend:** :class:`~vdapseisutils.core.maps.legends.MagLegend` is used for
+      catalog sizing/color prep as in matplotlib; pixel-perfect legend layout is deferred to
+      Part 3.
+
     Plotting methods return the same ``Figure`` instance (not ``self``).
     """
 
@@ -182,6 +222,7 @@ class CrossSectionPlotly:
     def __init__(
         self,
         figure=None,
+        fig=None,
         points=None,
         origin=None,
         radius_km: float = 25.0,
@@ -200,6 +241,8 @@ class CrossSectionPlotly:
         **kwargs: Any,
     ) -> None:
         _require_plotly()
+        if figure is None:
+            figure = fig
         if figure is None:
             figure = go.Figure()
         self.figure = figure
@@ -241,6 +284,10 @@ class CrossSectionPlotly:
             margin=dict(l=50, r=80, t=40, b=50),
             template="plotly_white",
             showlegend=True,
+            font=dict(
+                color=TICK_DEFAULTS["labelcolor"],
+                size=_font_px(TICK_DEFAULTS["labelsize"], 10),
+            ),
         )
         self._apply_axis_layout()
         if self._data.has_profile and len(self._data.profile_distance_km):
@@ -262,18 +309,47 @@ class CrossSectionPlotly:
     def _apply_axis_layout(self):
         xmin, xmax = self._data.horiz_extent_km
         ymin, ymax = self._data.depth_extent
+        tick_px = _font_px(TICK_DEFAULTS["labelsize"], 10)
+        axes_label_px = _font_px(TICK_DEFAULTS["axes_labelsize"], 11)
+        axes_title_px = _font_px(TICK_DEFAULTS["axes_titlesize"], 12)
+        label_title_font = dict(
+            color=TICK_DEFAULTS["axes_labelcolor"],
+            size=max(axes_label_px, axes_title_px),
+        )
+        # Light grid for readability (matplotlib CrossSection does not use GRID_DEFAULTS here).
+        tick_kw = dict(
+            showgrid=True,
+            gridcolor="rgba(128,128,128,0.28)",
+            gridwidth=0.5,
+            zeroline=False,
+            ticks="outside",
+            tickcolor=TICK_DEFAULTS["tick_color"],
+            tickwidth=float(TICK_DEFAULTS["tick_width"]),
+            ticklen=float(TICK_DEFAULTS["tick_size"]),
+            showline=True,
+            linewidth=float(AXES_DEFAULTS["spine_linewidth"]),
+            linecolor=AXES_DEFAULTS["spine_color"],
+            mirror=True,
+            tickfont=dict(color=TICK_DEFAULTS["labelcolor"], size=tick_px),
+        )
         self.figure.update_xaxes(
             range=[xmin, xmax],
-            title=dict(text=""),
-            showgrid=True,
-            zeroline=False,
+            title=dict(
+                text="Distance along profile (km)",
+                font=label_title_font,
+                standoff=8,
+            ),
+            **tick_kw,
         )
         self.figure.update_yaxes(
             range=[ymin, ymax],
-            title=dict(text="Depth (km)", standoff=12),
+            title=dict(
+                text="Depth (km)",
+                font=label_title_font,
+                standoff=float(CROSSSECTION_DEFAULTS["ylabel_pad"]),
+            ),
             side="right",
-            showgrid=True,
-            zeroline=False,
+            **tick_kw,
         )
         return self.figure
 
@@ -295,6 +371,10 @@ class CrossSectionPlotly:
         pad_x = (x1 - x0) * 0.03
         pad_y = (y1 - y0) * 0.03
         ya = y0 + pad_y
+        tick_px = _font_px(TICK_DEFAULTS["labelsize"], 10)
+        ann_font = dict(color="black", size=tick_px + 1)
+        stroke = float(CROSSSECTION_DEFAULTS["text_stroke_linewidth"])
+        stroke_col = CROSSSECTION_DEFAULTS["text_stroke_color"]
         self.figure.add_annotation(
             x=x0 + pad_x,
             y=ya,
@@ -302,7 +382,11 @@ class CrossSectionPlotly:
             showarrow=False,
             xanchor="left",
             yanchor="bottom",
-            font=dict(color="black"),
+            font=ann_font,
+            bgcolor="rgba(255,255,255,0.92)",
+            borderpad=2,
+            bordercolor=stroke_col,
+            borderwidth=stroke,
         )
         self.figure.add_annotation(
             x=x1 - pad_x,
@@ -311,7 +395,11 @@ class CrossSectionPlotly:
             showarrow=False,
             xanchor="right",
             yanchor="bottom",
-            font=dict(color="black"),
+            font=ann_font,
+            bgcolor="rgba(255,255,255,0.92)",
+            borderpad=2,
+            bordercolor=stroke_col,
+            borderwidth=stroke,
         )
 
     def plot(
@@ -694,3 +782,13 @@ class CrossSectionPlotly:
             vcatalog = catalog
         summary_str = vcatalog.short_summary_str()
         return self.set_subtitle(summary_str, **kwargs)
+
+    def save_html(self, file: str | Path, **kwargs: Any) -> None:
+        """Write a self-contained HTML file (delegates to :meth:`plotly.graph_objects.Figure.write_html`)."""
+        _require_plotly()
+        self.figure.write_html(file, **kwargs)
+
+    def show(self, **kwargs: Any) -> Any:
+        """Open an interactive view in the browser or embed in a notebook (``Figure.show``)."""
+        _require_plotly()
+        return self.figure.show(**kwargs)

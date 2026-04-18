@@ -1,9 +1,9 @@
 """
 Plotly-oriented helpers for maps (optional ``[plotly]`` extra).
 
-Part 1 provides a matplotlib-free **data layer** for cross-sections; interactive
-figures arrive in later parts. Import ``cross_section_data`` for geometry and
-catalog/inventory prep without pulling in Plotly.
+Part 1 provides a matplotlib-free **data layer** for cross-sections; Part 2 adds
+:class:`CrossSectionPlotly` (interactive figure). Import ``cross_section_data`` for
+geometry and catalog/inventory prep without pulling in Plotly.
 """
 
 from __future__ import annotations
