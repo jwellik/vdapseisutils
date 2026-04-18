@@ -19,6 +19,7 @@ from .cross_section_data import (
 
 __all__ = [
     "CrossSectionData",
+    "CrossSectionPlotly",
     "build_cross_section_data",
     "empty_cross_section_figure",
     "inventory_station_arrays",
@@ -26,6 +27,15 @@ __all__ = [
     "prep_inventory_for_cross_section",
     "project_latlon_to_cross_section",
 ]
+
+
+def __getattr__(name: str):
+    """Lazy import so ``cross_section_data`` works without Plotly installed."""
+    if name == "CrossSectionPlotly":
+        from .cross_section_plotly import CrossSectionPlotly
+
+        return CrossSectionPlotly
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def empty_cross_section_figure():
