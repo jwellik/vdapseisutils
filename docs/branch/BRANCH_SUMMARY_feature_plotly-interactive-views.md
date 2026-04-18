@@ -10,14 +10,14 @@
 P26-04-18
 
 ## Accomplishments
-- Add 2-5 key accomplishments before committing.
-- Keep each bullet concise and outcome-focused.
+- Created branch `feature/plotly-interactive-views` for Plotly-backed Map, CrossSection, and Clipboard work.
+- Documented mandatory branch policy and aligned copy-paste prompts in `docs/plotly_map_crosssection_clipboard_plan.md`.
 
 ## Planned work
-- 
+- CrossSection → Map → Clipboard Plotly ports per `docs/plotly_map_crosssection_clipboard_plan.md` (nine phased prompts).
 
 ## Executed work
-- 
+- Branch created; plan committed with branch-only policy and prompt updates.
 
 ## Back-and-forth / iteration notes
 - 
