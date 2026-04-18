@@ -101,6 +101,32 @@ def test_save_html_writes_file(tmp_path: Path):
     assert "plotly" in text.lower()
 
 
+def test_marker_px_scale_reduces_diameter():
+    from vdapseisutils.core.maps.plotly.cross_section_plotly import CrossSectionPlotly
+
+    xs1 = CrossSectionPlotly(
+        origin=(46.20, -122.25),
+        azimuth=90.0,
+        radius_km=8.0,
+        depth_extent=(-12.0, 2.0),
+        layout_height=300,
+        marker_px_scale=1.0,
+    )
+    xs1.scatter(x=[4.0], z=[-4.0], z_dir="depth", z_unit="km", s=49.0, c="black")
+    xs2 = CrossSectionPlotly(
+        origin=(46.20, -122.25),
+        azimuth=90.0,
+        radius_km=8.0,
+        depth_extent=(-12.0, 2.0),
+        layout_height=300,
+        marker_px_scale=0.5,
+    )
+    xs2.scatter(x=[4.0], z=[-4.0], z_dir="depth", z_unit="km", s=49.0, c="black")
+    t1 = [t for t in xs1.figure.data if t.mode == "markers"][-1]
+    t2 = [t for t in xs2.figure.data if t.mode == "markers"][-1]
+    assert float(t2.marker.size) < float(t1.marker.size)
+
+
 def test_scatter_marker_sizes_use_matplotlib_area_semantics():
     """``s`` is matplotlib pt² area; Plotly diameters must be modest px (not raw s as px)."""
     from vdapseisutils.core.maps.plotly import cross_section_plotly as csp
@@ -141,6 +167,7 @@ def test_plot_catalog_time_colorbar_and_magnitude_legend():
     cat_tr = next(t for t in xs.figure.data if getattr(t, "name", None) == "catalog")
     assert cat_tr.marker.showscale is True
     assert cat_tr.marker.colorbar.title.text == "Time"
+    assert cat_tr.marker.sizeref == 1
     mag_leg = [t for t in xs.figure.data if getattr(t, "legendgroup", None) == "vdap_mag_legend"]
     assert len(mag_leg) >= 2
 

@@ -27,3 +27,4 @@
 
 - **Spine / surface alignment:** Rely on the topography line and fixed `depth_extent`; adjust `depth_extent` or annotations if you need more margin near the surface.
 - **Magnitude key without clutter:** Pass `show_magnitude_legend=False` to `plot_catalog` and call `add_magnitude_legend()` once when you want the size scale, or hide the main trace from the legend with `plot_catalog(..., showlegend=False)` on the catalog trace if needed.
+- **Markers still look huge after an update:** The notebook or browser may be showing **old output**. Use **Kernel → Restart** and **Run All**, or clear outputs and re-run. Confirm the kernel loads the repo package: `import vdapseisutils.core.maps.plotly.cross_section_plotly as m; print(m.__file__)` should point at your clone (use `pip install -e .` from the repo root). If dots are still too large visually, pass `marker_px_scale=0.75` (or similar) to `CrossSectionPlotly(...)`.

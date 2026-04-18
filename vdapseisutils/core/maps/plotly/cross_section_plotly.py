@@ -131,12 +131,13 @@ def _colorscale_from_mpl_cmap(name: str | None) -> tuple[str, bool] | None:
 _MPL_TO_PLOTLY_PX: float = 96.0 / 72.0
 
 
-def _mpl_scatter_area_to_plotly_diameter_px(s: Any) -> Any:
+def _mpl_scatter_area_to_plotly_diameter_px(s: Any, *, px_scale: float = 1.0) -> Any:
     """Convert matplotlib-style scatter area *s* (pt²) to Plotly marker diameter (px)."""
+    scale = float(px_scale)
     arr = np.asarray(s, dtype=float)
     with np.errstate(invalid="ignore"):
         d_pt = np.sqrt(np.maximum(arr, 0.0))
-    d_px = d_pt * _MPL_TO_PLOTLY_PX
+    d_px = d_pt * _MPL_TO_PLOTLY_PX * scale
     d_px = np.where(np.isfinite(d_px), np.clip(d_px, 2.0, 80.0), 2.0)
     if getattr(s, "shape", ()) == () and np.ndim(s) == 0:
         return float(d_px.ravel()[0])
@@ -169,6 +170,7 @@ def _scatter_kwargs_to_plotly_marker(
     vmin: float | None = None,
     vmax: float | None = None,
     colorbar_title: str | None = None,
+    px_scale: float = 1.0,
 ) -> dict[str, Any]:
     """Map common matplotlib ``scatter`` kwargs to Plotly ``marker`` dict."""
     m: dict[str, Any] = {}
@@ -201,8 +203,10 @@ def _scatter_kwargs_to_plotly_marker(
         m["color"] = _mpl_color_to_plotly(use_c)
 
     if s is not None:
-        m["size"] = _mpl_scatter_area_to_plotly_diameter_px(s)
+        m["size"] = _mpl_scatter_area_to_plotly_diameter_px(s, px_scale=px_scale)
         m["sizemode"] = "diameter"
+        # Ensure ``size`` values are treated as pixel diameters (see Plotly scatter marker docs).
+        m["sizeref"] = 1
 
     sym = _mpl_marker_to_plotly(marker) if isinstance(marker, str) else None
     if sym:
@@ -252,6 +256,8 @@ class CrossSectionPlotly:
     - **Scatter marker size:** Matplotlib ``scatter(..., s=…)`` uses *s* as marker **area**
       in points²; Plotly uses pixel **diameter**. Values are converted so catalog, inventory,
       volcano, and peak markers match matplotlib ``CrossSection`` proportions on screen.
+      Pass ``marker_px_scale=0.8`` (for example) if you want smaller dots in the interactive view.
+      Plotly also gets ``marker.sizeref=1`` so diameters are not rescaled by the bubble-chart default.
 
     Plotting methods return the same ``Figure`` instance (not ``self``).
     """
@@ -277,6 +283,7 @@ class CrossSectionPlotly:
         profile_source: str = "opentopo",
         layout_width: int | None = None,
         layout_height: int | None = None,
+        marker_px_scale: float = 1.0,
         **kwargs: Any,
     ) -> None:
         _require_plotly()
@@ -311,6 +318,7 @@ class CrossSectionPlotly:
         self.A2 = self._data.A2
         self.profile = self._data.profile
         self._maglegend = maglegend
+        self._marker_px_scale = float(marker_px_scale)
 
         lw = layout_width if layout_width is not None else kwargs.pop("width_px", None)
         lh = layout_height if layout_height is not None else kwargs.pop("height_px", None)
@@ -551,6 +559,7 @@ class CrossSectionPlotly:
             vmin=vmin,
             vmax=vmax,
             colorbar_title=colorbar_title,
+            px_scale=self._marker_px_scale,
         )
 
         self.figure.add_trace(
@@ -593,7 +602,9 @@ class CrossSectionPlotly:
         self._clear_magnitude_legend_traces()
         ml = self._maglegend
         for i, mag in enumerate(ml.legend_mag):
-            siz = _mpl_scatter_area_to_plotly_diameter_px(ml.legend_s[i])
+            siz = _mpl_scatter_area_to_plotly_diameter_px(
+                ml.legend_s[i], px_scale=self._marker_px_scale
+            )
             line_d = dict(color=edgecolor, width=linewidth)
             extra = {}
             if i == 0:
