@@ -5,6 +5,10 @@ Each plotting / layout method returns the underlying :class:`plotly.graph_object
 so callers can chain ``fig.show()`` or ``fig.write_html(...)``.
 
 Requires the optional ``[plotly]`` dependency.
+
+**Matplotlib parity:** see ``docs/plotly_cross_section_PARITY.md`` for what matches
+:class:`~vdapseisutils.core.maps.cross_section.CrossSection`, what differs, and
+unsupported matplotlib-only behavior.
 """
 
 from __future__ import annotations
@@ -144,6 +148,9 @@ def _scatter_kwargs_to_plotly_marker(
     edgecolors: Any,
     linewidths: Any,
     marker: Any,
+    vmin: float | None = None,
+    vmax: float | None = None,
+    colorbar_title: str | None = None,
 ) -> dict[str, Any]:
     """Map common matplotlib ``scatter`` kwargs to Plotly ``marker`` dict."""
     m: dict[str, Any] = {}
@@ -163,6 +170,15 @@ def _scatter_kwargs_to_plotly_marker(
             m["colorscale"] = name
             if rev:
                 m["reversescale"] = True
+        if vmin is not None:
+            m["cmin"] = float(vmin)
+        if vmax is not None:
+            m["cmax"] = float(vmax)
+        cb: dict[str, Any] = {}
+        if colorbar_title:
+            cb["title"] = dict(text=colorbar_title)
+        if cb:
+            m["colorbar"] = cb
     elif use_c is not None:
         m["color"] = _mpl_color_to_plotly(use_c)
 
@@ -189,6 +205,9 @@ def _scatter_kwargs_to_plotly_marker(
     return m
 
 
+_MAG_LEGEND_GROUP = "vdap_mag_legend"
+
+
 class CrossSectionPlotly:
     """
     Interactive cross-section on a :class:`plotly.graph_objects.Figure`.
@@ -210,9 +229,11 @@ class CrossSectionPlotly:
       where applicable.
     - **Topography:** drawn as a :class:`plotly.graph_objects.Scatter` line when a profile
       exists (offline / empty elevation skips it, same idea as an empty matplotlib profile).
-    - **Magnitude legend:** :class:`~vdapseisutils.core.maps.legends.MagLegend` is used for
-      catalog sizing/color prep as in matplotlib; pixel-perfect legend layout is deferred to
-      Part 3.
+    - **Magnitude legend:** :class:`~vdapseisutils.core.maps.legends.MagLegend` drives
+      marker sizes in :meth:`plot_catalog` (same as matplotlib). For a visible size key,
+      use :meth:`add_magnitude_legend` or pass ``show_magnitude_legend=True`` to
+      :meth:`plot_catalog`. Time-colored catalogs use a Plotly **colorbar** (continuous),
+      analogous to matplotlib’s scatter colorbar for ``c="time"``.
 
     Plotting methods return the same ``Figure`` instance (not ``self``).
     """
@@ -496,8 +517,9 @@ class CrossSectionPlotly:
         name = kwargs.pop("name", None)
         label = kwargs.pop("label", None)
         showlegend = kwargs.pop("showlegend", True)
-        kwargs.pop("vmin", None)
-        kwargs.pop("vmax", None)
+        vmin = kwargs.pop("vmin", None)
+        vmax = kwargs.pop("vmax", None)
+        colorbar_title = kwargs.pop("colorbar_title", None)
 
         mk = _scatter_kwargs_to_plotly_marker(
             s=s,
@@ -508,6 +530,9 @@ class CrossSectionPlotly:
             edgecolors=edgecolors,
             linewidths=linewidths,
             marker=marker,
+            vmin=vmin,
+            vmax=vmax,
+            colorbar_title=colorbar_title,
         )
 
         self.figure.add_trace(
@@ -525,6 +550,57 @@ class CrossSectionPlotly:
         self.set_horiz_extent()
         return self.figure
 
+    def _clear_magnitude_legend_traces(self) -> None:
+        """Drop legend-only magnitude traces so :meth:`add_magnitude_legend` can be re-run."""
+        data = list(self.figure.data)
+        kept = [tr for tr in data if getattr(tr, "legendgroup", None) != _MAG_LEGEND_GROUP]
+        if len(kept) != len(data):
+            self.figure.data = tuple(kept)
+
+    def add_magnitude_legend(
+        self,
+        *,
+        fillcolor: str = "white",
+        edgecolor: str = "black",
+        linewidth: float = 0.8,
+    ) -> go.Figure:
+        """
+        Add legend-only marker sizes matching :class:`~vdapseisutils.core.maps.legends.MagLegend`.
+
+        Comparable to :meth:`MagLegend.display` (discrete circles labeled ``M…``). Removes
+        any magnitude-legend traces previously added on this figure. Main catalog points use
+        the same ``s`` units as :func:`~vdapseisutils.core.maps.utils.prep_catalog_data_mpl`.
+        """
+        _require_plotly()
+        self._clear_magnitude_legend_traces()
+        ml = self._maglegend
+        for i, mag in enumerate(ml.legend_mag):
+            siz = float(ml.legend_s[i])
+            line_d = dict(color=edgecolor, width=linewidth)
+            extra = {}
+            if i == 0:
+                extra["legendgrouptitle"] = dict(text="Magnitude")
+            self.figure.add_trace(
+                go.Scatter(
+                    x=[None],
+                    y=[None],
+                    mode="markers",
+                    name=f"M{mag:g}",
+                    legendgroup=_MAG_LEGEND_GROUP,
+                    showlegend=True,
+                    hoverinfo="skip",
+                    marker=dict(
+                        size=siz,
+                        sizemode="diameter",
+                        color=_mpl_color_to_plotly(fillcolor),
+                        opacity=1.0,
+                        line=line_d,
+                    ),
+                    **extra,
+                )
+            )
+        return self.figure
+
     def plot_catalog(
         self,
         catalog: Any,
@@ -534,8 +610,18 @@ class CrossSectionPlotly:
         cmap=PLOT_CATALOG_DEFAULTS["cmap"],
         alpha=PLOT_CATALOG_DEFAULTS["alpha"],
         time_format: str = "matplotlib",
+        show_magnitude_legend: bool | None = None,
         **kwargs: Any,
     ) -> go.Figure:
+        """
+        Plot catalog events like :meth:`~vdapseisutils.core.maps.cross_section.CrossSection.plot_catalog`.
+
+        When ``c="time"`` (default), markers use a Plotly colorbar titled **Time**. When
+        ``s="magnitude"`` (default), pass ``show_magnitude_legend=False`` to skip the
+        discrete **M…** size legend, or call :meth:`add_magnitude_legend` separately.
+        """
+        s_mode = s
+        wants_time_color = color is None and c == "time"
         prep = prep_catalog_for_cross_section(
             catalog,
             self.A1,
@@ -551,7 +637,11 @@ class CrossSectionPlotly:
         elif c == "time":
             c = catdata["time"]
 
-        return self.scatter(
+        scatter_kw: dict[str, Any] = dict(kwargs)
+        if wants_time_color:
+            scatter_kw.setdefault("colorbar_title", "Time")
+
+        fig = self.scatter(
             lat=catdata["lat"],
             lon=catdata["lon"],
             z=catdata["depth"],
@@ -561,9 +651,14 @@ class CrossSectionPlotly:
             c=c,
             cmap=cmap,
             alpha=alpha,
-            name=kwargs.pop("name", "catalog"),
-            **kwargs,
+            name=scatter_kw.pop("name", "catalog"),
+            **scatter_kw,
         )
+        if show_magnitude_legend is None:
+            show_magnitude_legend = s_mode == "magnitude"
+        if show_magnitude_legend:
+            self.add_magnitude_legend()
+        return fig
 
     def plot_inventory(
         self,
@@ -707,6 +802,7 @@ class CrossSectionPlotly:
                     reversescale=bool(rev),
                     zmin=zmin,
                     zmax=zmax,
+                    colorbar=dict(title=dict(text="Count")),
                     name="heatmap",
                     **kwargs,
                 )

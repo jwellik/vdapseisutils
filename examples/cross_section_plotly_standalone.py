@@ -25,11 +25,15 @@ if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
 import numpy as np
+from obspy import UTCDateTime
+from obspy.core.event import Catalog, Event, Magnitude, Origin
+from obspy.core.event.resourceid import ResourceIdentifier
 
 from vdapseisutils.core.maps.plotly.cross_section_plotly import CrossSectionPlotly
 
 
 def main() -> None:
+    # Same geometry as ``cross_section_standalone.py`` (matplotlib).
     xs = CrossSectionPlotly(
         origin=(46.20, -122.25),
         azimuth=90.0,
@@ -52,6 +56,22 @@ def main() -> None:
         alpha=0.85,
         name="events",
     )
+    # Typical VolcanoFigure-style catalog: magnitude-sized markers + time colorbar + M scale.
+    o = Origin(
+        time=UTCDateTime(2020, 1, 1, 12),
+        latitude=46.205,
+        longitude=-122.255,
+        depth=3500.0,
+    )
+    o.resource_id = ResourceIdentifier(id="origin/demo")
+    e = Event()
+    e.origins = [o]
+    e.preferred_origin_id = o.resource_id
+    e.magnitudes = [
+        Magnitude(mag=1.8, magnitude_type="ML", resource_id=ResourceIdentifier(id="mag/demo"))
+    ]
+    xs.plot_catalog(Catalog([e]), name="catalog")
+
     out = Path(__file__).resolve().with_name("cross_section_plotly_standalone.html")
     xs.save_html(out)
     print(f"Wrote {out}")

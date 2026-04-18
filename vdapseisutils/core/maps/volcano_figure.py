@@ -17,6 +17,8 @@ try:
     from .defaults import default_volcano, TITLE_DEFAULTS, SUBTITLE_DEFAULTS, ensure_maps_mpl_style
     from .map import Map
     from .cross_section import CrossSection
+    # Interactive Plotly port: ``vdapseisutils.core.maps.plotly.CrossSectionPlotly`` (optional ``[plotly]``).
+    # VolcanoFigure keeps matplotlib ``CrossSection`` until Plotly is promoted in the public package API.
     from .time_series import TimeSeries
     from .utils import prep_catalog_data_mpl
 except ImportError:
@@ -27,6 +29,8 @@ except ImportError:
     from vdapseisutils.core.maps.defaults import default_volcano, TITLE_DEFAULTS, SUBTITLE_DEFAULTS, ensure_maps_mpl_style
     from vdapseisutils.core.maps.map import Map
     from vdapseisutils.core.maps.cross_section import CrossSection
+    # Interactive Plotly port: ``vdapseisutils.core.maps.plotly.CrossSectionPlotly`` (optional ``[plotly]``).
+    # VolcanoFigure keeps matplotlib ``CrossSection`` until Plotly is promoted in the public package API.
     from vdapseisutils.core.maps.time_series import TimeSeries
     from vdapseisutils.core.maps.utils import prep_catalog_data_mpl
 from vdapseisutils.utils.geoutils import radial_extent2map_extent

@@ -99,3 +99,61 @@ def test_save_html_writes_file(tmp_path: Path):
     assert p.is_file()
     text = p.read_text(encoding="utf-8")
     assert "plotly" in text.lower()
+
+
+def test_plot_catalog_time_colorbar_and_magnitude_legend():
+    """Default catalog uses time colorbar + MagLegend-sized markers; Plotly adds M… legend."""
+    from vdapseisutils.core.maps.plotly.cross_section_plotly import CrossSectionPlotly
+
+    o = Origin(
+        time=UTCDateTime(2020, 1, 1),
+        latitude=46.20,
+        longitude=-122.26,
+        depth=3000.0,
+    )
+    o.resource_id = ResourceIdentifier(id="origin/o1")
+    e = Event()
+    e.origins = [o]
+    e.preferred_origin_id = o.resource_id
+    e.magnitudes = [
+        Magnitude(mag=2.5, magnitude_type="ML", resource_id=ResourceIdentifier(id="mag/1"))
+    ]
+    cat = Catalog([e])
+
+    xs = CrossSectionPlotly(
+        origin=(46.20, -122.25),
+        azimuth=90.0,
+        radius_km=10.0,
+        depth_extent=(-15.0, 2.0),
+        layout_height=300,
+    )
+    xs.plot_catalog(cat)
+    cat_tr = next(t for t in xs.figure.data if getattr(t, "name", None) == "catalog")
+    assert cat_tr.marker.showscale is True
+    assert cat_tr.marker.colorbar.title.text == "Time"
+    mag_leg = [t for t in xs.figure.data if getattr(t, "legendgroup", None) == "vdap_mag_legend"]
+    assert len(mag_leg) >= 2
+
+
+def test_minimal_fake_arrays_instantiation():
+    """Smoke test with in-axis coordinates only (no catalog / network)."""
+    from vdapseisutils.core.maps.plotly.cross_section_plotly import CrossSectionPlotly
+
+    xs = CrossSectionPlotly(
+        points=[(46.19, -122.30), (46.21, -122.20)],
+        depth_extent=(-5.0, 1.0),
+        layout_width=400,
+        layout_height=280,
+    )
+    xs.scatter(
+        x=[1.0, 2.5, 4.0],
+        z=[-2.0, -3.0, -1.5],
+        z_dir="depth",
+        z_unit="km",
+        s=20,
+        c="gray",
+        showlegend=False,
+    )
+    assert len(xs.figure.data) >= 1
+    xs.set_title("synthetic")
+    assert xs.figure.layout.title.text == "synthetic"
