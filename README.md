@@ -51,6 +51,9 @@ The package does not require `tables` (PyTables) by default. If you need it, ins
 - **macOS (Homebrew):** `brew install hdf5`, then `export HDF5_DIR=$(brew --prefix hdf5)` and `pip install ".[tables]"` (or `uv sync --extra tables`).
 - **Conda:** `conda install hdf5` then `pip install ".[tables]"`.
 
+**Optional: Plotly (interactive maps / cross-sections)**  
+Plotly-backed views are developed on branch `feature/plotly-interactive-views` and are not required for the default matplotlib API. Install when you need the optional interactive stack: `pip install ".[plotly]"` or `uv sync --extra plotly`.
+
 ## Usage
 
 This package is still in development. If you have trouble with these codes, let me know.
