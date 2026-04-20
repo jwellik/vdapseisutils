@@ -305,15 +305,25 @@ class VolcanoFigure(plt.Figure):
         **kwargs
             Additional plotting arguments
         """
+        # Avoid duplicate scatter keywords when callers pass e.g. **style dicts that
+        # also set s/c/alpha (explicit parameters win).
+        _inv_extras = {
+            k: v
+            for k, v in kwargs.items()
+            if k not in ("s", "c", "alpha", "transform", "cross_section_s")
+        }
         # Plot inventory on the main map
-        map_inventory = self.map_obj.plot_inventory(inventory, s=s, c=c, 
-                                 alpha=alpha, transform=transform, **kwargs)
-        
+        map_inventory = self.map_obj.plot_inventory(
+            inventory, s=s, c=c, alpha=alpha, transform=transform, **_inv_extras
+        )
+
         # Plot inventory on both cross-sections
-        xs1_inventory = self.xs1_obj.plot_inventory(inventory, s=cross_section_s, 
-                                   c=c, alpha=alpha, **kwargs)
-        xs2_inventory = self.xs2_obj.plot_inventory(inventory, s=cross_section_s, 
-                                   c=c, alpha=alpha, **kwargs)
+        xs1_inventory = self.xs1_obj.plot_inventory(
+            inventory, s=cross_section_s, c=c, alpha=alpha, **_inv_extras
+        )
+        xs2_inventory = self.xs2_obj.plot_inventory(
+            inventory, s=cross_section_s, c=c, alpha=alpha, **_inv_extras
+        )
         return map_inventory, xs1_inventory, xs2_inventory
 
     def plot_volcano(self, lat, lon, elev=0, transform=ccrs.Geodetic(), **kwargs):

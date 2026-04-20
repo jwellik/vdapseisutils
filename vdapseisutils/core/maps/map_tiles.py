@@ -188,7 +188,16 @@ def _calculate_auto_zoom_google(radius_km):
         return 5
 
 
-def add_arcgis_terrain(ax, zoom='auto', cache=False, radial_extent_km=None, verbose=False, ssl_verify=False):
+def add_arcgis_terrain(
+    ax,
+    zoom='auto',
+    cache=False,
+    radial_extent_km=None,
+    verbose=False,
+    ssl_verify=False,
+    style=None,
+    **_ignored,
+):
     """
     Add world terrain background tiles from ArcGIS to the map.
 
@@ -199,7 +208,7 @@ def add_arcgis_terrain(ax, zoom='auto', cache=False, radial_extent_km=None, verb
     zoom : int or str, optional
         Zoom level for the tiles ('auto' for auto-detection, default: 'auto')
     style : str, optional
-        Style of ArcGIS tiles ('terrain', 'street', 'satellite', default: 'terrain')
+        Reserved for API compatibility; ArcGIS hillshade + Carto overlay ignore this.
     cache : bool, optional
         Whether to cache tiles (default: False)
     radial_extent_km : float, optional

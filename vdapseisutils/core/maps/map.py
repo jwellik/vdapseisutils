@@ -817,17 +817,22 @@ class Map:
         """Add terrain background tiles from default source to the map."""
         self.add_arcgis_terrain(zoom=zoom, cache=cache, verbose=verbose, ssl_verify=ssl_verify)
 
-    def add_arcgis_terrain(self, zoom='auto', cache=False, verbose=False, ssl_verify=False):
+    def add_arcgis_terrain(self, zoom='auto', cache=False, verbose=False, ssl_verify=False, **kwargs):
         """Add world terrain background tiles from ArcGIS to the map."""
         from .map_tiles import add_arcgis_terrain
-        
+
+        # VolcanoFigure forwards *args, **kwargs; swallow unknown tile keywords (e.g. style).
+        style = kwargs.pop("style", None)
+
         add_arcgis_terrain(
-            self.ax, 
-            zoom=zoom, 
-            cache=cache, 
+            self.ax,
+            zoom=zoom,
+            cache=cache,
             radial_extent_km=self.properties.get("radial_extent_km"),
             verbose=verbose,
-            ssl_verify=ssl_verify
+            ssl_verify=ssl_verify,
+            style=style,
+            **kwargs,
         )
 
     def add_google_terrain(self, zoom='auto', cache=False, verbose=False, ssl_verify=False, **kwargs):
