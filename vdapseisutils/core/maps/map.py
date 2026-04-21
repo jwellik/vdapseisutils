@@ -356,6 +356,7 @@ class Map:
         glv.left_labels = True
         glv.right_labels = False
         glv.xlines = GRID_DEFAULTS['xlines']
+        glv.ylines = GRID_DEFAULTS['ylines']
         glv.xlabel_style = GRID_DEFAULTS['xlabel_style']
         glv.ylabel_style = GRID_DEFAULTS['ylabel_style']
         

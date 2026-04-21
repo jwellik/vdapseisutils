@@ -47,7 +47,8 @@ GRID_DEFAULTS = {
     "linewidth": 0,
     "color": "gray",
     "alpha": 0.5,
-    "xlines": True,
+    "xlines": False,
+    "ylines": False,
     "ylabel_style": {"color": "grey", "rotation": 90, "size": "small"},
     "xlabel_style": {"color": "grey", "size": "small"},
 }

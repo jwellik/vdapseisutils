@@ -145,6 +145,7 @@ class CrossSection:
         self.ax.set_ylabel("Depth (km)", rotation=CROSSSECTION_DEFAULTS['ylabel_rotation'], labelpad=CROSSSECTION_DEFAULTS['ylabel_pad'], 
                            color=TICK_DEFAULTS['axes_labelcolor'], 
                            fontsize=TICK_DEFAULTS['axes_labelsize'])
+        self.ax.grid(False)
         
         # Remove xlabel
         self.ax.set_xlabel("")  # Remove xlabel

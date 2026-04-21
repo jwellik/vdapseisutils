@@ -63,7 +63,7 @@ class VCatalogPlottingMixin:
         return VCatalogPlottingMixin.plot_eventrate_from_times(catalog, freq, ax, **kwargs)
 
     @staticmethod
-    def plot_eventrate_from_times(times, freq="1D", ax=None, **kwargs):
+    def plot_eventrate_from_times(times, freq="1D", ax=None, *, grid=False, **kwargs):
         """
         Plot event rate from a list-like object of datetimes.
 
@@ -76,6 +76,8 @@ class VCatalogPlottingMixin:
             Examples: "1H" (hourly), "1D" (daily), "1W" (weekly), "1M" (monthly)
         ax : matplotlib.axes.Axes, optional
             Existing axes to plot on. If None, creates new figure and axes
+        grid : bool, optional
+            If True, draw a light matplotlib axis grid (default False).
         **kwargs
             Additional keyword arguments passed to matplotlib step() function
 
@@ -120,7 +122,10 @@ class VCatalogPlottingMixin:
         ax.set_ylabel('Events per ' + freq)
         ax.set_xlabel('Time')
         ax.set_ylim(bottom=0)
-        ax.grid(True, alpha=0.3)
+        if grid:
+            ax.grid(True, alpha=0.3)
+        else:
+            ax.grid(False)
 
         return ax
 

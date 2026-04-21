@@ -25,6 +25,7 @@ except ImportError:
     from vdapseisutils.core.maps.utils import prep_catalog_data_mpl
     from vdapseisutils.core.maps.legends import MagLegend
 from vdapseisutils.utils.timeutils import convert_timeformat
+from vdapseisutils.obspy_ext.catalog.plotting import VCatalogPlottingMixin
 
 
 class TimeSeries:
@@ -108,6 +109,8 @@ class TimeSeries:
                                 right=False, labelright=False,
                                 top=False, labeltop=False)
 
+        self.ax.grid(False)
+
         # Set Y-Label using centralized styling
         if self.axis_type == "depth":
             ylabel = "Depth (km)"
@@ -134,6 +137,77 @@ class TimeSeries:
                 self.ax.set_ylim(self.mag_extent)
             else:
                 self.ax.set_ylim(ylim)
+
+    def plot_eventrate(self, data, freq="1D", overlay=False, grid=False, **kwargs):
+        """
+        Plot event rate on the time-series axis.
+
+        Parameters
+        ----------
+        data : obspy Catalog, VCatalog, or list-like
+            Event source. Accepts an ObsPy/VCatalog object or a list-like of
+            datetime/UTCDateTime objects.
+        freq : str, optional
+            Pandas offset alias used for event-rate bins (default: "1D").
+        overlay : bool, optional
+            If True, draw event rate on a secondary y-axis (``twinx``) and keep
+            the primary depth/magnitude axis visible. If False, draw on the
+            primary time-series axis.
+        **kwargs
+            Additional keyword arguments passed to matplotlib ``step``.
+
+        Returns
+        -------
+        matplotlib.axes.Axes
+            Axis containing the event-rate step plot.
+        """
+        # Accept catalogs and list-like time vectors.
+        if hasattr(data, "extract_origin_times"):
+            times = data.extract_origin_times()
+        elif hasattr(data, "events"):
+            from vdapseisutils.obspy_ext.catalog import VCatalog
+            times = VCatalog(data).extract_origin_times()
+        else:
+            times = data
+
+        target_ax = self.ax
+        if overlay:
+            if not hasattr(self, "ax_rate") or self.ax_rate is None:
+                self.ax_rate = self.ax.twinx()
+                # ``twinx`` on subplot-backed axes can snap to the parent
+                # subplot geometry; keep the overlay axis locked to the
+                # manually positioned TimeSeries panel bounds.
+                self.ax_rate.set_position(self.ax.get_position())
+                self.ax_rate.tick_params(
+                    axis='both',
+                    labelcolor=TICK_DEFAULTS['labelcolor'],
+                    labelsize=TICK_DEFAULTS['labelsize'],
+                    color=TICK_DEFAULTS['tick_color'],
+                    length=TICK_DEFAULTS['tick_size'],
+                    width=TICK_DEFAULTS['tick_width'],
+                    direction=TICK_DEFAULTS['tick_direction'],
+                    pad=TICK_DEFAULTS['tick_pad'],
+                )
+                self.ax_rate.grid(False)
+            else:
+                # Re-apply in case any downstream layout call changed bounds.
+                self.ax_rate.set_position(self.ax.get_position())
+            target_ax = self.ax_rate
+
+        ax_out = VCatalogPlottingMixin.plot_eventrate_from_times(
+            times,
+            freq=freq,
+            ax=target_ax,
+            grid=grid,
+            **kwargs,
+        )
+        if overlay:
+            ax_out.set_ylabel(
+                "Events per " + freq,
+                color=TICK_DEFAULTS['axes_labelcolor'],
+                fontsize=TICK_DEFAULTS['axes_labelsize'],
+            )
+        return ax_out
 
     def scatter(self, t, y, yaxis="Depth", **kwargs):
         """
