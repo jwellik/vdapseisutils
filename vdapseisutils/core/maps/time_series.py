@@ -153,6 +153,9 @@ class TimeSeries:
             If True, draw event rate on a secondary y-axis (``twinx``) and keep
             the primary depth/magnitude axis visible. If False, draw on the
             primary time-series axis.
+        grid : bool, optional
+            If True, enable the light axis grid from ``plot_eventrate_from_times``
+            (default False).
         **kwargs
             Additional keyword arguments passed to matplotlib ``step``.
 
