@@ -127,3 +127,21 @@ Prefer `clipboard_figure` if you want an explicit name for the legacy factory; i
 
 **Swarm runnable on-ramp (API v1 §11-style):** For a short, offline script that constructs **`Helicorder`** and **`SwarmClipboard`** on synthetic waveforms (no FDSN), run from the repo root: `python examples/swarm_clipboard_minimal.py` (or `uv run python …`). That mirrors how map workflows point to `examples/map_minimal.py` and friends; deeper layout and naming notes remain under **Pyplot helpers** (`register_pyplot`) and `vdapseisutils.plot.swarm` / `core/swarmmpl` source.
 
+**Peak-value raster overlay API (waveform axes only):**
+
+Both `ClipboardClass` and `SwarmClipboard` support:
+
+```python
+cb.plot_peak_value(
+    peak_stream,
+    window_s=0.05,
+    cmap="magma",
+    cmap_by_index={0: "RdPu", 1: "Blues"},
+    alpha=0.75,
+    interpolation="bilinear",
+    add_colorbar=True,
+)
+```
+
+`plot_peak_value(...)` intentionally overlays raster imagery behind existing waveform axes (`"w"` axes) without changing axis formatting; it raises when used on spectrogram-only (`mode="g"`) figures.
+

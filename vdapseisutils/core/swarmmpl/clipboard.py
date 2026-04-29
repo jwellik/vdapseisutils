@@ -405,6 +405,87 @@ class ClipboardClass(plt.Figure):
     def set_wave(self, **kwargs):
         self.wave_settings = {**self.wave_settings, **kwargs}
 
+    def plot_peak_value(
+        self,
+        peak_stream,
+        window_s=1.0,
+        cmap="magma",
+        cmap_by_index=None,
+        alpha=0.7,
+        interpolation="nearest",
+        add_colorbar=False,
+        colorbar_rect=(0.2, 0.02, 0.6, 0.025),
+        colorbar_label="Normalized peak intensity (0-1)",
+    ):
+        """
+        Overlay a peak-value raster behind waveform axes.
+
+        Notes
+        -----
+        - This method only supports figures with waveform axes (``mode='w'`` or ``mode='wg'``).
+        - ``peak_stream`` is expected to be aligned to waveform panels by order.
+        - Axis formatting is preserved; only an ``imshow`` raster is added.
+        """
+        from obspy import Stream, Trace
+        from matplotlib.colors import Normalize
+        from matplotlib.cm import ScalarMappable
+
+        if self.mode == "g":
+            raise ValueError("plot_peak_value() only supports Clipboard figures with waveform axes (mode 'w' or 'wg').")
+
+        if isinstance(peak_stream, Trace):
+            peak_stream = Stream([peak_stream])
+        if not isinstance(peak_stream, Stream):
+            raise TypeError("peak_stream must be an ObsPy Stream or Trace.")
+
+        wave_axes = [sf.axes[0] for sf in self.subfigs]
+        if len(peak_stream) < len(wave_axes):
+            raise ValueError(
+                f"peak_stream has {len(peak_stream)} traces but Clipboard has {len(wave_axes)} waveform panels."
+            )
+
+        for i, ax in enumerate(wave_axes):
+            tr_peak = peak_stream[i]
+            data = np.asarray(np.ma.filled(tr_peak.data, fill_value=0.0), dtype=float)
+            sr = float(tr_peak.stats.sampling_rate)
+            win = max(1, int(round(float(window_s) * sr)))
+
+            n_bins = int(np.ceil(data.size / win))
+            pad = n_bins * win - data.size
+            if pad:
+                data = np.pad(data, (0, pad), mode="constant", constant_values=0.0)
+
+            peak = np.max(np.abs(data).reshape(n_bins, win), axis=1)
+            peak_log = np.log10(peak + 1.0)
+            peak_norm = peak_log / peak_log.max() if peak_log.max() > 0 else peak_log
+
+            xlim = ax.get_xlim()
+            ylim = ax.get_ylim()
+            this_cmap = cmap_by_index.get(i, cmap) if isinstance(cmap_by_index, dict) else cmap
+
+            ax.imshow(
+                peak_norm[None, :],
+                aspect="auto",
+                cmap=this_cmap,
+                interpolation=interpolation,
+                extent=[xlim[0], xlim[1], ylim[0], ylim[1]],
+                vmin=0,
+                vmax=1,
+                alpha=alpha,
+                zorder=-5,
+            )
+            ax.set_xlim(xlim)
+            ax.set_ylim(ylim)
+
+        if add_colorbar:
+            cax = self.add_axes(list(colorbar_rect))
+            sm = ScalarMappable(norm=Normalize(vmin=0, vmax=1), cmap=cmap)
+            sm.set_array([])
+            cbar = self.colorbar(sm, cax=cax, orientation="horizontal")
+            cbar.set_label(colorbar_label)
+
+        return self
+
     # Axes settings
     def _set_axes(self):
         # Handles sync_waves, tick_type, etc.
@@ -1140,6 +1221,90 @@ class SwarmClipboard:
         # Plot horizontal components with specified styling
         self.plot_trace(horizontal_stream, color=color, alpha=alpha, zorder=zorder, **filtered_kwargs)
         
+        return self
+
+    def plot_peak_value(
+        self,
+        peak_stream,
+        window_s=1.0,
+        cmap="magma",
+        cmap_by_index=None,
+        alpha=0.7,
+        interpolation="nearest",
+        add_colorbar=False,
+        colorbar_rect=(0.2, 0.02, 0.6, 0.025),
+        colorbar_label="Normalized peak intensity (0-1)",
+    ):
+        """
+        Overlay a peak-value raster behind waveform axes.
+
+        This method only applies to waveform axes ("w"): in ``mode='w'`` that is
+        the panel axis, and in ``mode='wg'`` it is the first axis in each panel.
+        ``mode='g'`` is not supported.
+        """
+        from obspy import Stream, Trace
+        from matplotlib.colors import Normalize
+        from matplotlib.cm import ScalarMappable
+
+        if "w" not in str(self.mode):
+            raise ValueError("plot_peak_value() only supports SwarmClipboard figures with waveform axes ('w').")
+
+        if isinstance(peak_stream, Trace):
+            peak_stream = Stream([peak_stream])
+        if not isinstance(peak_stream, Stream):
+            raise TypeError("peak_stream must be an ObsPy Stream or Trace.")
+
+        if len(peak_stream) < len(self.panels):
+            raise ValueError(
+                f"peak_stream has {len(peak_stream)} traces but SwarmClipboard has {len(self.panels)} panels."
+            )
+
+        for i, panel in enumerate(self.panels):
+            if not panel.timeaxes:
+                continue
+
+            wave_ta = panel.timeaxes[0]  # waveform axis for mode='w' or mode='wg'
+            ax = wave_ta.ax
+            tr_peak = peak_stream[i]
+
+            data = np.asarray(np.ma.filled(tr_peak.data, fill_value=0.0), dtype=float)
+            sr = float(tr_peak.stats.sampling_rate)
+            win = max(1, int(round(float(window_s) * sr)))
+
+            n_bins = int(np.ceil(data.size / win))
+            pad = n_bins * win - data.size
+            if pad:
+                data = np.pad(data, (0, pad), mode="constant", constant_values=0.0)
+
+            peak = np.max(np.abs(data).reshape(n_bins, win), axis=1)
+            peak_log = np.log10(peak + 1.0)
+            peak_norm = peak_log / peak_log.max() if peak_log.max() > 0 else peak_log
+
+            xlim = ax.get_xlim()
+            ylim = ax.get_ylim()
+            this_cmap = cmap_by_index.get(i, cmap) if isinstance(cmap_by_index, dict) else cmap
+
+            ax.imshow(
+                peak_norm[None, :],
+                aspect="auto",
+                cmap=this_cmap,
+                interpolation=interpolation,
+                extent=[xlim[0], xlim[1], ylim[0], ylim[1]],
+                vmin=0,
+                vmax=1,
+                alpha=alpha,
+                zorder=-5,
+            )
+            ax.set_xlim(xlim)
+            ax.set_ylim(ylim)
+
+        if add_colorbar:
+            cax = self.fig.add_axes(list(colorbar_rect))
+            sm = ScalarMappable(norm=Normalize(vmin=0, vmax=1), cmap=cmap)
+            sm.set_array([])
+            cbar = self.fig.colorbar(sm, cax=cax, orientation="horizontal")
+            cbar.set_label(colorbar_label)
+
         return self
         
     def _resolve_target_panels(self, panels=None, stations=None, networks=None, ids=None, metadata=None):
