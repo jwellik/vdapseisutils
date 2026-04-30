@@ -16,7 +16,7 @@ from vdapseisutils.obspy_ext import (
     vutcrange,
     waveID,
 )
-from vdapseisutils.core.maps import Map, CrossSection, MagLegend, TimeSeries, VolcanoFigure
+from vdapseisutils.core.maps import Map, CrossSection, MagLegend, TimeSeries, VolcanoFigure, VelocityModel1D
 from vdapseisutils.core.swarmmpl.heli import Helicorder
 from vdapseisutils.utils.magnitude import MagnitudeUtils
 
@@ -36,6 +36,7 @@ __all__ = [
     "VStreamID",
     "VTrace",
     "VUTCDateTime",
+    "VelocityModel1D",
     "VolcanoFigure",
     "parse_wave_id",
     "read",

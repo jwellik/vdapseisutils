@@ -409,10 +409,14 @@ class ClipboardClass(plt.Figure):
         self,
         peak_stream,
         window_s=1.0,
+        use_raw_values=False,
+        aggregate="max",
         cmap="magma",
         cmap_by_index=None,
         alpha=0.7,
+        alpha_from_data=False,
         interpolation="nearest",
+        zorder=0.2,
         add_colorbar=False,
         colorbar_rect=(0.2, 0.02, 0.6, 0.025),
         colorbar_label="Normalized peak intensity (0-1)",
@@ -447,33 +451,57 @@ class ClipboardClass(plt.Figure):
         for i, ax in enumerate(wave_axes):
             tr_peak = peak_stream[i]
             data = np.asarray(np.ma.filled(tr_peak.data, fill_value=0.0), dtype=float)
-            sr = float(tr_peak.stats.sampling_rate)
-            win = max(1, int(round(float(window_s) * sr)))
+            data = np.where(np.isfinite(data), data, 0.0)
+            if bool(use_raw_values):
+                peak_norm = np.clip(data, 0.0, 1.0)
+                n_bins = int(peak_norm.size)
+            else:
+                sr = float(tr_peak.stats.sampling_rate)
+                win = max(1, int(round(float(window_s) * sr)))
 
-            n_bins = int(np.ceil(data.size / win))
-            pad = n_bins * win - data.size
-            if pad:
-                data = np.pad(data, (0, pad), mode="constant", constant_values=0.0)
+                n_bins = int(np.ceil(data.size / win))
+                pad = n_bins * win - data.size
+                if pad:
+                    data = np.pad(data, (0, pad), mode="constant", constant_values=0.0)
 
-            peak = np.max(np.abs(data).reshape(n_bins, win), axis=1)
-            peak_log = np.log10(peak + 1.0)
-            peak_norm = peak_log / peak_log.max() if peak_log.max() > 0 else peak_log
+                agg = str(aggregate).lower()
+                if agg == "mean":
+                    peak = np.mean(np.abs(data).reshape(n_bins, win), axis=1)
+                else:
+                    peak = np.max(np.abs(data).reshape(n_bins, win), axis=1)
+                peak_log = np.log10(peak + 1.0)
+                peak_norm = peak_log / peak_log.max() if peak_log.max() > 0 else peak_log
 
             xlim = ax.get_xlim()
             ylim = ax.get_ylim()
             this_cmap = cmap_by_index.get(i, cmap) if isinstance(cmap_by_index, dict) else cmap
 
-            ax.imshow(
-                peak_norm[None, :],
-                aspect="auto",
-                cmap=this_cmap,
-                interpolation=interpolation,
-                extent=[xlim[0], xlim[1], ylim[0], ylim[1]],
-                vmin=0,
-                vmax=1,
-                alpha=alpha,
-                zorder=-5,
-            )
+            if alpha_from_data:
+                rgba = np.zeros((1, n_bins, 4), dtype=float)
+                c = np.asarray(mpl.colormaps[this_cmap](1.0), dtype=float)
+                rgba[..., 0] = c[0]
+                rgba[..., 1] = c[1]
+                rgba[..., 2] = c[2]
+                rgba[..., 3] = np.clip(peak_norm, 0.0, 1.0)[np.newaxis, :] * float(alpha)
+                ax.imshow(
+                    rgba,
+                    aspect="auto",
+                    interpolation=interpolation,
+                    extent=[xlim[0], xlim[1], ylim[0], ylim[1]],
+                    zorder=float(zorder),
+                )
+            else:
+                ax.imshow(
+                    peak_norm[None, :],
+                    aspect="auto",
+                    cmap=this_cmap,
+                    interpolation=interpolation,
+                    extent=[xlim[0], xlim[1], ylim[0], ylim[1]],
+                    vmin=0,
+                    vmax=1,
+                    alpha=alpha,
+                    zorder=float(zorder),
+                )
             ax.set_xlim(xlim)
             ax.set_ylim(ylim)
 
@@ -1227,10 +1255,14 @@ class SwarmClipboard:
         self,
         peak_stream,
         window_s=1.0,
+        use_raw_values=False,
+        aggregate="max",
         cmap="magma",
         cmap_by_index=None,
         alpha=0.7,
+        alpha_from_data=False,
         interpolation="nearest",
+        zorder=0.2,
         add_colorbar=False,
         colorbar_rect=(0.2, 0.02, 0.6, 0.025),
         colorbar_label="Normalized peak intensity (0-1)",
@@ -1268,33 +1300,57 @@ class SwarmClipboard:
             tr_peak = peak_stream[i]
 
             data = np.asarray(np.ma.filled(tr_peak.data, fill_value=0.0), dtype=float)
-            sr = float(tr_peak.stats.sampling_rate)
-            win = max(1, int(round(float(window_s) * sr)))
+            data = np.where(np.isfinite(data), data, 0.0)
+            if bool(use_raw_values):
+                peak_norm = np.clip(data, 0.0, 1.0)
+                n_bins = int(peak_norm.size)
+            else:
+                sr = float(tr_peak.stats.sampling_rate)
+                win = max(1, int(round(float(window_s) * sr)))
 
-            n_bins = int(np.ceil(data.size / win))
-            pad = n_bins * win - data.size
-            if pad:
-                data = np.pad(data, (0, pad), mode="constant", constant_values=0.0)
+                n_bins = int(np.ceil(data.size / win))
+                pad = n_bins * win - data.size
+                if pad:
+                    data = np.pad(data, (0, pad), mode="constant", constant_values=0.0)
 
-            peak = np.max(np.abs(data).reshape(n_bins, win), axis=1)
-            peak_log = np.log10(peak + 1.0)
-            peak_norm = peak_log / peak_log.max() if peak_log.max() > 0 else peak_log
+                agg = str(aggregate).lower()
+                if agg == "mean":
+                    peak = np.mean(np.abs(data).reshape(n_bins, win), axis=1)
+                else:
+                    peak = np.max(np.abs(data).reshape(n_bins, win), axis=1)
+                peak_log = np.log10(peak + 1.0)
+                peak_norm = peak_log / peak_log.max() if peak_log.max() > 0 else peak_log
 
             xlim = ax.get_xlim()
             ylim = ax.get_ylim()
             this_cmap = cmap_by_index.get(i, cmap) if isinstance(cmap_by_index, dict) else cmap
 
-            ax.imshow(
-                peak_norm[None, :],
-                aspect="auto",
-                cmap=this_cmap,
-                interpolation=interpolation,
-                extent=[xlim[0], xlim[1], ylim[0], ylim[1]],
-                vmin=0,
-                vmax=1,
-                alpha=alpha,
-                zorder=-5,
-            )
+            if alpha_from_data:
+                rgba = np.zeros((1, n_bins, 4), dtype=float)
+                c = np.asarray(mpl.colormaps[this_cmap](1.0), dtype=float)
+                rgba[..., 0] = c[0]
+                rgba[..., 1] = c[1]
+                rgba[..., 2] = c[2]
+                rgba[..., 3] = np.clip(peak_norm, 0.0, 1.0)[np.newaxis, :] * float(alpha)
+                ax.imshow(
+                    rgba,
+                    aspect="auto",
+                    interpolation=interpolation,
+                    extent=[xlim[0], xlim[1], ylim[0], ylim[1]],
+                    zorder=float(zorder),
+                )
+            else:
+                ax.imshow(
+                    peak_norm[None, :],
+                    aspect="auto",
+                    cmap=this_cmap,
+                    interpolation=interpolation,
+                    extent=[xlim[0], xlim[1], ylim[0], ylim[1]],
+                    vmin=0,
+                    vmax=1,
+                    alpha=alpha,
+                    zorder=float(zorder),
+                )
             ax.set_xlim(xlim)
             ax.set_ylim(ylim)
 

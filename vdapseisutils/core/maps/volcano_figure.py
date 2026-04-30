@@ -80,6 +80,8 @@ class VolcanoFigure(plt.Figure):
             self.properties["origin"] = None
             self.properties["radial_extent_km"] = None
             self.properties["map_extent"] = map_extent
+        if ts_axis_type not in ("depth", "magnitude", None):
+            raise ValueError("ts_axis_type must be 'depth', 'magnitude', or None")
         self.properties["ts_axis_type"] = ts_axis_type
 
         # Parse and prepare Cross-Section arguments
@@ -109,33 +111,59 @@ class VolcanoFigure(plt.Figure):
         if hillshade:
             self.map_obj.add_hillshade()
         self.map_obj.add_scalebar()
-        lbwh = np.array([0.9, 4.0, 3.0, 3.0])
-        self.map_obj.ax.set_position(lbwh / figscale)
+        # Layout mode:
+        # - with TimeSeries: legacy geometry
+        # - no TimeSeries (ts_axis_type=None): reflow so map and cross-section
+        #   columns share the same top and bottom spines.
+        if self.properties["ts_axis_type"] is None:
+            lbwh_map = np.array([0.9, 1.2, 3.0, 5.8])
+            lbwh_xs1 = np.array([4.0, 4.2, 2.9, 2.8])
+            lbwh_xs2 = np.array([4.0, 1.2, 2.9, 2.8])
+            lbwh_leg = np.array([7.0, 1.2, 0.7, 5.8])
+        else:
+            lbwh_map = np.array([0.9, 4.0, 3.0, 3.0])
+            lbwh_xs1 = np.array([4.0, 5.8, 3.0, 1.2])
+            lbwh_xs2 = np.array([4.0, 4.0, 3.0, 1.2])
+            lbwh_leg = np.array([5.5, 1.2, 1.9, 2.1])
+        self.map_obj.ax.set_position(lbwh_map / figscale)
 
         # subfigure - Top Cross-Section
         self.fig_xs1 = self.add_subfigure(spec[0:1, 0:1])
         self.xs1_obj = CrossSection(fig=self.fig_xs1, **{**xs1_defaults, **xs1})  # overwrite defaults w user input
-        lbwh = np.array([4.0, 5.8, 3.0, 1.2])
-        self.xs1_obj.ax.set_position(lbwh / figscale)
+        self.xs1_obj.ax.set_position(lbwh_xs1 / figscale)
 
         # subfigure - Bottom Cross-Section
         self.fig_xs2 = self.add_subfigure(spec[0:1, 0:1])
         self.xs2_obj = CrossSection(fig=self.fig_xs2, ** {**xs2_defaults, **xs2})  # overwrite defaults w user input
-        lbwh = np.array([4.0, 4.0, 3.0, 1.2])
-        self.xs2_obj.ax.set_position(lbwh / figscale)
+        self.xs2_obj.ax.set_position(lbwh_xs2 / figscale)
 
-        # subfigure - TimeSeries
-        self.fig_ts = self.add_subfigure(spec[0:1, 0:1])
-        self.ts_obj = TimeSeries(fig=self.fig_ts, depth_extent=self.properties["depth_extent"], axis_type=self.properties["ts_axis_type"])
-        lbwh = np.array([0.9, 1.2, 6.1, 2.1])
-        self.ts_obj.ax.set_position(lbwh / figscale)
+        # subfigure - TimeSeries (optional)
+        self.fig_ts = None
+        self.ts_obj = None
+        if self.properties["ts_axis_type"] is not None:
+            self.fig_ts = self.add_subfigure(spec[0:1, 0:1])
+            self.ts_obj = TimeSeries(fig=self.fig_ts, depth_extent=self.properties["depth_extent"], axis_type=self.properties["ts_axis_type"])
+            lbwh = np.array([0.9, 1.2, 6.1, 2.1])
+            self.ts_obj.ax.set_position(lbwh / figscale)
 
         # subfigure - Legend
         self.fig_leg = self.add_subfigure(spec[0:1, 0:1])
         axL = self.fig_leg.add_subplot(111)
-        lbwh = np.array([5.5, 1.2, 1.9, 2.1])
-        axL.set_position(lbwh / figscale)
+        axL.set_position(lbwh_leg / figscale)
         axL.set_visible(False)
+
+        # Cartopy may shrink the map axis to preserve projection aspect ratio.
+        # For no-TS mode, reflow cross-sections to the realized map bounds so
+        # top and bottom spines align exactly across columns.
+        if self.properties["ts_axis_type"] is None:
+            map_pos = self.map_obj.ax.get_position()
+            xs_gap = 0.2 / figscale
+            xs_left = 4.0 / figscale
+            xs_width = 2.9 / figscale
+            xs_total_h = map_pos.y1 - map_pos.y0
+            xs_h = (xs_total_h - xs_gap) / 2.0
+            self.xs2_obj.ax.set_position([xs_left, map_pos.y0, xs_width, xs_h])
+            self.xs1_obj.ax.set_position([xs_left, map_pos.y0 + xs_h + xs_gap, xs_width, xs_h])
 
         # Plot Cross-Section lines to Map
         self.map_obj.plot_line(self.xs1_obj.properties["points"][0], self.xs1_obj.properties["points"][1], label=self.xs1_obj.properties["label"])
@@ -229,7 +257,9 @@ class VolcanoFigure(plt.Figure):
         map_scatter = self.map_obj.scatter(lat, lon, transform=transform, **kwargs)
         xs1_scatter = self.xs1_obj.scatter(lat, lon, **kwargs)
         xs2_scatter = self.xs2_obj.scatter(lat, lon, **kwargs)
-        ts_scatter = self.ts_obj.scatter(time, y, **kwargs)
+        ts_scatter = None
+        if self.ts_obj is not None:
+            ts_scatter = self.ts_obj.scatter(time, y, **kwargs)
         return map_scatter, xs1_scatter, xs2_scatter, ts_scatter
 
     def plot_catalog(self, *args, transform=ccrs.Geodetic(), **kwargs):
@@ -279,8 +309,36 @@ class VolcanoFigure(plt.Figure):
         map_scatter = self.map_obj.plot_catalog(*args, transform=transform, **kwargs)
         xs1_scatter = self.xs1_obj.plot_catalog(*args, **kwargs)
         xs2_scatter = self.xs2_obj.plot_catalog(*args, **kwargs)
-        ts_scatter = self.ts_obj.plot_catalog(*args, **kwargs)
+        ts_scatter = None
+        if self.ts_obj is not None:
+            ts_scatter = self.ts_obj.plot_catalog(*args, **kwargs)
         return map_scatter, xs1_scatter, xs2_scatter, ts_scatter
+
+    def plot_eventrate(self, data, freq="1D", overlay=True, **kwargs):
+        """
+        Plot event rate on the bottom TimeSeries panel.
+
+        Parameters
+        ----------
+        data : obspy Catalog, VCatalog, or list-like
+            Event source. Accepts an ObsPy/VCatalog object or a list-like of
+            datetime/UTCDateTime objects.
+        freq : str, optional
+            Pandas offset alias used for event-rate bins (default: "1D").
+        overlay : bool, optional
+            If True (default), draw event rate on a secondary y-axis in the
+            TimeSeries panel so depth/magnitude remains visible.
+        **kwargs
+            Additional keyword arguments passed to matplotlib ``step``.
+
+        Returns
+        -------
+        matplotlib.axes.Axes
+            Axis containing the event-rate step plot.
+        """
+        if self.ts_obj is None:
+            raise ValueError("TimeSeries axis is disabled (ts_axis_type=None).")
+        return self.ts_obj.plot_eventrate(data, freq=freq, overlay=overlay, **kwargs)
 
     def plot_inventory(self, inventory, s=8, c='black', alpha=0.8, 
                       transform=ccrs.Geodetic(), cross_section_s=6, 

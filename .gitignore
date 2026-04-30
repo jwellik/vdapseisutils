@@ -135,6 +135,12 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# IDE / local tooling
+.cursor/
+.githooks/
+
+# Gallery build output
+gallery/_build/
 
 # Backup files
 *.bak

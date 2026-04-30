@@ -2,7 +2,8 @@
 Maps module for vdapseisutils.
 
 This module provides mapping functionality including Map, VolcanoFigure, CrossSection,
-and TimeSeries classes, as well as various tile sources for background maps.
+TimeSeries, and VelocityModel1D classes, as well as various tile sources for
+background maps.
 """
 
 # Import classes from their individual modules for backwards compatibility
@@ -10,6 +11,7 @@ from .map import Map
 from .cross_section import CrossSection
 from .time_series import TimeSeries
 from .volcano_figure import VolcanoFigure
+from .velocity_model_1d import VelocityModel1D
 from .legends import MagLegend
 
 # Import utilities that users might need
@@ -28,6 +30,7 @@ __all__ = [
     'CrossSection', 
     'TimeSeries',
     'VolcanoFigure',
+    'VelocityModel1D',
     'MagLegend',
     'add_arcgis_terrain',
     'add_google_terrain',
