@@ -10,22 +10,18 @@
 P26-05-04
 
 ## Accomplishments
-- Drafted **`docs/plans/bokeh-maps-plan.md`**: phased approach for Bokeh-backed map types, API parity with Matplotlib `Map` / `CrossSection`, and terrain basemaps aligned with **`map_tiles.add_arcgis_terrain`** (Esri hillshade + Carto overlay, same as historical REDPy behavior).
-- Documented that **`REDPy-prerelease-2.0.0/`** will be removed from the repo; shipping code must not depend on it—behavior is encoded in vdapseisutils only.
-- Clarified requirements: same **`plot_catalog()`, `plot_inventory()`, `add_terrain()`,** and related method signatures as the Cartopy/Matplotlib map classes; defer detailed graticule/tick customization initially.
-- Established maintenance expectation: **branch summary and `BRANCH_TIMELINE.md`** stay current as implementation progresses (update accomplishments/executed work and bump **Last updated**, then run `python scripts/branch_docs.py regenerate-timeline` or rely on pre-commit).
+- Added **`vdapseisutils.core.maps.bokeh.Map`**: Web Mercator `bokeh.plotting.figure`, constructor aligned with MPL `Map`, **`add_terrain()`** (Esri + Carto) using shared URL constants in **`map_tiles`**. Public import: **`from vdapseisutils.core.maps.bokeh import Map`**.
+- Refactored **`map_tiles.add_arcgis_terrain`** to use **`ARCGIS_WORLD_HILLSHADE_URL`** and **`CARTO_LIGHT_NOLABELS_URL`** (single source of truth for Cartopy and Bokeh).
+- Added **`gallery/bokeh/Mount_Augustine_map.ipynb`**: inline Bokeh map of Mount Augustine, Alaska.
+- Drafted and updated **`docs/plans/bokeh-maps-plan.md`**: API parity, REDPy removal policy, nested `Map` naming, branch-doc maintenance.
 
 ## Planned work
-- Implement **`BokehCrossSection`** first (linear axes; reuse `TopographicProfile`, `project2line`, `prep_catalog_data_mpl`).
-- Implement **`BokehMap`** with Mercator figure, Web Mercator coordinates, **`add_terrain()`** via shared tile URLs/zoom with `map_tiles.py`.
-- Add catalog/inventory/volcano/peak/line/heatmap methods matching MPL APIs; optional `register_*` hook beside `plot/mpl.py` if useful.
-- Factor shared **`get_default_terrain_tile_sources()`** (or similar) if Cartopy and Bokeh both need the same tile definitions without duplication.
-- Tests (smoke / optional visual checks) and optional `bokeh` optional dependency in packaging.
+- Implement **Bokeh `CrossSection`** (linear axes; `TopographicProfile`, `project2line`, `prep_catalog_data_mpl`).
+- Extend Bokeh **`Map`**: **`plot_catalog()`, `plot_inventory()`, `plot_volcano()`, `plot_peak()`, `plot_line()`, `scatter()`, `plot()`**, heatmap, scale bar, etc., matching MPL `Map`.
+- Optional `register_*` hook beside `plot/mpl.py` if useful; tests and docstrings.
 
 ## Executed work
-- Created branch **`feature/bokeh-maps`**.
-- Added and iterated **`docs/plans/bokeh-maps-plan.md`** (terrain audit, API parity table, REDPy removal policy, phased milestones).
-- Updated **`docs/branch/BRANCH_SUMMARY_feature_bokeh-maps.md`** and regenerated **`BRANCH_TIMELINE.md`** to record planning-phase progress.
+- Created branch **`feature/bokeh-maps`**; landed **`core/maps/bokeh/`** package, **`map_tiles`** URL constants, **`gallery/bokeh`** notebook, plan doc updates, branch docs/timeline.
 
 ## Back-and-forth / iteration notes
 - User requested branch summary and timeline **updated whenever meaningful progress lands** (planning counts until code exists).
@@ -35,7 +31,7 @@ P26-05-04
 - None yet.
 
 ## Validation
-- Plan aligns with existing **`Map`** / **`CrossSection`** and **`map_tiles.add_arcgis_terrain`** implementation in-tree.
+- Smoke test: `from vdapseisutils.core.maps.bokeh import Map`; **`Map(...); add_terrain()`** builds a figure without error.
 
 ## Final changelog-style outcome
 - Pending: merge to main will note introduction of Bokeh map API and any new deps or entry points.

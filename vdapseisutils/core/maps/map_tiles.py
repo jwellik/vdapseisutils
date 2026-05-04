@@ -17,6 +17,26 @@ from PIL import Image
 
 import cartopy.io.img_tiles as cimgt
 
+# Shared XYZ/WMTS URL templates (Cartopy ``GoogleTiles``, Bokeh ``WMTSTileSource``, Folium).
+# Placeholders use ``{z}``, ``{x}``, ``{y}`` for Cartopy; Bokeh expects ``{Z}/{X}/{Y}``
+# (normalize when constructing ``WMTSTileSource``).
+ARCGIS_WORLD_HILLSHADE_URL = (
+    "https://services.arcgisonline.com/arcgis/rest/services/"
+    "Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}"
+)
+CARTO_LIGHT_NOLABELS_URL = (
+    "https://tiles.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png"
+)
+
+ATTRIBUTION_ESRI_HILLSHADE = (
+    "Tiles © Esri — Sources: Esri, Maxar, Airbus DS, USGS, NGA, NASA, CGIAR, "
+    "N Robinson, NCEAS, NLS, OS, NMA, Geodatastyrelsen, Rijkswaterstaat, GSA, "
+    "Geoland, FEMA, Intermap, and the GIS user community"
+)
+ATTRIBUTION_CARTO_POSITRON_NO_LABELS = (
+    "© OpenStreetMap contributors © CARTO"
+)
+
 
 def _create_ssl_context(ssl_verify=False):
     """
@@ -239,19 +259,15 @@ def add_arcgis_terrain(
     # Add arcgis terrain and transparent shading
     # (I stole this two-pronged approach from Alicia Hotovec Ellis and REDPy, circa 2025 September)
     # - Terrain--Nice hillshade tile
-    terrain_url = (
-        'https://services.arcgisonline.com/arcgis/rest/services'
-        '/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}'
+    terrain = _create_tile_with_ssl_context(
+        ARCGIS_WORLD_HILLSHADE_URL, cache=cache, ssl_verify=ssl_verify
     )
-    terrain = _create_tile_with_ssl_context(terrain_url, cache=cache, ssl_verify=ssl_verify)
     ax.add_image(terrain, zoom_level)
 
     # - Overlay--shading provides contrast for land/sea
-    overlay_url = (
-        'https://tiles.basemaps.cartocdn.com/light_nolabels/'
-        '{z}/{x}/{y}.png'
+    overlay = _create_tile_with_ssl_context(
+        CARTO_LIGHT_NOLABELS_URL, cache=cache, ssl_verify=ssl_verify
     )
-    overlay = _create_tile_with_ssl_context(overlay_url, cache=cache, ssl_verify=ssl_verify)
     ax.add_image(overlay, zoom_level, alpha=0.5)  # Reduced alpha for better contrast
 
 

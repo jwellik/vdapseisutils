@@ -105,8 +105,8 @@ REDPy does **not** use a bespoke raster pipeline for “terrain”; it uses **st
 | Piece | Suggestion |
 |--------|------------|
 | **REDPy** | **No imports.** Behavior copied into vdapseisutils; vendored `REDPy-prerelease-2.0.0/` may be deleted independently. |
-| **Package layout** | New submodule under `vdapseisutils.core.maps` (e.g. `bokeh_map.py`) or `vdapseisutils.plot.bokeh_maps` beside `plot/mpl.py`. Avoid shadowing the `bokeh` package at import. |
-| **Classes** | `BokehMap` / `BokehCrossSection` (or namespaced `Map` inside `bokeh_map` only); **methods** mirror MPL `Map` / `CrossSection` per **API parity**. |
+| **Package layout** | Package **`vdapseisutils.core.maps.bokeh`** (`bokeh/__init__.py`, `bokeh/map.py`). Import class as **`from vdapseisutils.core.maps.bokeh import Map`** so the public name stays **`Map`** without colliding with **`from vdapseisutils.core.maps import Map`** (matplotlib/Cartopy). Top-level **`import bokeh`** still resolves to the PyPI library. |
+| **Classes** | **`Map`** inside the `bokeh` subpackage; **`CrossSection`** TBD (`bokeh/cross_section.py` or similar). **Methods** mirror MPL `Map` / `CrossSection` per **API parity**. |
 | **Coordinates** | Lon/lat WGS84 → Web Mercator (m) for glyphs and tiles; reuse `map_extent` + **pyproj** / geoutils. |
 | **Figure handle** | `self.figure` = Bokeh `Figure`; optional `show()`, `save()` helpers. |
 | **Tiles** | Default **`add_terrain()`** = shared URL/zoom with **`add_arcgis_terrain`** (Esri + Carto). Other tile methods track MPL `add_google_*` in later phases. |
@@ -122,12 +122,14 @@ REDPy does **not** use a bespoke raster pipeline for “terrain”; it uses **st
 - Title/subtitle/catalog subtitle aligned with existing methods (simpler than map).
 - **Out of scope for meow:** Matplotlib `path_effects` on A/A′ labels; use solid background on labels or accept softer styling.
 
-### Phase 2 — `BokehMap` core
+### Phase 2 — `Map` (Bokeh subpackage) core
 
-- Constructor parity with `Map`: extent, `properties` dict, Mercator figure, ranges from `map_extent`.
-- **`add_terrain()` / `add_arcgis_terrain()`:** two-layer Esri + Carto tiles; **single source of truth** with `map_tiles.add_arcgis_terrain` (URLs, zoom, overlay alpha).
-- Implement **`plot_catalog()`, `plot_inventory()`, `plot_volcano()`, `plot_peak()`, `plot_line()`, `scatter()`, `plot()`** with the **same signatures** as MPL `Map`; lon/lat → Mercator inside.
+- Constructor parity with `Map`: extent, `properties` dict, Mercator figure, ranges from `map_extent`. **Started:** `vdapseisutils.core.maps.bokeh.Map` + **`add_terrain()`** (Esri + Carto via shared URLs in `map_tiles`).
+- **`add_terrain()` / `add_arcgis_terrain()`:** two-layer Esri + Carto tiles; **single source of truth** for URLs in **`map_tiles`** (`ARCGIS_WORLD_HILLSHADE_URL`, `CARTO_LIGHT_NOLABELS_URL`).
+- Remaining: **`plot_catalog()`, `plot_inventory()`, `plot_volcano()`, `plot_peak()`, `plot_line()`, `scatter()`, `plot()`** with the **same signatures** as MPL `Map`; lon/lat → Mercator inside.
 - **Explicitly deferred:** custom graticule / degree tick layout; rely on Bokeh defaults.
+
+**Gallery:** `gallery/bokeh/Mount_Augustine_map.ipynb` exercises `Map` + `add_terrain()` inline.
 
 ### Phase 3 — Richer map layers
 
