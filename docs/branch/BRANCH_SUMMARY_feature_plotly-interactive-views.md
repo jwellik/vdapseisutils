@@ -6,7 +6,7 @@
 - **Opened on**: 2026-04-18
 - **Closed on**: 2026-05-04
 - **Merged into**: main
-- **Merge strategy**: merge commit
+- **Merge strategy**: fast-forward
 - **Last updated**: 2026-05-04
 
 ## Accomplishments
@@ -31,4 +31,4 @@
 - `python -m pytest` on `tests/` after removing Plotly-only tests (full suite per local environment).
 
 ## Final changelog-style outcome
-- Merged to `main`: map/volcano/time-series/grid defaults, `VelocityModel1D`, clipboard peak raster overlay, branch documentation automation, and related README / catalog plotting tweaks—**no** in-tree Plotly figures or `[plotly]` extra.
+- Fast-forwarded to `main`: map/volcano/time-series/grid defaults, `VelocityModel1D`, clipboard peak raster overlay, branch documentation automation, and related README / catalog plotting tweaks—**no** in-tree Plotly figures or `[plotly]` extra.
