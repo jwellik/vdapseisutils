@@ -1,6 +1,8 @@
-# Plotly interactive views: Map, CrossSection, Clipboard
+# Plotly interactive views: Map and CrossSection
 
-Plan for optional Plotly-backed interactive versions of **Map**, **CrossSection**, and **Clipboard**, implemented in order: **CrossSection → Map → Clipboard** (each builds patterns for the next).
+Plan for optional Plotly-backed interactive versions of **Map** and **CrossSection**, implemented in order: **CrossSection → Map**.
+
+**Out of scope (this branch):** Plotly ports of **SwarmMPL** waveform/spectrogram UIs, including multi-trace **Clipboard** / **SwarmClipboard**. Those stay matplotlib-first; this document used to list Clipboard phases—they are intentionally dropped.
 
 ---
 
@@ -158,78 +160,11 @@ Constraints: large downloads should be cached consistently with existing pattern
 
 ---
 
-## Clipboard — three parts
-
-| Part | Focus |
-|------|--------|
-| **1** | Layout architecture: `make_subplots`, modes (w/g/s/wg), datetime vs relative, shared axes design. |
-| **2** | Waveform lines + spectrogram heatmaps; rangeslider; per-trace y-limits; ObsPy Stream integration. |
-| **3** | sync_waves / linked zoom behavior, SwarmClipboard API alignment, examples, parity doc. |
-
-### Prompt — Clipboard Part 1
-
-```
-You are working in vdapseisutils on branch `feature/plotly-interactive-views` — Clipboard Plotly Part 1 of 3.
-
-Goal: Architecture and empty/subplot layout for Swarm-like multi-panel views without full trace plotting.
-
-Tasks:
-1. Read vdapseisutils/core/swarmmpl/clipboard.py (ClipboardClass, SwarmClipboard) and examples/swarm_clipboard_minimal.py for the intended UX.
-2. Design Plotly subplot grid (make_subplots) for modes: waveform-only, spectrogram-only, combined; plan x-axis as datetime vs seconds with Plotly constraints.
-3. Implement ClipboardPlotly or SwarmClipboardPlotly skeleton: accepts Stream or list of Traces, builds figure with correct number of rows, axis titles off/on per Swarm style, placeholder traces optional.
-4. Document how share_xaxes / uirevision / linked axes will be handled in Part 3.
-
-Deliverables: new module under vdapseisutils/plot/ or core/swarmmpl/plotly/ consistent with repo layout; minimal example that shows N empty stacked panels.
-
-Constraints: no need for spectrogram computation yet; use dummy lines if needed.
-```
-
-### Prompt — Clipboard Part 2
-
-```
-You are working in vdapseisutils on branch `feature/plotly-interactive-views` — Clipboard Plotly Part 2 of 3.
-
-Prerequisites: Part 1 skeleton.
-
-Goal: Real waveform and spectrogram traces in Plotly.
-
-Tasks:
-1. Waveforms: plot each Trace as Scatter with x = datetime (UTCDateTime → python datetime) or relative seconds per existing clipboard conventions; match colors from vdapseisutils.style.colors if used in matplotlib version.
-2. Spectrograms: compute or reuse existing spectrogram path from clipboard/Swarm code; display as Heatmap subplot with correct time-frequency axes.
-3. Add rangeslider on x where appropriate for interactive zoom; ensure performance for reasonable trace lengths (downsample for display if matplotlib version does).
-4. Update example to match swarm_clipboard_minimal.py scenarios partially.
-
-Deliverables: working multi-panel figure with real data; note any ObsPy version assumptions.
-
-Constraints: defer perfect sync_waves across panels to Part 3; basic shared x zoom can be partial.
-```
-
-### Prompt — Clipboard Part 3
-
-```
-You are working in vdapseisutils on branch `feature/plotly-interactive-views` — Clipboard Plotly Part 3 of 3 (final).
-
-Goal: Linked interactions and API alignment with SwarmClipboard.
-
-Tasks:
-1. Implement linked x-axis behavior comparable to sync_waves / sharex: use uirevision, axis matching, or subplot update callbacks if targeting Dash/Notebook — choose one supported story (static HTML vs notebook) and document it.
-2. Align constructor kwargs and method names with SwarmClipboard where feasible (plot_trace, scroll_trace, set_tlim, etc.) — thin wrappers that call Plotly update methods.
-3. Add examples/swarm_clipboard_plotly_minimal.py and PARITY notes vs matplotlib SwarmClipboard (unsupported: tight_layout quirks, some tick formatters).
-4. Run tests; ensure matplotlib clipboard unchanged.
-
-Deliverables: example + docstring parity list; optional section in README for [plotly] extra.
-
-Constraints: if full sync is impossible in pure static HTML, document limitation and provide notebook/Dash follow-up as future work.
-```
-
----
-
 ## Summary
 
 | Component        | Part 1                 | Part 2                 | Part 3                      |
 |------------------|------------------------|------------------------|-----------------------------|
 | **CrossSection** | Data layer + skeleton | Core `go.Figure`       | Legend + examples + parity  |
 | **Map**          | Basemap strategy       | Catalog overlays       | Terrain/parity              |
-| **Clipboard**    | Subplot architecture   | Waves + spectrograms | Linking + API parity        |
 
-Use **one prompt per Cursor chat** in order to keep each session focused.
+There are **six** phased prompts above (three per component). Use **one prompt per Cursor chat** in order to keep each session focused.
