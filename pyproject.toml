@@ -33,8 +33,6 @@ dependencies = [
 # PyTables (tables) needs a system HDF5 install. On macOS: brew install hdf5, then set HDF5_DIR.
 # Only install this extra if you need HDF5/PyTables support.
 tables = ["tables"]
-# Interactive Plotly views (Map / CrossSection / Clipboard); not required for core matplotlib maps.
-plotly = ["plotly>=5,<6"]
 dev = ["pytest"]
 
 [project.urls]
