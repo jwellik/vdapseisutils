@@ -169,10 +169,10 @@ Reuse the **same example data files** as Tutorial A where paths exist under **`v
 
 ### Phase 1 — Waveform-only multi-panel
 
-- [ ] Build N-panel vertical layout for `mode="w"`.
-- [ ] Implement `sync_waves` True/False range linking.
-- [ ] Map **`tick_type`** behavior (absolute datetime vs relative seconds) to Bokeh formatters.
-- [ ] Smoke test: synthetic stream, two traces, mismatched start times.
+- [x] Build N-panel vertical layout for `mode="w"` (column of Bokeh figures).
+- [x] Implement `sync_waves` True/False range linking (shared **`Range1d`** vs independent).
+- [x] Map **`tick_type`** behavior: **`absolute`** / **`datetime`** / **`time`** → datetime axis; **`relative`** → linear seconds (aligned to global **`t0`** when **`sync_waves`**).
+- [x] Smoke tests: **`tests/test_swarm_clipboard_bokeh.py`** (including mismatched trace start times).
 
 ### Phase 2 — Spectrograms
 
