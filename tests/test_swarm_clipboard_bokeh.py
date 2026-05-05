@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 from bokeh.models import BasicTickFormatter, DatetimeTickFormatter
-from bokeh.models import BoxZoomTool, Span, WheelZoomTool
+from bokeh.models import BoxZoomTool, HoverTool, Span, WheelZoomTool
 from obspy import Stream, Trace, UTCDateTime
 from obspy.core.event import Catalog, Event, Origin, Pick, WaveformStreamID
 
@@ -42,6 +42,16 @@ def _tiny_trace(**kwargs) -> Trace:
     header.update(kwargs)
     data = np.linspace(-1.0, 1.0, header["npts"])
     return Trace(data=data.astype("float64"), header=header)
+
+
+def test_waveform_hover_tool_is_configured():
+    st = Stream([_tiny_trace()])
+    cb = SwarmClipboardBk(data=st, mode="w", tick_type="absolute")
+    hover = cb.figures[0].select_one(HoverTool)
+    assert hover is not None
+    assert hover.mode == "vline"
+    tips = [t[0] for t in (hover.tooltips or [])]
+    assert "Trace" in tips and "Time" in tips and "Amplitude" in tips
 
 
 def test_zoom_x_only_sets_wheel_and_box_dimensions_width():

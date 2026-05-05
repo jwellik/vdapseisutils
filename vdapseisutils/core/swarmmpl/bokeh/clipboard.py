@@ -23,6 +23,8 @@ from bokeh.layouts import column
 from bokeh.models import (
     BoxZoomTool,
     ColorBar,
+    ColumnDataSource,
+    HoverTool,
     LinearColorMapper,
     Range1d,
     Span,
@@ -161,6 +163,35 @@ def _record_matches_metadata(rec: _PanelRecord, **criteria: Any) -> bool:
             if md[key] != value:
                 return False
     return True
+
+
+def _waveform_column_source(tr: Trace, xs: list[float], ys: list[float]) -> ColumnDataSource:
+    """CDS for waveform lines so :class:`~bokeh.models.HoverTool` can show trace id and samples."""
+    n = len(xs)
+    lab = [tr.id] * n if n else []
+    return ColumnDataSource(data=dict(x=xs, y=ys, trace_label=lab))
+
+
+def _configure_waveform_hover(fig: Any, *, absolute_time_axis: bool) -> None:
+    """Attach time/amplitude tooltips to the figure hover tool (requires CDS-backed ``line`` glyphs)."""
+    hover = fig.select_one(HoverTool)
+    if hover is None:
+        return
+    hover.mode = "vline"
+    if absolute_time_axis:
+        hover.tooltips = [
+            ("Trace", "@trace_label"),
+            ("Time", "@x{%F %T}"),
+            ("Amplitude", "@y{0.0000}"),
+        ]
+        hover.formatters = {"@x": "datetime"}
+    else:
+        hover.tooltips = [
+            ("Trace", "@trace_label"),
+            ("Time (s)", "@x{0.000000}"),
+            ("Amplitude", "@y{0.0000}"),
+        ]
+        hover.formatters = {}
 
 
 def _restrict_zoom_to_x_axis(fig: Any) -> None:
@@ -558,7 +589,9 @@ class SwarmClipboardBk:
             tools="pan,wheel_zoom,box_zoom,reset,save,hover",
             active_scroll="wheel_zoom",
         )
-        fig.line(xs, ys, color=color, line_width=1)
+        wsrc = _waveform_column_source(tr, xs, ys)
+        fig.line("x", "y", source=wsrc, color=color, line_width=1)
+        _configure_waveform_hover(fig, absolute_time_axis=(self._tick == "absolute"))
         fig.yaxis.axis_label = "Amplitude"
         fig.xaxis.axis_label = x_label
         if hide_x_labels:
@@ -925,9 +958,11 @@ class SwarmClipboardBk:
                 if not xs:
                     continue
                 for fig in self._figures_for_axes(rec, axes):
+                    ovr = _waveform_column_source(trace, xs, ys)
                     fig.line(
-                        xs,
-                        ys,
+                        "x",
+                        "y",
+                        source=ovr,
                         color=color,
                         line_width=float(lw),
                         alpha=alpha,
