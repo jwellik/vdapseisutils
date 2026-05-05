@@ -44,6 +44,13 @@ def _tiny_trace(**kwargs) -> Trace:
     return Trace(data=data.astype("float64"), header=header)
 
 
+def test_wave_settings_color_mpl_shorthand_k(tmp_path):
+    """Bokeh rejects matplotlib 'k'; we normalize via :func:`to_hex`."""
+    st = Stream([_tiny_trace()])
+    cb = SwarmClipboardBk(data=st, mode="w", tick_type="absolute", wave_settings={"color": "k"})
+    cb.save(tmp_path / "k.html")
+
+
 def test_save_html_two_traces_absolute_sync(tmp_path):
     st = Stream(
         [

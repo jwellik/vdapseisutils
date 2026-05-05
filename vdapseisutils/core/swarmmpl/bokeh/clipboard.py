@@ -69,6 +69,21 @@ def _inferno_u_palette(n: int = 256) -> list[str]:
     return [to_hex(vdap_colors.inferno_u(float(x))) for x in xs]
 
 
+def _mpl_color_to_bokeh(color: Any) -> str:
+    """Matplotlib colors (short names like ``'k'``, tuples, …) → CSS hex for Bokeh."""
+    if color is None:
+        return "#000000"
+    try:
+        return to_hex(color)
+    except (ValueError, TypeError):
+        try:
+            import matplotlib.colors as mcolors
+
+            return to_hex(mcolors.to_rgb(color))
+        except Exception:
+            return "#000000"
+
+
 def _palette_from_cmap(cmap: Any) -> list[str]:
     """Matplotlib colormap or None → Bokeh palette list."""
     if cmap is None:
@@ -143,7 +158,7 @@ def _span_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
     """Matplotlib-style line kwargs → :class:`~bokeh.models.Span` props."""
     m: dict[str, Any] = {}
     if "color" in kwargs:
-        m["line_color"] = kwargs["color"]
+        m["line_color"] = _mpl_color_to_bokeh(kwargs["color"])
     if "lw" in kwargs:
         m["line_width"] = kwargs["lw"]
     elif "linewidth" in kwargs:
@@ -478,7 +493,7 @@ class SwarmClipboardBk:
         hide_x_labels: bool,
         title: str | None,
     ) -> Any:
-        color = self.wave_settings.get("color", "black")
+        color = _mpl_color_to_bokeh(self.wave_settings.get("color", "black"))
         x_axis_type = "datetime" if self._tick == "absolute" else "linear"
         x_label = "" if hide_x_labels else ("Time" if self._tick == "absolute" else "Time (s)")
 
@@ -830,7 +845,7 @@ class SwarmClipboardBk:
         if not target_panels:
             target_panels = list(self._panels)
 
-        color = filtered.pop("color", "gray")
+        color = _mpl_color_to_bokeh(filtered.pop("color", "gray"))
         alpha = float(filtered.pop("alpha", 1.0))
         lw = filtered.pop("linewidth", filtered.pop("lw", 1.0))
         line_dash = filtered.pop("linestyle", filtered.pop("ls", "solid"))
@@ -1058,7 +1073,7 @@ class SwarmClipboardBk:
                     print(f" {ot} | Origin time")
                 for rec in targets:
                     x = self._utc_to_x(rec, UTCDateTime(ot))
-                    sk = {**span_base, "line_color": origin_color}
+                    sk = {**span_base, "line_color": _mpl_color_to_bokeh(origin_color)}
                     for fig in self._figures_for_axes(rec, axes):
                         fig.add_layout(Span(location=x, dimension="height", **sk))
 
@@ -1086,7 +1101,7 @@ class SwarmClipboardBk:
                         ):
                             continue
                         x = self._utc_to_x(rec, UTCDateTime(pick.time))
-                        pk = {**span_base, "line_color": col}
+                        pk = {**span_base, "line_color": _mpl_color_to_bokeh(col)}
                         for fig in self._figures_for_axes(rec, axes):
                             fig.add_layout(Span(location=x, dimension="height", **pk))
         return self
