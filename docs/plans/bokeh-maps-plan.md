@@ -33,21 +33,24 @@ Implemented now:
 
 - `vdapseisutils.core.maps.bokeh.Map` exists and is wired for terrain parity (Esri hillshade + Carto overlay).
 - `Map` methods implemented: `plot`, `scatter`, `plot_catalog`, `plot_inventory`, `plot_volcano`, `plot_peak`, `plot_line`.
+- Bokeh `Map` tile parity includes **`add_google_terrain`**, **`add_google_street`**, and **`add_google_satellite`** (XYZ URLs shared with Cartopy via `map_tiles`; cache/ssl kwargs match MPL swallow/no-op pattern).
 - `Map` helpers implemented: `set_title`, `set_subtitle`, `set_catalog_subtitle`, `add_scalebar` (native `ScaleBar` + fallback), `add_world_location_map`.
 - Aspect-locked zoom behavior implemented (`match_aspect=True`, `BoxZoomTool.match_aspect=True`).
 - Hover behavior implemented for map scatter-family methods plus automatic hover defaults for inventory/catalog.
 - New transect helpers implemented on both MPL and Bokeh maps: `plot_cross_section` and alias `plot_transect`.
-- `vdapseisutils.core.maps.bokeh.CrossSection` scaffold exists with constructor parity, profile rendering, `plot`, `scatter`, `plot_catalog`, `plot_inventory`, `plot_volcano`, `plot_peak`, `plot_heatmap`, title/subtitle helpers, `set_titles`, and `set_catalog_subtitle`.
-- `CrossSection` now adds fixed corner labels `A` and `A'` (screen-space); temporary debug mode exists via `debug_corner_labels=True` for label diagnostics.
-- `vdapseisutils.core.maps.bokeh.Map.plot_heatmap` now exists with MPL-like calling modes (`plot_heatmap(catalog, ...)` and `plot_heatmap(lat, lon, [depth], ...)`) and Bokeh quad rendering in Mercator coordinates.
-- Heatmap bin sizing now uses a shared backend-agnostic helper (`core/maps/heatmap_utils.py`) reused by both MPL and Bokeh map/cross-section implementations.
-- Bokeh smoke tests now include kwargs alias/precedence checks (`color` vs `c`, `size` vs `s`, `edgecolors`/`linewidths`), vector-size handling, and catalog time-colormap behavior checks for both map and cross section.
+- `vdapseisutils.core.maps.bokeh.CrossSection` exists with constructor parity, profile rendering, `plot`, `scatter`, `plot_catalog`, `plot_inventory`, `plot_volcano`, `plot_peak`, `plot_heatmap`, title/subtitle helpers, `set_titles`, and `set_catalog_subtitle`.
+- **CrossSection scatter-family parity:** matplotlib-style kwargs (`color`/`c`, `size`/`s`, edge widths/colors, `**{'c','s'}` catalog passes, `cmap` for numeric/`time` coloring, inventory defaults) covered beyond basic smoke where tested.
+- `CrossSection` adds fixed corner labels `A` and `A'` (screen-space); temporary debug mode exists via `debug_corner_labels=True` for label diagnostics.
+- **`plot_heatmap`** on Bokeh `Map` and `CrossSection`: MPL-like calling modes and quad rendering; default **color bar** with `colorbar=False` escape hatch (aligned kwargs naming between backends).
+- **MPL `Map.plot_heatmap` / `CrossSection.plot_heatmap`** attach a **Matplotlib colorbar by default** (`colorbar=False`, `colorbar_label` popped before `pcolormesh`) so the density legend story matches Bokeh.
+- Heatmap bin sizing and **histogram bin edges** use shared helpers in **`core/maps/heatmap_utils.py`** (`heatmap_bin_step`, **`histogram_bin_edges`**) so `histogram2d` does not drop samples at the padded range max (MPL + Bokeh).
+- MPL **`CrossSection.set_horiz_extent()`** supports **endpoint `points` mode** (uses geodesic **`length`** when **`radius`** is unset).
+- Bokeh smoke tests include google tile stacking, catalog cmap/kwargs/inventory edge cases, and MPL stack smoke tests cover heatmap colorbar defaults.
 - Gallery notebooks: `gallery/Mapping_tutorial_bokeh.ipynb` and `gallery/CrossSection_tutorial_bokeh.ipynb` (Spurr, St Helens, Crater Lake, Kilauea, Yellowstone).
 
 Remaining high-priority gaps:
 
-- CrossSection catalog coloring still needs deeper edge-case parity validation for matplotlib-style kwargs combinations.
-- `add_hillshade` remains pending.
+- **`add_hillshade`** on Bokeh maps / richer raster parity remains explicitly deferred ("for meow").
 
 ---
 
@@ -133,7 +136,7 @@ REDPy does **not** use a bespoke raster pipeline for “terrain”; it uses **st
 | **Classes** | **`Map`** inside the `bokeh` subpackage; **`CrossSection`** TBD (`bokeh/cross_section.py` or similar). **Methods** mirror MPL `Map` / `CrossSection` per **API parity**. |
 | **Coordinates** | Lon/lat WGS84 → Web Mercator (m) for glyphs and tiles; reuse `map_extent` + **pyproj** / geoutils. |
 | **Figure handle** | `self.figure` = Bokeh `Figure`; optional `show()`, `save()` helpers. |
-| **Tiles** | Default **`add_terrain()`** = shared URL/zoom with **`add_arcgis_terrain`** (Esri + Carto). Other tile methods track MPL `add_google_*` in later phases. |
+| **Tiles** | Default **`add_terrain()`** = shared URL/zoom with **`add_arcgis_terrain`** (Esri + Carto). **`add_google_*`** implemented on Bokeh `Map` using shared XYZ helpers in **`map_tiles`**. |
 
 ---
 
@@ -150,21 +153,21 @@ REDPy does **not** use a bespoke raster pipeline for “terrain”; it uses **st
 
 - Constructor parity with `Map`: extent, `properties` dict, Mercator figure, ranges from `map_extent`. **Done for core path:** `vdapseisutils.core.maps.bokeh.Map` + **`add_terrain()`** (Esri + Carto via shared URLs in `map_tiles`).
 - **`add_terrain()` / `add_arcgis_terrain()`:** two-layer Esri + Carto tiles; **single source of truth** for URLs in **`map_tiles`** (`ARCGIS_WORLD_HILLSHADE_URL`, `CARTO_LIGHT_NOLABELS_URL`).
-- Remaining: `plot_heatmap`, `add_hillshade` and deeper kwargs parity; core plotting methods are already implemented.
+- **`plot_heatmap`** + **`add_google_*`** landed on Bokeh `Map`; **`add_hillshade`** still deferred.
 - **Explicitly deferred:** custom graticule / degree tick layout; rely on Bokeh defaults.
 
 **Gallery:** `gallery/Mapping_tutorial_bokeh.ipynb` exercises Bokeh `Map` (Augustine + Kīlauea examples, terrain, catalog/inventory).
 
 ### Phase 3 — Richer map layers
 
-- `plot_heatmap` (quad mesh or image from `histogram2d`, projected bounds).
+- `plot_heatmap` (**done** on Bokeh `Map` / `CrossSection`; MPL heatmaps share bin helpers + default colorbar).
 - `add_scalebar` (segment + label in canvas or data coords; reuse `choose_scale_bar_length` + geodesic width).
-- `add_hillshade` (PyGMT raster as `image` glyph) if still needed when tiles are insufficient.
+- `add_hillshade` (PyGMT raster as `image` glyph) if still needed when tiles are insufficient — **deferred**.
 
 ### Phase 4 — Polish
 
 - Hover tools for catalog points, export PNG/SVG, kwargs adapter for common matplotlib→Bokeh aliases.
-- World inset, Google tile variants, kwargs parity as needed.
+- World inset; residual kwargs parity as needed (scatter/catalog/inventory deepen incrementally).
 
 ---
 

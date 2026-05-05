@@ -8,7 +8,6 @@ from typing import Any
 
 import numpy as np
 from bokeh.models import ColorBar, ColumnDataSource, HoverTool, Label, LinearColorMapper, Title
-from bokeh.palettes import Viridis256
 from bokeh.plotting import figure as bk_figure
 from bokeh.transform import linear_cmap
 
@@ -26,7 +25,7 @@ from vdapseisutils.core.maps.defaults import (
     SUBTITLE_DEFAULTS,
     TITLE_DEFAULTS,
 )
-from vdapseisutils.core.maps.heatmap_utils import heatmap_bin_step
+from vdapseisutils.core.maps.heatmap_utils import heatmap_bin_step, histogram_bin_edges
 from vdapseisutils.core.maps.utils import prep_catalog_data_mpl
 from vdapseisutils.utils.geoutils import backazimuth, project2line, sight_point_pyproj
 
@@ -125,6 +124,17 @@ def _bokeh_marker(marker: str | None) -> str | None:
         "d": "diamond",
     }
     return m.get(str(marker), str(marker))
+
+
+def _mpl_scatter_area_to_bokeh_size(size: Any) -> Any:
+    """Matplotlib scatter ``s`` (marker area) to Bokeh ``size`` (approximate diameter scale)."""
+    if size is None:
+        return None
+    arr = np.asarray(size, dtype=float)
+    arr = np.sqrt(np.clip(arr, a_min=0.0, a_max=None))
+    if np.ndim(arr) == 0:
+        return float(arr)
+    return arr
 
 
 class CrossSection:
@@ -387,12 +397,11 @@ class CrossSection:
         depth = np.atleast_1d(_compute_depth_km(z, z_dir=z_dir, z_unit=z_unit))
         scatter_kwargs = dict(kwargs)
         c_alias = scatter_kwargs.pop("c", None)
+        s_alias = scatter_kwargs.pop("s", None)
         if "color" not in scatter_kwargs and c_alias is not None:
             scatter_kwargs["color"] = c_alias
-        s_alias = scatter_kwargs.pop("s", None)
         if "size" not in scatter_kwargs and s_alias is not None:
-            s = np.asarray(s_alias, dtype=float)
-            scatter_kwargs["size"] = np.sqrt(np.clip(s, a_min=0.0, a_max=None))
+            scatter_kwargs["size"] = _mpl_scatter_area_to_bokeh_size(s_alias)
         if "edgecolors" in scatter_kwargs and "line_color" not in scatter_kwargs:
             scatter_kwargs["line_color"] = scatter_kwargs.pop("edgecolors")
         if "linewidths" in scatter_kwargs and "line_width" not in scatter_kwargs:
@@ -443,21 +452,23 @@ class CrossSection:
         **kwargs,
     ):
         """Plot ObsPy catalog projected along the cross-section line."""
-        _ = cmap
         hover_tooltips = kwargs.pop("hover_tooltips", None)
         hover_formatters = kwargs.pop("hover_formatters", None)
         catdata = prep_catalog_data_mpl(catalog, time_format="matplotlib")
-        if s == "magnitude":
-            s = catdata["size"]
-        if color is not None:
-            c = color
-        elif c == "time":
-            c = catdata["time"]
         plot_kwargs = dict(kwargs)
-        if "c" in plot_kwargs and color is None:
-            c = plot_kwargs.pop("c")
         if "s" in plot_kwargs:
             s = plot_kwargs.pop("s")
+        if color is not None:
+            plot_kwargs.pop("c", None)
+            c = color
+        elif "c" in plot_kwargs:
+            c = plot_kwargs.pop("c")
+
+        if s == "magnitude":
+            s = catdata["size"]
+        if color is None and c == "time":
+            c = catdata["time"]
+
         if "edgecolors" in plot_kwargs and "line_color" not in plot_kwargs:
             plot_kwargs["line_color"] = plot_kwargs.pop("edgecolors")
         if "linewidths" in plot_kwargs and "line_width" not in plot_kwargs:
@@ -469,14 +480,15 @@ class CrossSection:
             c = _normalize_mpl_color(c)
         if "line_color" in plot_kwargs:
             plot_kwargs["line_color"] = _normalize_mpl_color(plot_kwargs["line_color"])
+
         x = np.atleast_1d(
             project2line(catdata["lat"], catdata["lon"], P1=self.A1, P2=self.A2, unit="km")
         )
         y = np.atleast_1d(np.asarray(catdata["depth"]))
-        size = np.sqrt(np.clip(np.asarray(s, dtype=float), a_min=0.0, a_max=None))
-        size = np.atleast_1d(size)
+        size = np.atleast_1d(np.asarray(_mpl_scatter_area_to_bokeh_size(s), dtype=float))
         if size.size == 1 and x.size > 1:
             size = np.repeat(size, x.size)
+
         source = ColumnDataSource(
             {
                 "x": np.asarray(x),
@@ -490,6 +502,7 @@ class CrossSection:
             }
         )
         plot_kwargs.setdefault("alpha", alpha)
+        palette = palette_for_heatmap_cmap(cmap)
         c_array = np.asarray(c) if hasattr(c, "__len__") and not isinstance(c, str) else None
         if isinstance(c, str):
             renderer = self.figure.scatter(
@@ -497,7 +510,11 @@ class CrossSection:
             )
         elif c_array is not None and c_array.size == len(x):
             source.data["cval"] = c_array
-            mapper = linear_cmap("cval", Viridis256, low=float(np.nanmin(c_array)), high=float(np.nanmax(c_array)))
+            c_min = float(np.nanmin(c_array))
+            c_max = float(np.nanmax(c_array))
+            if c_max <= c_min:
+                c_max = c_min + 1.0
+            mapper = linear_cmap("cval", palette, low=c_min, high=c_max)
             renderer = self.figure.scatter(
                 x="x",
                 y="y",
@@ -562,15 +579,31 @@ class CrossSection:
             project2line(station_lats, station_lons, P1=self.A1, P2=self.A2, unit="km")
         )
         y = np.atleast_1d(np.asarray(station_elevs, dtype=float) / 1000.0)
-        size = np.sqrt(np.clip(np.asarray(s, dtype=float), a_min=0.0, a_max=None))
-        size = np.atleast_1d(size)
-        if size.size == 1 and x.size > 1:
-            size = np.repeat(size, x.size)
+        sz_arr = np.atleast_1d(np.asarray(_mpl_scatter_area_to_bokeh_size(s), dtype=float))
+        if sz_arr.size == 1 and x.size > 1:
+            sz_arr = np.repeat(sz_arr, x.size)
+        plot_kwargs = {**PLOT_INVENTORY_DEFAULTS, **kwargs}
+        plot_kwargs.update(
+            {
+                "color": _normalize_mpl_color(c),
+                "alpha": alpha,
+            }
+        )
+        plot_kwargs.pop("s", None)
+        plot_kwargs.pop("c", None)
+        if "edgecolors" in plot_kwargs and "line_color" not in plot_kwargs:
+            plot_kwargs["line_color"] = plot_kwargs.pop("edgecolors")
+        if "linewidths" in plot_kwargs and "line_width" not in plot_kwargs:
+            plot_kwargs["line_width"] = plot_kwargs.pop("linewidths")
+        mk = plot_kwargs.pop("marker", "inverted_triangle")
+        if mk:
+            plot_kwargs["marker"] = _bokeh_marker(mk) or mk
+
         source = ColumnDataSource(
             {
                 "x": np.asarray(x),
                 "y": y,
-                "size": np.asarray(size),
+                "size": sz_arr,
                 "station_id": np.asarray(
                     [f"{n}.{sta}" if n else sta for n, sta in zip(networks, stations)],
                     dtype=str,
@@ -580,20 +613,11 @@ class CrossSection:
                 "elev_str": np.asarray([_stringify_hover_value(v) for v in station_elevs]),
             }
         )
-        plot_kwargs = dict(kwargs)
-        if "edgecolors" in plot_kwargs and "line_color" not in plot_kwargs:
-            plot_kwargs["line_color"] = plot_kwargs.pop("edgecolors")
-        if "linewidths" in plot_kwargs and "line_width" not in plot_kwargs:
-            plot_kwargs["line_width"] = plot_kwargs.pop("linewidths")
-        mk = plot_kwargs.pop("marker", "inverted_triangle")
         renderer = self.figure.scatter(
             x="x",
             y="y",
             size="size",
             source=source,
-            color=_normalize_mpl_color(c),
-            alpha=alpha,
-            marker=_bokeh_marker(mk) or mk,
             **plot_kwargs,
         )
         if hover_tooltips is None:
@@ -730,8 +754,8 @@ class CrossSection:
 
         x_pad = data_range_x * 0.1
         y_pad = data_range_y * 0.1
-        x_grid = np.arange(x_min - x_pad, x_max + x_pad + grid_size_km, grid_size_km)
-        y_grid = np.arange(y_min - y_pad, y_max + y_pad + grid_size_km, grid_size_km)
+        x_grid = histogram_bin_edges(x_min - x_pad, x_max + x_pad, grid_size_km)
+        y_grid = histogram_bin_edges(y_min - y_pad, y_max + y_pad, grid_size_km)
         if x_grid.size < 2 or y_grid.size < 2:
             return None
 

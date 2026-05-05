@@ -138,3 +138,54 @@ def test_maps_shim_exports_match_core_package():
     assert shim_maps.CrossSection is pkg_maps.CrossSection
     assert shim_maps.TimeSeries is pkg_maps.TimeSeries
     assert shim_maps.MagLegend is pkg_maps.MagLegend
+
+
+def test_mpl_map_plot_heatmap_attaches_colorbar_by_default():
+    from vdapseisutils.core.maps.map import Map
+
+    m = Map(figsize=(3, 3), dpi=72)
+    try:
+        im = m.plot_heatmap(
+            np.array([46.18, 46.19, 46.20]),
+            np.array([-122.28, -122.26, -122.24]),
+        )
+        assert im is not None
+        assert getattr(im, "colorbar", None) is not None
+    finally:
+        plt.close(m.figure)
+
+
+def test_mpl_map_plot_heatmap_colorbar_disabled():
+    from vdapseisutils.core.maps.map import Map
+
+    m = Map(figsize=(3, 3), dpi=72)
+    try:
+        im = m.plot_heatmap(
+            np.array([46.18, 46.19]),
+            np.array([-122.28, -122.26]),
+            colorbar=False,
+        )
+        assert im is not None
+        assert getattr(im, "colorbar", None) is None
+    finally:
+        plt.close(m.figure)
+
+
+def test_mpl_cross_section_plot_heatmap_attaches_colorbar():
+    from vdapseisutils.core.maps.cross_section import CrossSection
+
+    xs = CrossSection(
+        points=[(46.20, -122.26), (46.20, -122.14)],
+        figsize=(4, 2),
+        dpi=72,
+    )
+    try:
+        im = xs.plot_heatmap(
+            np.array([46.20, 46.20]),
+            np.array([-122.24, -122.18]),
+            np.array([3000.0, 5000.0]),
+        )
+        assert im is not None
+        assert getattr(im, "colorbar", None) is not None
+    finally:
+        plt.close(xs.figure)

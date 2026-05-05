@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import numpy as np
-from bokeh.models import ColorBar, ColumnDataSource
+from bokeh.models import ColorBar, ColumnDataSource, TileRenderer
+
+from vdapseisutils.core.maps.bokeh.heatmap_common import palette_for_heatmap_cmap
 from obspy import Catalog, UTCDateTime
 from obspy.core.event import Event, Magnitude, Origin
 from obspy.core.inventory import Channel, Inventory, Network, Site, Station
@@ -57,6 +59,7 @@ def test_bokeh_map_smoke_methods():
     inv = _sample_inventory()
     m = Map(map_extent=[-122.35, -122.05, 46.10, 46.30], figsize=(4, 4))
     m.add_terrain()
+    m.add_google_street(zoom=10)
     m.plot(
         np.array([46.18, 46.21]),
         np.array([-122.28, -122.16]),
@@ -77,7 +80,8 @@ def test_bokeh_map_smoke_methods():
     m.set_title("Map title")
     m.set_subtitle("Map subtitle")
     m.set_catalog_subtitle(cat)
-    assert len(m.figure.renderers) >= 6
+    assert len(m.figure.renderers) >= 7
+    assert sum(isinstance(r, TileRenderer) for r in m.figure.renderers) >= 3
     assert m.figure.title.text == "Map title"
 
 
@@ -214,3 +218,36 @@ def test_bokeh_cross_section_catalog_time_colormap_consistency():
     r_color = cs_color.plot_catalog(cat, c="time", color="k")
     assert "cval" not in r_color.data_source.data
     assert r_color.glyph.fill_color == "black"
+
+
+def _glyph_fill_palette(renderer):
+    fc = renderer.glyph.fill_color
+    tr = getattr(fc, "transform", None)
+    if tr is None and isinstance(fc, dict):
+        tr = fc.get("transform")
+    return getattr(tr, "palette", None) if tr is not None else None
+
+
+def test_bokeh_cross_section_plot_catalog_respects_cmap_kw():
+    cat = _sample_catalog()
+    cs = CrossSection(points=[(46.20, -122.26), (46.20, -122.14)], figsize=(5, 3))
+    r = cs.plot_catalog(cat, c="time", cmap="inferno")
+    pal = _glyph_fill_palette(r)
+    assert list(pal) == list(palette_for_heatmap_cmap("inferno"))
+
+
+def test_bokeh_cross_section_plot_catalog_kwargs_c_and_s():
+    cat = _sample_catalog()
+    cs = CrossSection(points=[(46.20, -122.26), (46.20, -122.14)], figsize=(5, 3))
+    r = cs.plot_catalog(cat, **{"c": "b", "s": 36})
+    assert r.glyph.fill_color == "blue"
+    np.testing.assert_allclose(r.data_source.data["size"], np.array([6.0, 6.0, 6.0]))
+
+
+def test_bokeh_cross_section_plot_inventory_default_marker_and_edges():
+    inv = _sample_inventory()
+    cs = CrossSection(points=[(46.20, -122.26), (46.20, -122.14)], figsize=(5, 3))
+    r = cs.plot_inventory(inv, edgecolors="white", linewidths=2.0)
+    assert r.glyph.marker == "inverted_triangle"
+    assert r.glyph.line_color == "white"
+    assert r.glyph.line_width == 2.0

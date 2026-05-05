@@ -37,6 +37,24 @@ ATTRIBUTION_CARTO_POSITRON_NO_LABELS = (
     "© OpenStreetMap contributors © CARTO"
 )
 
+# Google Maps XYZ templates (Cartopy ``GoogleTiles`` and Bokeh ``WMTSTileSource``).
+# Same ``lyrs`` mapping as :func:`add_google_tile`.
+GOOGLE_MAPS_TILE_ATTRIBUTION = "Map data © Google"
+
+
+def google_maps_xyz_url_template(style: str = "terrain") -> str:
+    """
+    Return an XYZ URL template with ``{z}``, ``{x}``, ``{y}`` placeholders.
+
+    Parameters
+    ----------
+    style
+        One of ``terrain``, ``street``, ``satellite`` (same semantics as ``add_google_tile``).
+    """
+    style_map = {"terrain": "p", "street": "m", "satellite": "s"}
+    lyrs = style_map.get(style, "p")
+    return f"https://mt1.google.com/vt/lyrs={lyrs}&x={{x}}&y={{y}}&z={{z}}"
+
 
 def _create_ssl_context(ssl_verify=False):
     """
@@ -302,17 +320,8 @@ def add_google_tile(ax, zoom='auto', style='terrain', cache=False, radial_extent
             zoom_level = 10
     else:
         zoom_level = zoom
-    
-    # Map style names to Google's lyrs parameter
-    style_map = {
-        'terrain': 'p',
-        'street': 'm', 
-        'satellite': 's'
-    }
-    
-    lyrs = style_map.get(style, 'p')  # Default to terrain
-    
-    tile_url = f'https://mt1.google.com/vt/lyrs={lyrs}&x={{x}}&y={{y}}&z={{z}}'
+
+    tile_url = google_maps_xyz_url_template(style)
     
     if verbose:
         print(f"Google {style.capitalize()} Tiles:")

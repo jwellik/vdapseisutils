@@ -21,7 +21,7 @@ try:
     )
     from .utils import prep_catalog_data_mpl
     from .legends import MagLegend
-    from .heatmap_utils import heatmap_bin_step
+    from .heatmap_utils import heatmap_bin_step, histogram_bin_edges
 except ImportError:
     # Running as script - add package root to path and use absolute imports
     import sys
@@ -34,7 +34,7 @@ except ImportError:
     )
     from vdapseisutils.core.maps.utils import prep_catalog_data_mpl
     from vdapseisutils.core.maps.legends import MagLegend
-    from vdapseisutils.core.maps.heatmap_utils import heatmap_bin_step
+    from vdapseisutils.core.maps.heatmap_utils import heatmap_bin_step, histogram_bin_edges
 from vdapseisutils.utils.geoutils import backazimuth, sight_point_pyproj, project2line
 from vdapseisutils.core.maps import elev_profile
 
@@ -197,7 +197,13 @@ class CrossSection:
     def set_horiz_extent(self, extent=None):
         """Set the horizontal extent (x-axis limits) of the cross-section."""
         if extent is None:
-            self.ax.set_xlim(0, self.properties["radius"]*2/1000)
+            r_m = self.properties.get("radius")
+            if r_m is not None:
+                self.ax.set_xlim(0, r_m * 2 / 1000)
+            else:
+                length_m = self.properties.get("length")
+                if length_m is not None:
+                    self.ax.set_xlim(0, length_m / 1000)
         else:
             self.ax.set_xlim(extent)
 
@@ -446,6 +452,8 @@ class CrossSection:
             
             data_range_x = x_max - x_min
             data_range_depth = depth_max - depth_min
+            colorbar = bool(kwargs.pop("colorbar", True))
+            colorbar_label = kwargs.pop("colorbar_label", "Event count")
             max_heatmap_bins = int(kwargs.pop("max_heatmap_bins", 120))
             grid_size_km = heatmap_bin_step(
                 min(data_range_x, data_range_depth),
@@ -461,8 +469,8 @@ class CrossSection:
                 print("Warning: Invalid coordinate ranges for heatmap")
                 return None
             
-            x_grid = np.arange(x_min - x_pad, x_max + x_pad, grid_size_km)
-            depth_grid = np.arange(depth_min - depth_pad, depth_max + depth_pad, grid_size_km)
+            x_grid = histogram_bin_edges(x_min - x_pad, x_max + x_pad, grid_size_km)
+            depth_grid = histogram_bin_edges(depth_min - depth_pad, depth_max + depth_pad, grid_size_km)
             
             if len(x_grid) < 2 or len(depth_grid) < 2:
                 print("Warning: Grid too small for heatmap")
@@ -482,7 +490,9 @@ class CrossSection:
                                    cmap=cmap, alpha=alpha, 
                                    vmin=vmin, vmax=vmax,
                                    **kwargs)
-            
+            if colorbar:
+                self.figure.colorbar(im, ax=self.ax, label=colorbar_label)
+
             return im
             
         except Exception as e:

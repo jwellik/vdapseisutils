@@ -43,13 +43,16 @@ from vdapseisutils.core.maps.defaults import (
     WORLD_LOCATION_MAP_DEFAULTS,
     default_volcano,
 )
-from vdapseisutils.core.maps.heatmap_utils import heatmap_bin_step
+from vdapseisutils.core.maps.heatmap_utils import heatmap_bin_step, histogram_bin_edges
 from vdapseisutils.core.maps.map_tiles import (
     ARCGIS_WORLD_HILLSHADE_URL,
     ATTRIBUTION_CARTO_POSITRON_NO_LABELS,
     ATTRIBUTION_ESRI_HILLSHADE,
     CARTO_LIGHT_NOLABELS_URL,
+    GOOGLE_MAPS_TILE_ATTRIBUTION,
     _calculate_auto_zoom_arcgis,
+    _calculate_auto_zoom_google,
+    google_maps_xyz_url_template,
 )
 from vdapseisutils.core.maps.utils import choose_scale_bar_length, prep_catalog_data_mpl
 from vdapseisutils.utils.geoutils import backazimuth, radial_extent2map_extent, sight_point_pyproj
@@ -393,6 +396,66 @@ class Map:
         )
         self.figure.add_tile(base)
         self.figure.add_tile(overlay, alpha=0.5)
+
+    def _google_zoom_level(self, zoom: Any) -> int:
+        radial = self.properties.get("radial_extent_km")
+        if zoom == "auto":
+            return (
+                int(_calculate_auto_zoom_google(float(radial)))
+                if radial is not None
+                else 10
+            )
+        return int(zoom)
+
+    def _add_google_tile_layer(self, style: str, zoom="auto", verbose=False, **kwargs: Any) -> None:
+        """Attach one Google XYZ tile layer (Web Mercator); zoom hint affects logs only."""
+        kwargs.pop("style", None)
+        zoom_level = self._google_zoom_level(zoom)
+        if verbose:
+            print(f"Bokeh Google tiles ({style}): zoom_level={zoom_level}")
+        url = _wmts_url_for_bokeh(google_maps_xyz_url_template(style))
+        self.figure.add_tile(
+            WMTSTileSource(url=url, attribution=GOOGLE_MAPS_TILE_ATTRIBUTION),
+        )
+
+    def add_google_terrain(
+        self,
+        zoom="auto",
+        cache=False,
+        verbose=False,
+        ssl_verify=False,
+        **kwargs,
+    ) -> None:
+        """Google terrain tiles (XYZ); matches matplotlib ``Map.add_google_terrain`` signature."""
+        _ = cache
+        _ = ssl_verify
+        self._add_google_tile_layer("terrain", zoom=zoom, verbose=verbose, **kwargs)
+
+    def add_google_street(
+        self,
+        zoom="auto",
+        cache=False,
+        verbose=False,
+        ssl_verify=False,
+        **kwargs,
+    ) -> None:
+        """Google street map tiles; matches matplotlib ``Map.add_google_street`` signature."""
+        _ = cache
+        _ = ssl_verify
+        self._add_google_tile_layer("street", zoom=zoom, verbose=verbose, **kwargs)
+
+    def add_google_satellite(
+        self,
+        zoom="auto",
+        cache=False,
+        verbose=False,
+        ssl_verify=False,
+        **kwargs,
+    ) -> None:
+        """Google satellite imagery tiles; matches matplotlib ``Map.add_google_satellite`` signature."""
+        _ = cache
+        _ = ssl_verify
+        self._add_google_tile_layer("satellite", zoom=zoom, verbose=verbose, **kwargs)
 
     def set_title(self, title_text: str, **kwargs: Any):
         """Set the main plot title (MPL-compatible kwargs merged with ``TITLE_DEFAULTS``)."""
@@ -764,11 +827,11 @@ class Map:
 
             lon_pad = data_range_lon * 0.1
             lat_pad = data_range_lat * 0.1
-            lon_grid = np.arange(
-                lon_min - lon_pad, lon_max + lon_pad + grid_size_deg, grid_size_deg
+            lon_grid = histogram_bin_edges(
+                lon_min - lon_pad, lon_max + lon_pad, grid_size_deg
             )
-            lat_grid = np.arange(
-                lat_min - lat_pad, lat_max + lat_pad + grid_size_deg, grid_size_deg
+            lat_grid = histogram_bin_edges(
+                lat_min - lat_pad, lat_max + lat_pad, grid_size_deg
             )
             if lon_grid.size < 2 or lat_grid.size < 2:
                 return None

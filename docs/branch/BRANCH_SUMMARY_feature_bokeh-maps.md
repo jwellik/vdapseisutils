@@ -8,24 +8,20 @@
 - **Merged into**: -
 - **Merge strategy**: -
 P26-05-05
-P26-05-05
-P26-05-05
-P26-05-05
-P26-05-05
 
 ## Accomplishments
-- Added **`vdapseisutils.core.maps.bokeh.Map`** and stabilized projection initialization for environments with missing `proj.db` EPSG context.
-- Implemented practical parity methods on Bokeh `Map`: **`plot()`**, **`scatter()`**, **`plot_catalog()`**, **`plot_inventory()`**, **`plot_volcano()`**, **`plot_peak()`**, and **`plot_line()`**, plus **`add_scalebar()`**, **`set_title()`** / **`set_catalog_subtitle()`**, and **`add_world_location_map()`** (side-by-side layout).
-- Centralized ArcGIS/Carto terrain URL constants in **`map_tiles.py`** so Cartopy and Bokeh terrain paths share defaults.
-- **`gallery/Mapping_tutorial_bokeh.ipynb`**: Bokeh parallels to `Mapping_tutorial.ipynb` (Augustine, regional peaks, Kīlauea with IRIS inventory + catalog + locator layout).
+- **`vdapseisutils.core.maps.bokeh.Map`**: proj-safe Mercator init; **`add_terrain`** / **`add_google_*`**; plotting surface including **`plot_heatmap`**; **`add_scalebar`**, titles, **`add_world_location_map`**.
+- **`vdapseisutils.core.maps.bokeh.CrossSection`**: MPL-like **`plot`**, **`scatter`**, **`plot_catalog`**, **`plot_inventory`**, **`plot_heatmap`**, with matplotlib-style kwargs parity covered in smoke tests (**`color`/`c`**, **`cmap`**, inventory marker/edges).
+- **`map_tiles.py`**: shared ArcGIS/Carto terrain URLs plus Google XYZ templates/attribution consumed by Cartopy and Bokeh tile layers.
+- **MPL heatmaps**: default **`colorbar`** on **`Map.plot_heatmap`** and **`CrossSection.plot_heatmap`**; shared **`heatmap_utils.histogram_bin_edges`** prevents **`histogram2d`** from dropping samples at the padded range ends (MPL + Bokeh).
+- **MPL `CrossSection.set_horiz_extent`**: supports **`points`** profiles using geodesic **`length`** when **`radius`** is unset; gallery Bokeh notebooks mirror the matplotlib tutorials.
 
 ## Planned work
-- Implement Bokeh `CrossSection` with MPL-compatible constructor and plotting methods.
-- Extend Bokeh `Map` with **`plot_heatmap`**, optional hillshade raster support, and richer kwargs parity with MPL `Map`.
-- Add tests and more gallery examples for catalog/inventory workflows.
+- **`add_hillshade`** / raster parity on Bokeh maps when needed beyond XYZ terrain stacks.
+- Optional: **`register_bokeh`**, shared **`get_default_terrain_tile_sources()`**, finer graticule/tick formatting.
 
 ## Executed work
-- Created branch **`feature/bokeh-maps`** and delivered initial Bokeh map module, terrain integration, notebook demos, and documentation updates.
+- Created branch **`feature/bokeh-maps`** and delivered Bokeh map and cross-section modules, terrain and heatmap integration, google tiles, notebook demos, plan/timeline updates, and expanding smoke tests (`tests/test_bokeh_maps_smoke.py`, **`tests/test_maps_stack_smoke.py`** heatmap/colorbar checks).
 - Resolved editable-install/packaging troubleshooting notes in notebook documentation for mixed conda/pip environments.
 - Updated branch timeline metadata and accomplishments as progress landed.
 
@@ -38,7 +34,7 @@ P26-05-05
 - Environment had stale pip uninstall metadata; documented cleanup steps and kernel restart guidance in notebook.
 
 ## Validation
-- Smoke tests pass for Bokeh `Map` import, terrain rendering call, and plotting methods (`plot`, `scatter`, `plot_line`, `plot_volcano`, `plot_peak`, `plot_inventory`, `plot_catalog`). Notebook exercises **`show(fig.layout)`** for the world-locator case.
+- **`pytest -q tests/test_bokeh_maps_smoke.py tests/test_maps_stack_smoke.py`** passes (terrain + google tiles, heatmaps, catalog/scatter kwargs, MPL heatmap colorbars).
 
 ## Final changelog-style outcome
-- Pending merge: adds a new Bokeh map API surface under `vdapseisutils.core.maps.bokeh` plus gallery examples and terrain-sharing utilities.
+- Pending merge: adds Bokeh **`Map`** / **`CrossSection`** under **`vdapseisutils.core.maps.bokeh`**, shared **`heatmap_utils`**, google XYZ parity, MPL heatmap colorbar defaults, gallery notebooks, and smoke coverage for the above.

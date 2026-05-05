@@ -22,7 +22,7 @@ try:
         WORLD_LOCATION_MAP_DEFAULTS, TITLE_DEFAULTS, SUBTITLE_DEFAULTS, ensure_maps_mpl_style,
     )
     from .utils import prep_catalog_data_mpl, choose_scale_bar_length
-    from .heatmap_utils import heatmap_bin_step
+    from .heatmap_utils import heatmap_bin_step, histogram_bin_edges
 except ImportError:
     # Running as script - add package root to path and use absolute imports
     import sys
@@ -34,7 +34,7 @@ except ImportError:
         WORLD_LOCATION_MAP_DEFAULTS, TITLE_DEFAULTS, SUBTITLE_DEFAULTS, ensure_maps_mpl_style,
     )
     from vdapseisutils.core.maps.utils import prep_catalog_data_mpl, choose_scale_bar_length
-    from vdapseisutils.core.maps.heatmap_utils import heatmap_bin_step
+    from vdapseisutils.core.maps.heatmap_utils import heatmap_bin_step, histogram_bin_edges
 
 from vdapseisutils.utils.geoutils import backazimuth, radial_extent2map_extent, sight_point_pyproj
 
@@ -818,6 +818,8 @@ class Map:
             
             data_range_lon = lon_max - lon_min
             data_range_lat = lat_max - lat_min
+            colorbar = bool(kwargs.pop("colorbar", True))
+            colorbar_label = kwargs.pop("colorbar_label", "Event count")
             max_heatmap_bins = int(kwargs.pop("max_heatmap_bins", 120))
             grid_size_deg = heatmap_bin_step(
                 min(data_range_lon, data_range_lat),
@@ -833,8 +835,8 @@ class Map:
             lon_pad = (lon_max - lon_min) * 0.1
             lat_pad = (lat_max - lat_min) * 0.1
             
-            lon_grid = np.arange(lon_min - lon_pad, lon_max + lon_pad, grid_size_deg)
-            lat_grid = np.arange(lat_min - lat_pad, lat_max + lat_pad, grid_size_deg)
+            lon_grid = histogram_bin_edges(lon_min - lon_pad, lon_max + lon_pad, grid_size_deg)
+            lat_grid = histogram_bin_edges(lat_min - lat_pad, lat_max + lat_pad, grid_size_deg)
             
             if len(lon_grid) < 2 or len(lat_grid) < 2:
                 print("Warning: Grid too small for heatmap")
@@ -855,7 +857,9 @@ class Map:
                                    vmin=vmin, vmax=vmax,
                                    transform=ccrs.PlateCarree(),
                                    **kwargs)
-            
+            if colorbar:
+                self.figure.colorbar(im, ax=self.ax, label=colorbar_label)
+
             return im
             
         except Exception as e:
