@@ -20,7 +20,16 @@ from typing import Any
 import numpy as np
 from bokeh.io import save
 from bokeh.layouts import column
-from bokeh.models import BoxZoomTool, ColorBar, LinearColorMapper, Range1d, Span, WheelZoomTool
+from bokeh.models import (
+    BoxZoomTool,
+    ColorBar,
+    LinearColorMapper,
+    Range1d,
+    Span,
+    WheelZoomTool,
+    ZoomInTool,
+    ZoomOutTool,
+)
 from bokeh.plotting import figure as bk_figure
 from bokeh.resources import Resources
 from matplotlib.colors import to_hex
@@ -155,9 +164,15 @@ def _record_matches_metadata(rec: _PanelRecord, **criteria: Any) -> bool:
 
 
 def _restrict_zoom_to_x_axis(fig: Any) -> None:
-    """Wheel zoom / box zoom affect only the x (time) axis; y limits stay fixed."""
+    """
+    Constrain Bokeh zoom tools to the horizontal (time) axis; y-ranges stay fixed.
+
+    Sets ``dimensions`` to ``'width'`` on wheel zoom, box zoom, and the optional
+    zoom-in / zoom-out tools when those are present on the figure toolbar.
+    """
+    _zoom_types = (WheelZoomTool, BoxZoomTool, ZoomInTool, ZoomOutTool)
     for tool in fig.toolbar.tools:
-        if isinstance(tool, (WheelZoomTool, BoxZoomTool)):
+        if isinstance(tool, _zoom_types):
             tool.dimensions = "width"
 
 
@@ -188,9 +203,10 @@ class SwarmClipboardBk:
     shows a placeholder figure for that panel.
 
     **Toolbar / zoom:** ``toolbar_location`` places the tool palette (``'above'``, ``'below'``,
-    ``'left'``, ``'right'`` — default ``'right'``). With ``zoom_x_only=True`` (default),
-    wheel zoom and box zoom only stretch the time axis; amplitude / frequency limits stay
-    fixed unless you change them (``set_alim`` / ``set_flim`` / manual y-range).
+    ``'left'``, ``'right'`` — default ``'right'``).     With ``zoom_x_only=True`` (default),
+    wheel zoom, box zoom, and zoom-in/out tools (when present) only affect the time axis;
+    amplitude / frequency limits stay fixed unless you change them (``set_alim`` /
+    ``set_flim`` / manual y-range).
 
     **Wave + spectrogram gap:** In ``mode='wg'``, ``wave_spec_spacing`` is the pixel gap
     between the waveform and spectrogram sub-figures in the column (default ``0``).
@@ -256,7 +272,8 @@ class SwarmClipboardBk:
         Create a :func:`bokeh.plotting.figure` with clipboard toolbar defaults.
 
         ``toolbar_location`` is ``'above'``, ``'below'``, ``'left'``, or ``'right'``.
-        When ``zoom_x_only`` is True, wheel zoom and box zoom only change the x-range.
+        When ``zoom_x_only`` is True, zoom tools (wheel, box, zoom-in/out) only change
+        the x-range.
         """
         kwargs.setdefault("toolbar_location", self._toolbar_location)
         fig = bk_figure(**kwargs)
