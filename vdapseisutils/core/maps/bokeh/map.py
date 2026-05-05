@@ -6,6 +6,7 @@ Author: Jay Wellik
 
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import Any
 
 from bokeh.models import WMTSTileSource
@@ -22,7 +23,20 @@ from vdapseisutils.core.maps.map_tiles import (
 )
 from vdapseisutils.utils.geoutils import radial_extent2map_extent
 
-_TRANSFORMER = Transformer.from_crs("EPSG:4326", "EPSG:3857", always_xy=True)
+# PROJ4 strings avoid EPSG lookups so imports work when ``proj.db`` is missing or
+# misconfigured (CRSError: no database context specified).
+_WGS84_LONG_LAT = "+proj=longlat +datum=WGS84 +no_defs"
+_WEB_MERCATOR = (
+    "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +k=1.0 "
+    "+x_0=0.0 +y_0=0 +units=m +no_defs"
+)
+
+
+@lru_cache(maxsize=1)
+def _wgs84_to_web_mercator_transformer() -> Transformer:
+    return Transformer.from_crs(
+        _WGS84_LONG_LAT, _WEB_MERCATOR, always_xy=True
+    )
 
 
 def _extent_lonlat_to_mercator_ranges(
@@ -32,13 +46,14 @@ def _extent_lonlat_to_mercator_ranges(
     min_lon, max_lon, min_lat, max_lat = extent
     xs: list[float] = []
     ys: list[float] = []
+    tr = _wgs84_to_web_mercator_transformer()
     for lon, lat in (
         (min_lon, min_lat),
         (max_lon, min_lat),
         (max_lon, max_lat),
         (min_lon, max_lat),
     ):
-        x, y = _TRANSFORMER.transform(lon, lat)
+        x, y = tr.transform(lon, lat)
         xs.append(x)
         ys.append(y)
     return (min(xs), max(xs)), (min(ys), max(ys))

@@ -11,6 +11,7 @@ P26-05-04
 P26-05-04
 P26-05-04
 P26-05-04
+P26-05-05
 
 ## Accomplishments
 - Added **`vdapseisutils.core.maps.bokeh.Map`**: Web Mercator `bokeh.plotting.figure`, constructor aligned with MPL `Map`, **`add_terrain()`** (Esri + Carto) using shared URL constants in **`map_tiles`**. Public import: **`from vdapseisutils.core.maps.bokeh import Map`**.
