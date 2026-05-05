@@ -181,16 +181,16 @@ Reuse the **same example data files** as Tutorial A where paths exist under **`v
 
 ### Phase 3 — Overlays and navigation
 
-- [ ] `axvline` equivalent (global and metadata-targeted).
-- [ ] `plot_peak_value` raster behind waveforms.
-- [ ] `plot_trace` / `plot_horizontals` overlays (at least station-matched path).
-- [ ] `plot_catalog` origins/picks (reuse ObsPy structures).
+- [x] `axvline` equivalent (global and metadata-targeted).
+- [x] `plot_peak_value` raster behind waveforms.
+- [x] `plot_trace` / `plot_horizontals` overlays (at least station-matched path).
+- [x] `plot_catalog` origins/picks (reuse ObsPy structures).
 
 ### Phase 4 — Docs + parity hardening
 
-- [ ] Add **`gallery/SwarmMPL/Clipboard_tutorial_bokeh.ipynb`** with **Example 1**, **Example 2**, and **Example 3** aligned to **`Clipboard_Tutorial_A.ipynb`** (see **Gallery notebook** section above).
-- [ ] `pytest` smoke tests (optional image baseline deferred).
-- [ ] README section: “Bokeh clipboard” under Swarm plotting.
+- [x] Add **`gallery/SwarmMPL/Clipboard_tutorial_bokeh.ipynb`** with **Example 1**, **Example 2**, and **Example 3** aligned to **`Clipboard_Tutorial_A.ipynb`** (see **Gallery notebook** section above).
+- [x] `pytest` smoke tests (optional image baseline deferred).
+- [x] README section: “Bokeh clipboard” under Swarm plotting.
 
 ### Phase 5 — Helicorder (separate milestone)
 

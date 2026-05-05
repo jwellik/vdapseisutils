@@ -142,3 +142,5 @@ cb.plot_peak_value(
 
 `plot_peak_value(...)` intentionally overlays raster imagery behind existing waveform axes (`"w"` axes) without changing axis formatting; it raises when used on spectrogram-only (`mode="g"`) figures.
 
+**Bokeh clipboard:** For notebooks and standalone HTML, use **`SwarmClipboardBk`** from **`vdapseisutils.core.swarmmpl.bokeh`**. It mirrors **`SwarmClipboard`** semantics (modes **`w`** / **`g`** / **`wg`**, **`tick_type`** absolute vs relative, **`sync_waves`**, aligned waveform/spectrogram compute), plus overlays such as **`axvline`**, **`plot_trace`** / **`plot_horizontals`**, **`plot_peak_value`**, **`plot_catalog`**, **`scroll_traces`**, and **`save()`** for exported plots. Worked examples are in **`gallery/SwarmMPL/Clipboard_tutorial_bokeh.ipynb`** (Examples 1–3 align with **`gallery/SwarmMPL/Clipboard_Tutorial_A.ipynb`**).
+

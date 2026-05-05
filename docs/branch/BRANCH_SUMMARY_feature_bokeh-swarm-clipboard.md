@@ -10,32 +10,26 @@
 - **Last updated**: 2026-05-05
 
 ## Accomplishments
-- Opened branch **`feature/bokeh-swarm-clipboard`** to add Bokeh-backed Swarm-style **Clipboard** (and later **Helicorder**) beside existing matplotlib `swarmmpl` code.
-- Audited **`ClipboardClass`** / **`Clipboard`** and **`SwarmClipboard`** in `vdapseisutils.core.swarmmpl.clipboard` plus dependencies (`TimeAxes`, **`prepare_waveform_series`**, **`compute_spectrogram`**).
-- Extended **`docs/plans/bokeh-swarm-clipboard-plan.md`** with **`gallery/SwarmMPL/Clipboard_tutorial_bokeh.ipynb`** (**Examples 1–3** mirroring **`Clipboard_Tutorial_A.ipynb`**) and **deferred downsampling** (“for meow”) until post‑MVP.
-- Landed **`SwarmClipboardBk`** through **Phase 2**: HTML **`save()`**, **`tick_type`** / **`sync_waves`**, modes **`w`** / **`g`** / **`wg`** with **`compute_spectrogram`**, **inferno_u** palette + color bar, **`examples/swarm_clipboard_minimal.py --save-bokeh-html`**, tests **`tests/test_swarm_clipboard_bokeh.py`**.
+- Implemented **Phase 3** overlays and navigation on **`SwarmClipboardBk`**: **`axvline`** (metadata targeting and **`axes`** indices), **`plot_peak_value`** raster behind waveform axes, **`plot_trace`** / **`plot_horizontals`**, **`plot_catalog`**, **`scroll_traces`**, plus **`set_alim`** / **`set_flim`** for y-limits.
+- Completed **Phase 4**: gallery notebook **`gallery/SwarmMPL/Clipboard_tutorial_bokeh.ipynb`** (Examples 1–3 aligned with **`Clipboard_Tutorial_A.ipynb`**), README **“Bokeh clipboard”** subsection, extended **`tests/test_swarm_clipboard_bokeh.py`**, and marked Phases 3–4 complete in **`docs/plans/bokeh-swarm-clipboard-plan.md`**.
+- Fixed **`plot_peak_value`** horizontal **`ColorBar`** placement for Bokeh 3 (**`location='bottom_center'`**).
 
 ## Planned work
-- Phase 3–4: overlays (**`axvline`**, **`plot_peak_value`**, catalog), **`gallery/SwarmMPL/Clipboard_tutorial_bokeh.ipynb`**, README blurb.
+- Phase 5 Helicorder Bokeh milestone (separate scope per plan).
 
 ## Executed work
-- Created git branch **`feature/bokeh-swarm-clipboard`** from **`main`** and regenerated **`docs/branch/BRANCH_TIMELINE.md`** via **`scripts/branch_docs.py post-checkout`**.
-- Added **`docs/plans/bokeh-swarm-clipboard-plan.md`** and populated this branch summary for hook validation.
-- Captured stakeholder answers on parity (**`SwarmClipboard`**), notebook + HTML export, package layout (**`core.swarmmpl.bokeh`**); downsampling policy explicitly deferred per latest guidance.
-- Implemented Phase 0 package **`core/swarmmpl/bokeh/`**, smoke tests, example flag, and marked Phase 0 checklist complete in the plan.
-- Completed Phase 1 waveform **`tick_type`** / **`sync_waves`** behavior and renamed tests to **`tests/test_swarm_clipboard_bokeh.py`**.
-- Completed Phase 2 spectrogram modes (**`g`**/**`wg`**), **`spec_settings`** passthrough, and palette / color-bar parity with MPL defaults.
+- Added **`_resolve_target_panels`** / **`_figures_for_axes`** helpers and **`_PanelRecord`** wiring for **`wg`** stacked panels.
+- Notebook documents **`SwarmClipboardBk`** usage with **`output_notebook`**, **`show`**, and **`save`** HTML artifacts under **`gallery/SwarmMPL/`**.
 
 ## Back-and-forth / iteration notes
-- User asked to start with **Clipboard**; **Helicorder** remains explicit follow-on under the same branch initiative.
-- Stakeholder locked **`SwarmClipboard`** parity, **`vdapseisutils.core.swarmmpl.bokeh`**, HTML **`save`** on first usable drop; requested **`Clipboard_tutorial_bokeh`** with Tutorial A **Examples 1–3**; **downsampling** discussion deferred for meow.
+- Tutorial A labels **“Example 3”** twice (Examples 2 and 3 in narrative order); the Bokeh notebook follows the **three worked examples** pattern from the plan (simple clip → filtered markers → Augustine relative + scroll).
 
 ## Problems + resolutions
-- Root **`__init__.py`** documents **`from vdapseisutils.swarmbk import Clipboard_bk`**, but **`swarmbk`** is not present in-tree—called out as repo hygiene / non-goal for Clipboard v1 in the plan (no code change yet).
+- **`ColorBar`** rejected **`location='below'`** on this Bokeh version — use **`bottom_center`** when **`orientation='horizontal'`**.
+- **`Span`** annotations attach to **`figure.center`**, not glyph **`renderers`** — tests count spans accordingly.
 
 ## Validation
-- Branch summary passes **`scripts/branch_docs.py`** metadata and accomplishments count; timeline regenerated.
-- **`pytest -q tests/test_swarm_clipboard_bokeh.py`** passes.
+- **`python3 -m pytest tests/test_swarm_clipboard_bokeh.py`** passes (15 tests).
 
 ## Final changelog-style outcome
-- Phase 0–2 on branch: **`SwarmClipboardBk`** (**w**/**g**/**wg**) + **`save`** + spectrogram pipeline; overlays and gallery notebook remain per **`docs/plans/bokeh-swarm-clipboard-plan.md`** Phases 3–4.
+- **`feature/bokeh-swarm-clipboard`**: Phase 3–4 deliverables landed — overlay/navigation API on **`SwarmClipboardBk`**, gallery notebook + README + tests + plan checklist updates.
