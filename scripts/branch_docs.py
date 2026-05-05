@@ -206,7 +206,9 @@ def ensure_branch_summary(branch: str) -> pathlib.Path:
 
 def update_metadata_value(content: str, key: str, value: str) -> str:
     pattern = rf"^(\s*-\s+\*\*{re.escape(key)}\*\*:\s*).*$"
-    replacement = rf"\1{value}"
+    # Use \g<1> so the next character is not parsed as part of a numeric backreference
+    # (e.g. "\12026-05-05" would treat \120 as octal and corrupt the line).
+    replacement = r"\g<1>" + value
     if re.search(pattern, content, flags=re.MULTILINE):
         return re.sub(pattern, replacement, content, flags=re.MULTILINE)
     return content
