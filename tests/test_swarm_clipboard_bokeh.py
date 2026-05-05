@@ -10,6 +10,23 @@ from obspy import Stream, Trace, UTCDateTime
 from vdapseisutils.core.swarmmpl.bokeh import SwarmClipboardBk
 
 
+def _long_trace(**kwargs) -> Trace:
+    """Enough samples for :func:`compute_spectrogram` with default window."""
+    header = {
+        "network": "XX",
+        "station": "T01",
+        "location": "00",
+        "channel": "HHZ",
+        "starttime": UTCDateTime("2020-01-01T00:00:00"),
+        "sampling_rate": 20.0,
+        "npts": 800,
+    }
+    header.update(kwargs)
+    rng = np.random.default_rng(42)
+    data = rng.standard_normal(header["npts"]).astype(np.float64)
+    return Trace(data=data, header=header)
+
+
 def _tiny_trace(**kwargs) -> Trace:
     header = {
         "network": "XX",
@@ -59,9 +76,9 @@ def test_no_data_save_relative(tmp_path):
     cb.save(tmp_path / "empty_rel.html")
 
 
-def test_unsupported_mode_wg():
-    with pytest.raises(NotImplementedError, match='mode="w"'):
-        SwarmClipboardBk(data=None, mode="wg")
+def test_invalid_mode_raises():
+    with pytest.raises(ValueError, match="Unknown mode"):
+        SwarmClipboardBk(data=None, mode="wx")
 
 
 def test_unknown_tick_type():
@@ -104,6 +121,23 @@ def test_relative_sync_misaligned_starts_shared_axis():
     assert cb.figures[0].x_range is cb.figures[1].x_range
     # Global span: 60 s gap + 2 s waveforms -> ~62 s (ObsPy float duration)
     assert cb.figures[0].x_range.end > 60.0
+
+
+def test_mode_g_spectrogram_html(tmp_path):
+    st = Stream([_long_trace()])
+    cb = SwarmClipboardBk(data=st, mode="g", tick_type="absolute")
+    out = tmp_path / "spec.html"
+    cb.save(out)
+    html = out.read_text(encoding="utf-8")
+    assert out.stat().st_size > 2000
+    assert "ColorBar" in html or "color_mapper" in html
+
+
+def test_mode_wg_stacked_wave_and_spec():
+    st = Stream([_long_trace()])
+    cb = SwarmClipboardBk(data=st, mode="wg", tick_type="absolute", sync_waves=True)
+    panel = cb.figures[0]
+    assert len(panel.children) == 2
 
 
 def test_absolute_sync_mismatched_starts_same_range_object():

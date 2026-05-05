@@ -13,10 +13,10 @@
 - Opened branch **`feature/bokeh-swarm-clipboard`** to add Bokeh-backed Swarm-style **Clipboard** (and later **Helicorder**) beside existing matplotlib `swarmmpl` code.
 - Audited **`ClipboardClass`** / **`Clipboard`** and **`SwarmClipboard`** in `vdapseisutils.core.swarmmpl.clipboard` plus dependencies (`TimeAxes`, **`prepare_waveform_series`**, **`compute_spectrogram`**).
 - Extended **`docs/plans/bokeh-swarm-clipboard-plan.md`** with **`gallery/SwarmMPL/Clipboard_tutorial_bokeh.ipynb`** (**Examples 1–3** mirroring **`Clipboard_Tutorial_A.ipynb`**) and **deferred downsampling** (“for meow”) until post‑MVP.
-- Landed **`SwarmClipboardBk`** (**Phase 0–1**): HTML **`save()`**, **`examples/swarm_clipboard_minimal.py --save-bokeh-html`**, **`tick_type`** aliases (**absolute**/**datetime** vs **relative** seconds + **`sync_waves`** range linking), tests **`tests/test_swarm_clipboard_bokeh.py`**.
+- Landed **`SwarmClipboardBk`** through **Phase 2**: HTML **`save()`**, **`tick_type`** / **`sync_waves`**, modes **`w`** / **`g`** / **`wg`** with **`compute_spectrogram`**, **inferno_u** palette + color bar, **`examples/swarm_clipboard_minimal.py --save-bokeh-html`**, tests **`tests/test_swarm_clipboard_bokeh.py`**.
 
 ## Planned work
-- Phase 2–4: spectrogram modes (**`wg`**/**`g`**), overlays (**`axvline`**, catalog), **`gallery/SwarmMPL/Clipboard_tutorial_bokeh.ipynb`**.
+- Phase 3–4: overlays (**`axvline`**, **`plot_peak_value`**, catalog), **`gallery/SwarmMPL/Clipboard_tutorial_bokeh.ipynb`**, README blurb.
 
 ## Executed work
 - Created git branch **`feature/bokeh-swarm-clipboard`** from **`main`** and regenerated **`docs/branch/BRANCH_TIMELINE.md`** via **`scripts/branch_docs.py post-checkout`**.
@@ -24,6 +24,7 @@
 - Captured stakeholder answers on parity (**`SwarmClipboard`**), notebook + HTML export, package layout (**`core.swarmmpl.bokeh`**); downsampling policy explicitly deferred per latest guidance.
 - Implemented Phase 0 package **`core/swarmmpl/bokeh/`**, smoke tests, example flag, and marked Phase 0 checklist complete in the plan.
 - Completed Phase 1 waveform **`tick_type`** / **`sync_waves`** behavior and renamed tests to **`tests/test_swarm_clipboard_bokeh.py`**.
+- Completed Phase 2 spectrogram modes (**`g`**/**`wg`**), **`spec_settings`** passthrough, and palette / color-bar parity with MPL defaults.
 
 ## Back-and-forth / iteration notes
 - User asked to start with **Clipboard**; **Helicorder** remains explicit follow-on under the same branch initiative.
@@ -37,4 +38,4 @@
 - **`pytest -q tests/test_swarm_clipboard_bokeh.py`** passes.
 
 ## Final changelog-style outcome
-- Phase 0–1 on branch: **`SwarmClipboardBk`** + HTML **`save`** + waveform tick/sync coverage; spectrograms, overlays, and **`Clipboard_tutorial_bokeh.ipynb`** remain per **`docs/plans/bokeh-swarm-clipboard-plan.md`** Phases 2–4.
+- Phase 0–2 on branch: **`SwarmClipboardBk`** (**w**/**g**/**wg**) + **`save`** + spectrogram pipeline; overlays and gallery notebook remain per **`docs/plans/bokeh-swarm-clipboard-plan.md`** Phases 3–4.

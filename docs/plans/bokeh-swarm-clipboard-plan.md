@@ -176,8 +176,8 @@ Reuse the **same example data files** as Tutorial A where paths exist under **`v
 
 ### Phase 2 — Spectrograms
 
-- [ ] Add `mode="g"` and `"wg"` using shared `compute_spectrogram`.
-- [ ] Color bar / palette defaults consistent with MPL (`inferno_u`, db scale).
+- [x] Add **`mode="g"`** and **`"wg"`** using **`compute_spectrogram`** (`spec_settings`: **`wlen`**, **`overlap`**, **`dbscale`**, **`samp_rate`**, **`log_power`**, **`cmap`**).
+- [x] **`inferno_u`**-sampled palette, **`LinearColorMapper`**, right **`ColorBar`** (dB label when **`dbscale`**).
 
 ### Phase 3 — Overlays and navigation
 
