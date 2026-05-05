@@ -22,6 +22,7 @@ try:
         WORLD_LOCATION_MAP_DEFAULTS, TITLE_DEFAULTS, SUBTITLE_DEFAULTS, ensure_maps_mpl_style,
     )
     from .utils import prep_catalog_data_mpl, choose_scale_bar_length
+    from .heatmap_utils import heatmap_bin_step
 except ImportError:
     # Running as script - add package root to path and use absolute imports
     import sys
@@ -33,8 +34,9 @@ except ImportError:
         WORLD_LOCATION_MAP_DEFAULTS, TITLE_DEFAULTS, SUBTITLE_DEFAULTS, ensure_maps_mpl_style,
     )
     from vdapseisutils.core.maps.utils import prep_catalog_data_mpl, choose_scale_bar_length
+    from vdapseisutils.core.maps.heatmap_utils import heatmap_bin_step
 
-from vdapseisutils.utils.geoutils import backazimuth, radial_extent2map_extent
+from vdapseisutils.utils.geoutils import backazimuth, radial_extent2map_extent, sight_point_pyproj
 
 
 def add_hillshade_pygmt(ax, extent=[-180, 180, -90, 90],
@@ -664,6 +666,53 @@ class Map:
                      bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, pad=2),
                      transform=transform)
 
+    def plot_cross_section(
+        self,
+        points=None,
+        origin=None,
+        radius_km=40.0,
+        azimuth=270.0,
+        label="A",
+        color="k",
+        linewidth=1.5,
+        va="center",
+        ha="center",
+        transform=ccrs.Geodetic(),
+        **kwargs,
+    ):
+        """
+        Plot a cross-section/transect line and endpoint labels (A and A').
+
+        Provide either ``points=[(lat1, lon1), (lat2, lon2)]`` or ``origin`` with
+        ``radius_km`` + ``azimuth``.
+        """
+        if points is None:
+            if origin is None:
+                raise ValueError("Provide either points or origin.")
+            radius_m = float(radius_km) * 1000.0
+            p1 = sight_point_pyproj(origin, azimuth, radius_m)
+            p2 = sight_point_pyproj(origin, np.mod(azimuth + 180.0, 360.0), radius_m)
+        else:
+            if len(points) != 2:
+                raise ValueError("points must contain exactly two (lat, lon) tuples.")
+            p1, p2 = points
+        self.plot_line(
+            p1,
+            p2,
+            color=color,
+            linewidth=linewidth,
+            label=label,
+            va=va,
+            ha=ha,
+            transform=transform,
+            **kwargs,
+        )
+        return p1, p2
+
+    def plot_transect(self, *args, **kwargs):
+        """Alias for :meth:`plot_cross_section`."""
+        return self.plot_cross_section(*args, **kwargs)
+
     def plot_inventory(self, inventory, s=PLOT_INVENTORY_DEFAULTS['s'], 
                       c=PLOT_INVENTORY_DEFAULTS['c'], alpha=PLOT_INVENTORY_DEFAULTS['alpha'], 
                       transform=ccrs.Geodetic(), **kwargs):
@@ -767,15 +816,15 @@ class Map:
             lon_min, lon_max = np.min(lon), np.max(lon)
             lat_min, lat_max = np.min(lat), np.max(lat)
             
-            grid_size_deg = grid_size
-            if grid_size_deg < 0.001:
-                grid_size_deg = 0.001
-            
             data_range_lon = lon_max - lon_min
             data_range_lat = lat_max - lat_min
-            min_grid_size = max(0.001, min(data_range_lon, data_range_lat) * 0.1)
-            if grid_size_deg < min_grid_size:
-                grid_size_deg = min_grid_size
+            max_heatmap_bins = int(kwargs.pop("max_heatmap_bins", 120))
+            grid_size_deg = heatmap_bin_step(
+                min(data_range_lon, data_range_lat),
+                float(grid_size),
+                floor=1e-5,
+                max_bins=max_heatmap_bins,
+            )
             
             if lon_max <= lon_min or lat_max <= lat_min:
                 print("Warning: Invalid coordinate ranges for heatmap")

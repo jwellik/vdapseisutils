@@ -27,6 +27,30 @@ Non-goals for the first milestone: world Orthographic inset (`add_world_location
 
 ---
 
+## Current status (2026-05-05)
+
+Implemented now:
+
+- `vdapseisutils.core.maps.bokeh.Map` exists and is wired for terrain parity (Esri hillshade + Carto overlay).
+- `Map` methods implemented: `plot`, `scatter`, `plot_catalog`, `plot_inventory`, `plot_volcano`, `plot_peak`, `plot_line`.
+- `Map` helpers implemented: `set_title`, `set_subtitle`, `set_catalog_subtitle`, `add_scalebar` (native `ScaleBar` + fallback), `add_world_location_map`.
+- Aspect-locked zoom behavior implemented (`match_aspect=True`, `BoxZoomTool.match_aspect=True`).
+- Hover behavior implemented for map scatter-family methods plus automatic hover defaults for inventory/catalog.
+- New transect helpers implemented on both MPL and Bokeh maps: `plot_cross_section` and alias `plot_transect`.
+- `vdapseisutils.core.maps.bokeh.CrossSection` scaffold exists with constructor parity, profile rendering, `plot`, `scatter`, `plot_catalog`, `plot_inventory`, `plot_volcano`, `plot_peak`, `plot_heatmap`, title/subtitle helpers, `set_titles`, and `set_catalog_subtitle`.
+- `CrossSection` now adds fixed corner labels `A` and `A'` (screen-space); temporary debug mode exists via `debug_corner_labels=True` for label diagnostics.
+- `vdapseisutils.core.maps.bokeh.Map.plot_heatmap` now exists with MPL-like calling modes (`plot_heatmap(catalog, ...)` and `plot_heatmap(lat, lon, [depth], ...)`) and Bokeh quad rendering in Mercator coordinates.
+- Heatmap bin sizing now uses a shared backend-agnostic helper (`core/maps/heatmap_utils.py`) reused by both MPL and Bokeh map/cross-section implementations.
+- Bokeh smoke tests now include kwargs alias/precedence checks (`color` vs `c`, `size` vs `s`, `edgecolors`/`linewidths`), vector-size handling, and catalog time-colormap behavior checks for both map and cross section.
+- Gallery notebooks: `gallery/Mapping_tutorial_bokeh.ipynb` and `gallery/CrossSection_tutorial_bokeh.ipynb` (Spurr, St Helens, Crater Lake, Kilauea, Yellowstone).
+
+Remaining high-priority gaps:
+
+- CrossSection catalog coloring still needs deeper edge-case parity validation for matplotlib-style kwargs combinations.
+- `add_hillshade` remains pending.
+
+---
+
 ## API parity (must match MPL `Map` / `CrossSection`)
 
 The Bokeh map type should expose the **same instance methods** as `vdapseisutils.core.maps.map.Map` wherever feasible, with arguments passed through in the same order and meaning; internally, translate to Bokeh glyphs/sources.
@@ -117,16 +141,16 @@ REDPy does **not** use a bespoke raster pipeline for “terrain”; it uses **st
 
 ### Phase 1 — `BokehCrossSection` (linear axes)
 
-- Mirror `CrossSection.__init__` geometry (`points` / `origin` + `azimuth` + `radius_km`), `TopographicProfile`, spine/profile styling approximated with Bokeh lines and axis limits.
-- Implement `plot`, `scatter`, `plot_catalog`, `plot_inventory`, `plot_volcano`, `plot_peak`, `plot_heatmap` using Bokeh glyphs; reuse `prep_catalog_data_mpl` and `project2line`.
-- Title/subtitle/catalog subtitle aligned with existing methods (simpler than map).
+- Mirror `CrossSection.__init__` geometry (`points` / `origin` + `azimuth` + `radius_km`), `TopographicProfile`, spine/profile styling approximated with Bokeh lines and axis limits. **(done for current parity target)**
+- Implement `plot`, `scatter`, `plot_catalog`, `plot_inventory`, `plot_volcano`, `plot_peak`, `plot_heatmap` using Bokeh glyphs; reuse `prep_catalog_data_mpl` and `project2line`. **(done for smoke-level parity)**
+- Title/subtitle/catalog subtitle aligned with existing methods (simpler than map). **(done, including `set_titles` and `set_catalog_subtitle`)**
 - **Out of scope for meow:** Matplotlib `path_effects` on A/A′ labels; use solid background on labels or accept softer styling.
 
 ### Phase 2 — `Map` (Bokeh subpackage) core
 
-- Constructor parity with `Map`: extent, `properties` dict, Mercator figure, ranges from `map_extent`. **Started:** `vdapseisutils.core.maps.bokeh.Map` + **`add_terrain()`** (Esri + Carto via shared URLs in `map_tiles`).
+- Constructor parity with `Map`: extent, `properties` dict, Mercator figure, ranges from `map_extent`. **Done for core path:** `vdapseisutils.core.maps.bokeh.Map` + **`add_terrain()`** (Esri + Carto via shared URLs in `map_tiles`).
 - **`add_terrain()` / `add_arcgis_terrain()`:** two-layer Esri + Carto tiles; **single source of truth** for URLs in **`map_tiles`** (`ARCGIS_WORLD_HILLSHADE_URL`, `CARTO_LIGHT_NOLABELS_URL`).
-- Remaining: **`plot_catalog()`, `plot_inventory()`, `plot_volcano()`, `plot_peak()`, `plot_line()`, `scatter()`, `plot()`** with the **same signatures** as MPL `Map`; lon/lat → Mercator inside.
+- Remaining: `plot_heatmap`, `add_hillshade` and deeper kwargs parity; core plotting methods are already implemented.
 - **Explicitly deferred:** custom graticule / degree tick layout; rely on Bokeh defaults.
 
 **Gallery:** `gallery/Mapping_tutorial_bokeh.ipynb` exercises Bokeh `Map` (Augustine + Kīlauea examples, terrain, catalog/inventory).
@@ -147,7 +171,7 @@ REDPy does **not** use a bespoke raster pipeline for “terrain”; it uses **st
 ## Dependencies
 
 - **Runtime:** `bokeh` per project policy (e.g. `>=3.0`), existing `pyproj`/geodesy stack, optional `xyzservices` if it simplifies tile URLs.
-- **Tests:** Smoke tests that build figures without network where possible (mock tile source or skip-if-no-network); optional visual regression deferred.
+- **Tests:** Smoke tests that build figures without network where possible now include Bokeh `Map` + `CrossSection` (`tests/test_bokeh_maps_smoke.py`); optional visual regression deferred.
 
 ---
 

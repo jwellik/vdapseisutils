@@ -21,6 +21,7 @@ try:
     )
     from .utils import prep_catalog_data_mpl
     from .legends import MagLegend
+    from .heatmap_utils import heatmap_bin_step
 except ImportError:
     # Running as script - add package root to path and use absolute imports
     import sys
@@ -33,6 +34,7 @@ except ImportError:
     )
     from vdapseisutils.core.maps.utils import prep_catalog_data_mpl
     from vdapseisutils.core.maps.legends import MagLegend
+    from vdapseisutils.core.maps.heatmap_utils import heatmap_bin_step
 from vdapseisutils.utils.geoutils import backazimuth, sight_point_pyproj, project2line
 from vdapseisutils.core.maps import elev_profile
 
@@ -442,16 +444,15 @@ class CrossSection:
             x_min, x_max = np.min(x), np.max(x)
             depth_min, depth_max = np.min(depth_km), np.max(depth_km)
             
-            grid_size_km = grid_size * 111.0
-            
-            if grid_size_km < 0.1:
-                grid_size_km = 0.1
-            
             data_range_x = x_max - x_min
             data_range_depth = depth_max - depth_min
-            min_grid_size = max(0.1, min(data_range_x, data_range_depth) * 0.1)
-            if grid_size_km < min_grid_size:
-                grid_size_km = min_grid_size
+            max_heatmap_bins = int(kwargs.pop("max_heatmap_bins", 120))
+            grid_size_km = heatmap_bin_step(
+                min(data_range_x, data_range_depth),
+                float(grid_size) * 111.0,
+                floor=1e-3,
+                max_bins=max_heatmap_bins,
+            )
             
             x_pad = (x_max - x_min) * 0.1
             depth_pad = (depth_max - depth_min) * 0.1

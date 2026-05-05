@@ -14,7 +14,6 @@ from bokeh.transform import linear_cmap
 
 from vdapseisutils.core.maps import elev_profile
 from vdapseisutils.core.maps.bokeh.heatmap_common import (
-    heatmap_bin_step,
     palette_for_heatmap_cmap,
     remove_layout_annotation,
 )
@@ -27,6 +26,7 @@ from vdapseisutils.core.maps.defaults import (
     SUBTITLE_DEFAULTS,
     TITLE_DEFAULTS,
 )
+from vdapseisutils.core.maps.heatmap_utils import heatmap_bin_step
 from vdapseisutils.core.maps.utils import prep_catalog_data_mpl
 from vdapseisutils.utils.geoutils import backazimuth, project2line, sight_point_pyproj
 

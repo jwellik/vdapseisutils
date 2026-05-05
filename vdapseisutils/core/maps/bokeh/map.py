@@ -29,7 +29,6 @@ from bokeh.palettes import Viridis256
 from pyproj import Transformer
 
 from vdapseisutils.core.maps.bokeh.heatmap_common import (
-    heatmap_bin_step,
     palette_for_heatmap_cmap,
     remove_layout_annotation,
 )
@@ -44,6 +43,7 @@ from vdapseisutils.core.maps.defaults import (
     WORLD_LOCATION_MAP_DEFAULTS,
     default_volcano,
 )
+from vdapseisutils.core.maps.heatmap_utils import heatmap_bin_step
 from vdapseisutils.core.maps.map_tiles import (
     ARCGIS_WORLD_HILLSHADE_URL,
     ATTRIBUTION_CARTO_POSITRON_NO_LABELS,
