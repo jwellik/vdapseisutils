@@ -162,10 +162,10 @@ Reuse the **same example data files** as Tutorial A where paths exist under **`v
 
 ### Phase 0 — Scaffold
 
-- [ ] ~~Choose module path~~ — use **`vdapseisutils.core.swarmmpl.bokeh`**; pick **class names** that avoid shadowing MPL **`Clipboard`** on wildcard imports.
-- [ ] Add **`examples/` or extend `examples/swarm_clipboard_minimal.py`** with a commented Bokeh target API sketch.
-- [ ] Dependency check: Bokeh version pins aligned with maps gallery notebooks.
-- [ ] Stub **HTML save** path early so the first milestone is never notebook-only.
+- [x] ~~Choose module path~~ — **`vdapseisutils.core.swarmmpl.bokeh`** with **`SwarmClipboardBk`** (does not shadow MPL **`Clipboard`**).
+- [x] Extend **`examples/swarm_clipboard_minimal.py`** with API sketch + optional **`--save-bokeh-html PATH`**.
+- [x] Dependency check: **`bokeh`** remains a core **`pyproject.toml`** dependency (same stack as maps notebooks); no extra pin required for Phase 0.
+- [x] **`SwarmClipboardBk.save()`** writes standalone HTML via Bokeh **`save`** + **`CDN`** defaults.
 
 ### Phase 1 — Waveform-only multi-panel
 
