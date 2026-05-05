@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 from bokeh.models import BasicTickFormatter, DatetimeTickFormatter
-from bokeh.models import Span
+from bokeh.models import BoxZoomTool, Span, WheelZoomTool
 from obspy import Stream, Trace, UTCDateTime
 from obspy.core.event import Catalog, Event, Origin, Pick, WaveformStreamID
 
@@ -42,6 +42,28 @@ def _tiny_trace(**kwargs) -> Trace:
     header.update(kwargs)
     data = np.linspace(-1.0, 1.0, header["npts"])
     return Trace(data=data.astype("float64"), header=header)
+
+
+def test_zoom_x_only_sets_wheel_and_box_dimensions_width():
+    st = Stream([_tiny_trace()])
+    cb = SwarmClipboardBk(data=st, mode="w", tick_type="absolute", zoom_x_only=True)
+    fig = cb.figures[0]
+    for t in fig.toolbar.tools:
+        if isinstance(t, (WheelZoomTool, BoxZoomTool)):
+            assert t.dimensions == "width"
+
+
+def test_toolbar_location_above():
+    st = Stream([_tiny_trace()])
+    cb = SwarmClipboardBk(data=st, mode="w", toolbar_location="above")
+    assert cb.figures[0].toolbar_location == "above"
+
+
+def test_wg_wave_spec_spacing_zero_by_default():
+    st = Stream([_long_trace()])
+    cb = SwarmClipboardBk(data=st, mode="wg", tick_type="absolute")
+    panel = cb.figures[0]
+    assert panel.spacing == 0
 
 
 def test_wave_settings_color_mpl_shorthand_k(tmp_path):

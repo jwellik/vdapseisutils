@@ -20,7 +20,7 @@ from typing import Any
 import numpy as np
 from bokeh.io import save
 from bokeh.layouts import column
-from bokeh.models import ColorBar, LinearColorMapper, Range1d, Span
+from bokeh.models import BoxZoomTool, ColorBar, LinearColorMapper, Range1d, Span, WheelZoomTool
 from bokeh.plotting import figure as bk_figure
 from bokeh.resources import Resources
 from matplotlib.colors import to_hex
@@ -154,6 +154,13 @@ def _record_matches_metadata(rec: _PanelRecord, **criteria: Any) -> bool:
     return True
 
 
+def _restrict_zoom_to_x_axis(fig: Any) -> None:
+    """Wheel zoom / box zoom affect only the x (time) axis; y limits stay fixed."""
+    for tool in fig.toolbar.tools:
+        if isinstance(tool, (WheelZoomTool, BoxZoomTool)):
+            tool.dimensions = "width"
+
+
 def _span_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
     """Matplotlib-style line kwargs → :class:`~bokeh.models.Span` props."""
     m: dict[str, Any] = {}
@@ -179,6 +186,14 @@ class SwarmClipboardBk:
     Parameters mirror :class:`~vdapseisutils.core.swarmmpl.clipboard.SwarmClipboard`.
     Unknown ``mode`` / ``tick_type`` raises ``ValueError``; spectrogram failure on a trace
     shows a placeholder figure for that panel.
+
+    **Toolbar / zoom:** ``toolbar_location`` places the tool palette (``'above'``, ``'below'``,
+    ``'left'``, ``'right'`` — default ``'right'``). With ``zoom_x_only=True`` (default),
+    wheel zoom and box zoom only stretch the time axis; amplitude / frequency limits stay
+    fixed unless you change them (``set_alim`` / ``set_flim`` / manual y-range).
+
+    **Wave + spectrogram gap:** In ``mode='wg'``, ``wave_spec_spacing`` is the pixel gap
+    between the waveform and spectrogram sub-figures in the column (default ``0``).
     """
 
     def __init__(
@@ -196,6 +211,9 @@ class SwarmClipboardBk:
         title_space: float = 0.10,
         width_px: int | None = None,
         panel_height_px: int | None = None,
+        toolbar_location: str = "right",
+        zoom_x_only: bool = True,
+        wave_spec_spacing: int = 0,
     ) -> None:
         self.sync_waves = sync_waves
         self.tick_type = tick_type
@@ -224,10 +242,27 @@ class SwarmClipboardBk:
         self._wave_frac = 0.25
         self._spec_frac = 0.75
 
+        self._toolbar_location = str(toolbar_location).lower()
+        self._zoom_x_only = bool(zoom_x_only)
+        self._wave_spec_spacing = int(wave_spec_spacing)
+
         self._panels: list[_PanelRecord] = []
         self.figures: list[Any] = []
         self.layout = column(children=[], sizing_mode="stretch_width")
         self._build_layout()
+
+    def _bokeh_figure(self, **kwargs: Any) -> Any:
+        """
+        Create a :func:`bokeh.plotting.figure` with clipboard toolbar defaults.
+
+        ``toolbar_location`` is ``'above'``, ``'below'``, ``'left'``, or ``'right'``.
+        When ``zoom_x_only`` is True, wheel zoom and box zoom only change the x-range.
+        """
+        kwargs.setdefault("toolbar_location", self._toolbar_location)
+        fig = bk_figure(**kwargs)
+        if self._zoom_x_only:
+            _restrict_zoom_to_x_axis(fig)
+        return fig
 
     @staticmethod
     def _normalize_traces(data: Stream | list[Trace] | Trace | None) -> list[Trace]:
@@ -261,7 +296,7 @@ class SwarmClipboardBk:
 
     def _empty_figure(self) -> Any:
         if self._tick == "absolute":
-            fig = bk_figure(
+            fig = self._bokeh_figure(
                 width=self._width_px,
                 height=max(self._panel_height_px, 160),
                 title="SwarmClipboardBk — no data",
@@ -269,7 +304,7 @@ class SwarmClipboardBk:
                 tools="pan,wheel_zoom,box_zoom,reset,save",
             )
         else:
-            fig = bk_figure(
+            fig = self._bokeh_figure(
                 width=self._width_px,
                 height=max(self._panel_height_px, 160),
                 title="SwarmClipboardBk — no data",
@@ -403,7 +438,7 @@ class SwarmClipboardBk:
         x_label = "" if hide_x_labels else ("Time" if self._tick == "absolute" else "Time (s)")
 
         if spec is None:
-            return bk_figure(
+            return self._bokeh_figure(
                 width=self._width_px,
                 height=height_px,
                 title=(title or tr.id) + " (spectrogram unavailable)",
@@ -424,7 +459,7 @@ class SwarmClipboardBk:
 
         z = np.asarray(spec.power, dtype=float)
         if z.size == 0:
-            fig = bk_figure(
+            fig = self._bokeh_figure(
                 width=self._width_px,
                 height=height_px,
                 title=title or tr.id,
@@ -445,7 +480,7 @@ class SwarmClipboardBk:
 
         mapper = LinearColorMapper(palette=palette, low=lo, high=hi, nan_color="#00000000")
 
-        fig = bk_figure(
+        fig = self._bokeh_figure(
             width=self._width_px,
             height=height_px,
             title=title or tr.id,
@@ -497,7 +532,7 @@ class SwarmClipboardBk:
         x_axis_type = "datetime" if self._tick == "absolute" else "linear"
         x_label = "" if hide_x_labels else ("Time" if self._tick == "absolute" else "Time (s)")
 
-        fig = bk_figure(
+        fig = self._bokeh_figure(
             width=self._width_px,
             height=height_px,
             title=title or tr.id,
@@ -603,7 +638,11 @@ class SwarmClipboardBk:
                 height_px=spec_h,
                 hide_x_labels=False,
             )
-            panel = column([wave_fig, spec_fig], sizing_mode="stretch_width")
+            panel = column(
+                [wave_fig, spec_fig],
+                sizing_mode="stretch_width",
+                spacing=self._wave_spec_spacing,
+            )
             self._panels.append(
                 _PanelRecord(
                     index=pidx,
