@@ -7,13 +7,23 @@ from __future__ import annotations
 from typing import Any
 
 import numpy as np
-from bokeh.models import ColumnDataSource, HoverTool, Title
+from bokeh.models import ColorBar, ColumnDataSource, HoverTool, Label, LinearColorMapper, Title
+from bokeh.palettes import Viridis256
 from bokeh.plotting import figure as bk_figure
+from bokeh.transform import linear_cmap
 
 from vdapseisutils.core.maps import elev_profile
+from vdapseisutils.core.maps.bokeh.heatmap_common import (
+    heatmap_bin_step,
+    palette_for_heatmap_cmap,
+    remove_layout_annotation,
+)
 from vdapseisutils.core.maps.defaults import (
+    HEATMAP_DEFAULTS,
     PLOT_CATALOG_DEFAULTS,
     PLOT_INVENTORY_DEFAULTS,
+    PLOT_PEAK_DEFAULTS,
+    PLOT_VOLCANO_DEFAULTS,
     SUBTITLE_DEFAULTS,
     TITLE_DEFAULTS,
 )
@@ -85,6 +95,38 @@ def _stringify_hover_value(value: Any) -> str:
     return str(value)
 
 
+def _normalize_mpl_color(color):
+    """Convert matplotlib single-letter colors to CSS names for Bokeh."""
+    if not isinstance(color, str):
+        return color
+    cmap = {
+        "b": "blue",
+        "g": "green",
+        "r": "red",
+        "c": "cyan",
+        "m": "magenta",
+        "y": "yellow",
+        "k": "black",
+        "w": "white",
+    }
+    return cmap.get(color, color)
+
+
+def _bokeh_marker(marker: str | None) -> str | None:
+    """Map common matplotlib marker letters to Bokeh marker names."""
+    if marker is None:
+        return None
+    m = {
+        "v": "inverted_triangle",
+        "^": "triangle",
+        "s": "square",
+        "o": "circle",
+        "D": "diamond",
+        "d": "diamond",
+    }
+    return m.get(str(marker), str(marker))
+
+
 class CrossSection:
     """
     Bokeh-backed cross section using the same constructor surface as MPL CrossSection.
@@ -121,6 +163,7 @@ class CrossSection:
         width=None,
         maglegend=None,
         verbose=False,
+        debug_corner_labels=False,
         **kwargs,
     ):
         _ = resolution
@@ -162,6 +205,7 @@ class CrossSection:
         self.properties["orientation"] = "horizontal"
 
         self.verbose = verbose
+        self._debug_corner_labels = bool(debug_corner_labels)
         self.A1 = self.properties["points"][0]
         self.A2 = self.properties["points"][1]
         self.profile = elev_profile.TopographicProfile(
@@ -191,6 +235,8 @@ class CrossSection:
         self._add_profile()
         self.set_horiz_extent()
         self.set_depth_extent()
+        self._add_corner_labels()
+        self._heatmap_colorbar: ColorBar | None = None
 
     def _default_horiz_extent(self):
         if self.properties["radius"] is not None:
@@ -219,6 +265,75 @@ class CrossSection:
             line_alpha=0.9,
         )
 
+    def _add_corner_labels(self):
+        """Add fixed A / A' corner labels that stay put while panning/zooming."""
+        label = str(self.properties.get("label", "A"))
+        fig_w = int(getattr(self.figure, "width", 700) or 700)
+        toolbar_loc = str(getattr(self.figure, "toolbar_location", "right") or "right")
+        # Reserve screen-space where the toolbar lives so labels remain visible.
+        toolbar_reserve_px = 42
+        left_pad = 8 + (toolbar_reserve_px if toolbar_loc == "left" else 0)
+        right_pad = 8 + (toolbar_reserve_px if toolbar_loc == "right" else 0)
+        # Hybrid inset: proportional to width but never less than 56 px.
+        right_inset_px = max(56, int(fig_w * 0.06))
+        x_right = max(left_pad + 16, fig_w - right_pad - right_inset_px)
+        common = dict(
+            y=8,
+            y_units="screen",
+            x_units="screen",
+            text_baseline="bottom",
+            text_font_style="bold",
+            text_color="black",
+            background_fill_color="white",
+            background_fill_alpha=0.75,
+            border_line_alpha=0.0,
+        )
+        self.figure.add_layout(
+            Label(
+                x=left_pad,
+                text=label,
+                text_align="left",
+                **common,
+            )
+        )
+        self.figure.add_layout(
+            Label(
+                x=x_right,
+                text=f"{label}'",
+                text_align="right",
+                **common,
+            )
+        )
+        if self._debug_corner_labels:
+            debug_common = dict(
+                y=26,
+                y_units="screen",
+                x_units="screen",
+                text_baseline="bottom",
+                text_font_style="bold",
+                text_color="red",
+                background_fill_color="white",
+                background_fill_alpha=0.9,
+                border_line_alpha=0.25,
+                border_line_color="red",
+            )
+            self.figure.add_layout(
+                Label(
+                    x=left_pad,
+                    text=f"DBG A x={left_pad}px",
+                    text_align="left",
+                    **debug_common,
+                )
+            )
+            self.figure.add_layout(
+                Label(
+                    x=x_right,
+                    text=f"DBG A' x={x_right}px (w={fig_w}, inset={right_inset_px}, tb={toolbar_loc})",
+                    text_align="right",
+                    **debug_common,
+                )
+            )
+
     def set_depth_extent(self, depth_extent=None):
         """Set y-axis depth extent in km."""
         if depth_extent is None:
@@ -246,10 +361,10 @@ class CrossSection:
 
     def plot(self, lat=None, lon=None, z=None, x=None, z_dir="depth", z_unit="m", **kwargs):
         """Plot line data on the cross section (MPL-compatible signature)."""
-        x_vals = self._compute_x_from_latlon(lat=lat, lon=lon, x=x)
+        x_vals = np.atleast_1d(self._compute_x_from_latlon(lat=lat, lon=lon, x=x))
         if z is None:
             z = np.zeros_like(x_vals)
-        depth = _compute_depth_km(z, z_dir=z_dir, z_unit=z_unit)
+        depth = np.atleast_1d(_compute_depth_km(z, z_dir=z_dir, z_unit=z_unit))
         return self.figure.line(x=x_vals, y=depth, **kwargs)
 
     def scatter(
@@ -266,16 +381,29 @@ class CrossSection:
         **kwargs,
     ):
         """Scatter data on the cross section (MPL-compatible signature)."""
-        x_vals = self._compute_x_from_latlon(lat=lat, lon=lon, x=x)
+        x_vals = np.atleast_1d(self._compute_x_from_latlon(lat=lat, lon=lon, x=x))
         if z is None:
             z = np.zeros_like(x_vals)
-        depth = _compute_depth_km(z, z_dir=z_dir, z_unit=z_unit)
+        depth = np.atleast_1d(_compute_depth_km(z, z_dir=z_dir, z_unit=z_unit))
         scatter_kwargs = dict(kwargs)
-        if "c" in scatter_kwargs and "color" not in scatter_kwargs:
-            scatter_kwargs["color"] = scatter_kwargs.pop("c")
-        if "s" in scatter_kwargs and "size" not in scatter_kwargs:
-            s = np.asarray(scatter_kwargs.pop("s"), dtype=float)
+        c_alias = scatter_kwargs.pop("c", None)
+        if "color" not in scatter_kwargs and c_alias is not None:
+            scatter_kwargs["color"] = c_alias
+        s_alias = scatter_kwargs.pop("s", None)
+        if "size" not in scatter_kwargs and s_alias is not None:
+            s = np.asarray(s_alias, dtype=float)
             scatter_kwargs["size"] = np.sqrt(np.clip(s, a_min=0.0, a_max=None))
+        if "edgecolors" in scatter_kwargs and "line_color" not in scatter_kwargs:
+            scatter_kwargs["line_color"] = scatter_kwargs.pop("edgecolors")
+        if "linewidths" in scatter_kwargs and "line_width" not in scatter_kwargs:
+            scatter_kwargs["line_width"] = scatter_kwargs.pop("linewidths")
+        if "color" in scatter_kwargs:
+            scatter_kwargs["color"] = _normalize_mpl_color(scatter_kwargs["color"])
+        if "line_color" in scatter_kwargs:
+            scatter_kwargs["line_color"] = _normalize_mpl_color(scatter_kwargs["line_color"])
+        mk = scatter_kwargs.pop("marker", None)
+        if mk:
+            scatter_kwargs["marker"] = _bokeh_marker(mk) or mk
 
         if hover_text is not None:
             x_arr = np.atleast_1d(x_vals)
@@ -325,6 +453,22 @@ class CrossSection:
             c = color
         elif c == "time":
             c = catdata["time"]
+        plot_kwargs = dict(kwargs)
+        if "c" in plot_kwargs and color is None:
+            c = plot_kwargs.pop("c")
+        if "s" in plot_kwargs:
+            s = plot_kwargs.pop("s")
+        if "edgecolors" in plot_kwargs and "line_color" not in plot_kwargs:
+            plot_kwargs["line_color"] = plot_kwargs.pop("edgecolors")
+        if "linewidths" in plot_kwargs and "line_width" not in plot_kwargs:
+            plot_kwargs["line_width"] = plot_kwargs.pop("linewidths")
+        if "marker" in plot_kwargs:
+            mk = plot_kwargs.get("marker")
+            plot_kwargs["marker"] = _bokeh_marker(mk) or mk
+        if isinstance(c, str):
+            c = _normalize_mpl_color(c)
+        if "line_color" in plot_kwargs:
+            plot_kwargs["line_color"] = _normalize_mpl_color(plot_kwargs["line_color"])
         x = np.atleast_1d(
             project2line(catdata["lat"], catdata["lon"], P1=self.A1, P2=self.A2, unit="km")
         )
@@ -345,15 +489,32 @@ class CrossSection:
                 "lon_str": np.asarray([_stringify_hover_value(v) for v in catdata["lon"]]),
             }
         )
-        glyph_kwargs = dict(kwargs)
-        glyph_kwargs.setdefault("alpha", alpha)
+        plot_kwargs.setdefault("alpha", alpha)
+        c_array = np.asarray(c) if hasattr(c, "__len__") and not isinstance(c, str) else None
         if isinstance(c, str):
             renderer = self.figure.scatter(
-                x="x", y="y", size="size", source=source, color=c, **glyph_kwargs
+                x="x", y="y", size="size", source=source, color=c, **plot_kwargs
+            )
+        elif c_array is not None and c_array.size == len(x):
+            source.data["cval"] = c_array
+            mapper = linear_cmap("cval", Viridis256, low=float(np.nanmin(c_array)), high=float(np.nanmax(c_array)))
+            renderer = self.figure.scatter(
+                x="x",
+                y="y",
+                size="size",
+                source=source,
+                fill_color=mapper,
+                line_color=mapper,
+                **plot_kwargs,
             )
         else:
             renderer = self.figure.scatter(
-                x="x", y="y", size="size", source=source, color="royalblue", **glyph_kwargs
+                x="x",
+                y="y",
+                size="size",
+                source=source,
+                color=_normalize_mpl_color(c),
+                **plot_kwargs,
             )
         if hover_tooltips is None:
             hover_tooltips = [
@@ -419,15 +580,21 @@ class CrossSection:
                 "elev_str": np.asarray([_stringify_hover_value(v) for v in station_elevs]),
             }
         )
+        plot_kwargs = dict(kwargs)
+        if "edgecolors" in plot_kwargs and "line_color" not in plot_kwargs:
+            plot_kwargs["line_color"] = plot_kwargs.pop("edgecolors")
+        if "linewidths" in plot_kwargs and "line_width" not in plot_kwargs:
+            plot_kwargs["line_width"] = plot_kwargs.pop("linewidths")
+        mk = plot_kwargs.pop("marker", "inverted_triangle")
         renderer = self.figure.scatter(
             x="x",
             y="y",
             size="size",
             source=source,
-            color=c,
+            color=_normalize_mpl_color(c),
             alpha=alpha,
-            marker="inverted_triangle",
-            **kwargs,
+            marker=_bokeh_marker(mk) or mk,
+            **plot_kwargs,
         )
         if hover_tooltips is None:
             hover_tooltips = [
@@ -467,6 +634,170 @@ class CrossSection:
         )
         self.figure.add_layout(subt, "above")
         return self
+
+    def set_titles(self, title_text: str | None = None, subtitle_text: str | None = None, **kwargs):
+        """Set title and subtitle with MPL-style prefixed kwargs."""
+        title_kwargs = {
+            k.replace("title_", ""): v for k, v in kwargs.items() if k.startswith("title_")
+        }
+        subtitle_kwargs = {
+            k.replace("subtitle_", ""): v
+            for k, v in kwargs.items()
+            if k.startswith("subtitle_")
+        }
+        if title_text:
+            self.set_title(title_text, **title_kwargs)
+        if subtitle_text:
+            self.set_subtitle(subtitle_text, **subtitle_kwargs)
+        return self
+
+    def set_catalog_subtitle(self, catalog, **kwargs):
+        """Subtitle from catalog summary (same as matplotlib CrossSection)."""
+        from vdapseisutils.obspy_ext.catalog import VCatalog
+
+        if not isinstance(catalog, VCatalog):
+            vcatalog = VCatalog(catalog)
+        else:
+            vcatalog = catalog
+        summary_str = vcatalog.short_summary_str()
+        return self.set_subtitle(summary_str, **kwargs)
+
+    def plot_volcano(self, lat, lon, elev=0, **kwargs):
+        """Plot volcano location on the cross section."""
+        plot_kwargs = {**PLOT_VOLCANO_DEFAULTS, **kwargs}
+        return self.scatter(lat=lat, lon=lon, z=elev, z_dir="elev", z_unit="m", **plot_kwargs)
+
+    def plot_peak(self, lat, lon, elev=0, **kwargs):
+        """Plot peak location on the cross section."""
+        plot_kwargs = {**PLOT_PEAK_DEFAULTS, **kwargs}
+        return self.scatter(lat=lat, lon=lon, z=elev, z_dir="elev", z_unit="m", **plot_kwargs)
+
+    def plot_heatmap(
+        self,
+        *args,
+        grid_size=HEATMAP_DEFAULTS["grid_size"],
+        cmap=HEATMAP_DEFAULTS["cmap"],
+        alpha=HEATMAP_DEFAULTS["alpha"],
+        vmin=HEATMAP_DEFAULTS["vmin"],
+        vmax=HEATMAP_DEFAULTS["vmax"],
+        **kwargs,
+    ):
+        """Plot event-density heatmap on cross-section (catalog or lat/lon/depth arrays)."""
+        if len(args) == 1 and hasattr(args[0], "events"):
+            catdata = prep_catalog_data_mpl(args[0], time_format="matplotlib")
+            lat = np.asarray(catdata["lat"])
+            lon = np.asarray(catdata["lon"])
+            depth_km = np.asarray(catdata["depth"], dtype=float)
+        elif len(args) >= 2:
+            lat = np.asarray(args[0])
+            lon = np.asarray(args[1])
+            depth = np.asarray(args[2]) if len(args) > 2 else None
+            if depth is None:
+                raise ValueError("depth is required when calling plot_heatmap(lat, lon, depth, ...).")
+            depth_km = -np.asarray(depth, dtype=float) / 1000.0
+        else:
+            raise ValueError("Usage: plot_heatmap(catalog, ...) or plot_heatmap(lat, lon, depth, ...)")
+
+        if lat.size == 0 or lon.size == 0:
+            return None
+
+        x = np.asarray(project2line(lat, lon, P1=self.A1, P2=self.A2, unit="km"), dtype=float)
+        if x.size == 0 or np.all(~np.isfinite(x)):
+            return None
+
+        finite_mask = np.isfinite(x) & np.isfinite(depth_km)
+        if not np.any(finite_mask):
+            return None
+        x = x[finite_mask]
+        depth_km = depth_km[finite_mask]
+
+        x_min, x_max = float(np.nanmin(x)), float(np.nanmax(x))
+        y_min, y_max = float(np.nanmin(depth_km)), float(np.nanmax(depth_km))
+        if x_max <= x_min or y_max <= y_min:
+            return None
+
+        data_range_x = x_max - x_min
+        data_range_y = y_max - y_min
+        extent_short = min(data_range_x, data_range_y)
+        colorbar = kwargs.pop("colorbar", True)
+        colorbar_title = kwargs.pop("colorbar_title", "Event count")
+        colorbar_location = kwargs.pop("colorbar_location", "right")
+        max_heatmap_bins = int(kwargs.pop("max_heatmap_bins", 120))
+        requested_km = max(float(grid_size) * 111.0, 1e-3)
+        grid_size_km = heatmap_bin_step(
+            extent_short, requested_km, floor=1e-3, max_bins=max_heatmap_bins
+        )
+
+        x_pad = data_range_x * 0.1
+        y_pad = data_range_y * 0.1
+        x_grid = np.arange(x_min - x_pad, x_max + x_pad + grid_size_km, grid_size_km)
+        y_grid = np.arange(y_min - y_pad, y_max + y_pad + grid_size_km, grid_size_km)
+        if x_grid.size < 2 or y_grid.size < 2:
+            return None
+
+        H, xedges, yedges = np.histogram2d(x, depth_km, bins=[x_grid, y_grid])
+        if H.size == 0 or np.all(H == 0):
+            return None
+
+        xs = []
+        ys = []
+        vals = []
+        for ix in range(H.shape[0]):
+            for iy in range(H.shape[1]):
+                val = float(H[ix, iy])
+                if val <= 0:
+                    continue
+                xs.append(
+                    [
+                        float(xedges[ix]),
+                        float(xedges[ix + 1]),
+                        float(xedges[ix + 1]),
+                        float(xedges[ix]),
+                    ]
+                )
+                ys.append(
+                    [
+                        float(yedges[iy]),
+                        float(yedges[iy]),
+                        float(yedges[iy + 1]),
+                        float(yedges[iy + 1]),
+                    ]
+                )
+                vals.append(val)
+
+        if not vals:
+            return None
+
+        source = ColumnDataSource({"xs": xs, "ys": ys, "count": vals})
+        palette = kwargs.pop("palette", palette_for_heatmap_cmap(cmap))
+        low = float(vmin) if vmin is not None else float(np.nanmin(vals))
+        high = float(vmax) if vmax is not None else float(np.nanmax(vals))
+        if not np.isfinite(low) or not np.isfinite(high):
+            return None
+        if high <= low:
+            high = low + 1.0
+        color_mapper = LinearColorMapper(palette=palette, low=low, high=high)
+        line_alpha = kwargs.pop("line_alpha", 0.0)
+        renderer = self.figure.patches(
+            xs="xs",
+            ys="ys",
+            source=source,
+            fill_color={"field": "count", "transform": color_mapper},
+            fill_alpha=alpha,
+            line_alpha=line_alpha,
+            **kwargs,
+        )
+        if colorbar:
+            remove_layout_annotation(self.figure, self._heatmap_colorbar)
+            bar = ColorBar(
+                color_mapper=color_mapper,
+                title=colorbar_title,
+                margin=10,
+                padding=2,
+            )
+            self.figure.add_layout(bar, colorbar_location)
+            self._heatmap_colorbar = bar
+        return renderer
 
 
 __all__ = ["CrossSection"]

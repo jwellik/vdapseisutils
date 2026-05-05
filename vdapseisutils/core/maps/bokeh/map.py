@@ -11,14 +11,30 @@ from typing import Any
 
 import numpy as np
 from bokeh.layouts import row
-from bokeh.models import ColumnDataSource, Title, WMTSTileSource
+from bokeh.models import (
+    BoxZoomTool,
+    ColorBar,
+    ColumnDataSource,
+    HoverTool,
+    LinearColorMapper,
+    MetricLength,
+    ScaleBar,
+    Title,
+    WMTSTileSource,
+)
 from bokeh.models.annotations import Label
 from bokeh.plotting import figure as bk_figure
 from bokeh.transform import linear_cmap
 from bokeh.palettes import Viridis256
 from pyproj import Transformer
 
+from vdapseisutils.core.maps.bokeh.heatmap_common import (
+    heatmap_bin_step,
+    palette_for_heatmap_cmap,
+    remove_layout_annotation,
+)
 from vdapseisutils.core.maps.defaults import (
+    HEATMAP_DEFAULTS,
     PLOT_CATALOG_DEFAULTS,
     PLOT_INVENTORY_DEFAULTS,
     PLOT_PEAK_DEFAULTS,
@@ -36,7 +52,7 @@ from vdapseisutils.core.maps.map_tiles import (
     _calculate_auto_zoom_arcgis,
 )
 from vdapseisutils.core.maps.utils import choose_scale_bar_length, prep_catalog_data_mpl
-from vdapseisutils.utils.geoutils import backazimuth, radial_extent2map_extent
+from vdapseisutils.utils.geoutils import backazimuth, radial_extent2map_extent, sight_point_pyproj
 
 # PROJ4 strings avoid EPSG lookups so imports work when ``proj.db`` is missing or
 # misconfigured (CRSError: no database context specified).
@@ -164,9 +180,51 @@ def _bokeh_marker(marker: str | None) -> str | None:
     return m.get(str(marker), str(marker))
 
 
+def _mpl_scatter_size_to_bokeh(size: Any) -> Any:
+    """
+    Convert matplotlib-style scatter area ``s`` (pt^2) into Bokeh marker ``size``.
+
+    Matplotlib's ``scatter`` interprets ``s`` as marker area, while Bokeh expects a
+    marker diameter-like size in screen units. Taking the square root keeps Bokeh
+    glyphs visually closer to their matplotlib counterparts.
+    """
+    if size is None:
+        return None
+    arr = np.asarray(size, dtype=float)
+    arr = np.sqrt(np.clip(arr, a_min=0.0, a_max=None))
+    if np.ndim(arr) == 0:
+        return float(arr)
+    return arr
+
+
 def _wmts_url_for_bokeh(url: str) -> str:
     """Bokeh ``WMTSTileSource`` expects ``{X}``, ``{Y}``, ``{Z}`` placeholders."""
     return url.replace("{z}", "{Z}").replace("{x}", "{X}").replace("{y}", "{Y}")
+
+
+def _position_to_bokeh_location(position: str) -> str:
+    """Translate MPL-ish strings like ``'lower right'`` to Bokeh locations."""
+    mapping = {
+        "lower right": "bottom_right",
+        "lower left": "bottom_left",
+        "lower center": "bottom_center",
+        "upper right": "top_right",
+        "upper left": "top_left",
+        "upper center": "top_center",
+        "center right": "center_right",
+        "center left": "center_left",
+        "center": "center",
+    }
+    return mapping.get(position, position.replace(" ", "_"))
+
+
+def _stringify_hover_value(value: Any) -> str:
+    """Format values for hover display without failing on missing/null inputs."""
+    if value is None:
+        return ""
+    if isinstance(value, float):
+        return f"{value:.3f}"
+    return str(value)
 
 
 def _parse_figure_dimensions(kwargs: dict[str, Any]) -> tuple[int, int, dict[str, Any]]:
@@ -215,6 +273,7 @@ class Map:
             "active_drag",
             "active_tap",
             "output_backend",
+            "match_aspect",
         }
     )
 
@@ -227,6 +286,7 @@ class Map:
         **kwargs: Any,
     ) -> None:
         width, height, plot_kwargs = _parse_figure_dimensions(kwargs)
+        match_aspect = bool(plot_kwargs.pop("match_aspect", True))
 
         self.properties: dict[str, Any] = {}
         self.properties["origin"] = origin
@@ -244,6 +304,7 @@ class Map:
                 self.properties["map_extent"]
             )
             fig_kwargs = {k: v for k, v in plot_kwargs.items() if k in self._FIGURE_KW}
+            fig_kwargs.setdefault("match_aspect", match_aspect)
             self.figure = bk_figure(
                 x_range=x_range,
                 y_range=y_range,
@@ -255,9 +316,16 @@ class Map:
             )
         else:
             self.figure = fig
+            self.figure.match_aspect = match_aspect
+
+        for tool in getattr(self.figure.toolbar, "tools", []):
+            if isinstance(tool, BoxZoomTool):
+                tool.match_aspect = match_aspect
 
         self._world_figure = None
         self._world_position: str | None = None
+        self._scale_bar = None
+        self._heatmap_colorbar: ColorBar | None = None
 
     @property
     def layout(self):
@@ -382,17 +450,59 @@ class Map:
         frameon=False,
         **_ignored,
     ):
-        """Approximate MPL scale bar using Mercator line + label (``frameon`` ignored)."""
-        _ = frameon
+        """Add a corner-anchored scale bar, falling back to a manual Mercator bar if needed."""
+        _ = pad
         extent = self.properties["map_extent"]
         map_lon_l, map_lon_r = extent[0], extent[1]
         map_mid_lat = (extent[2] + extent[3]) / 2.0
         _, d_m = backazimuth((map_mid_lat, map_lon_l), (map_mid_lat, map_lon_r))
         map_width_km = d_m / 1000.0
 
+        bokeh_location = _position_to_bokeh_location(position)
+        try:
+            if self._scale_bar is not None:
+                self.figure.center = [
+                    item for item in self.figure.center if item is not self._scale_bar
+                ]
+            sb_kwargs = dict(
+                range=self.figure.x_range,
+                unit="m",
+                dimensional=MetricLength(),
+                orientation="horizontal",
+                location=bokeh_location,
+                label_location="above",
+                label_align="center",
+                bar_line_width=3,
+                bar_line_color=_normalize_mpl_color(color),
+                label_text_color=_normalize_mpl_color(color),
+                label_text_font_size=f"{fontsize}pt",
+                background_fill_alpha=0.0 if not frameon else 0.8,
+                border_line_alpha=0.0 if not frameon else 1.0,
+            )
+            if scale_length_km == "auto":
+                sb_kwargs["length_sizing"] = "adaptive"
+                sb_kwargs["label"] = "@{value} @{unit}"
+            else:
+                if scale_length_km < 1:
+                    scale_length_m = int(scale_length_km * 1000)
+                    scale_label = f"{scale_length_m} m"
+                elif scale_length_km == int(scale_length_km):
+                    scale_label = f"{int(scale_length_km)} km"
+                else:
+                    scale_label = f"{scale_length_km} km"
+                sb_kwargs["bar_length"] = float(scale_length_km) * 1000.0
+                sb_kwargs["label"] = scale_label
+            scale_bar = ScaleBar(
+                **sb_kwargs,
+            )
+            self.figure.add_layout(scale_bar)
+            self._scale_bar = scale_bar
+            return self
+        except Exception:
+            pass
+
         if scale_length_km == "auto":
             scale_length_km = choose_scale_bar_length(map_width_km, 0.25)
-
         if scale_length_km < 1:
             scale_length_m = int(scale_length_km * 1000)
             scale_label = f"{scale_length_m} m"
@@ -447,6 +557,23 @@ class Map:
             )
         )
         return self
+
+    def _add_hover_tool(
+        self,
+        renderer,
+        tooltips=None,
+        formatters=None,
+    ):
+        """Attach a renderer-specific hover tool when tooltips are provided."""
+        if not tooltips:
+            return renderer
+        hover = HoverTool(
+            renderers=[renderer],
+            tooltips=tooltips,
+            formatters=formatters or {},
+        )
+        self.figure.add_tools(hover)
+        return renderer
 
     def add_world_location_map(
         self,
@@ -544,10 +671,15 @@ class Map:
         _ = transform
         x, y = _lonlat_to_mercator(lon, lat)
         scatter_kwargs = dict(kwargs)
-        if "c" in scatter_kwargs and color is None:
-            color = scatter_kwargs.pop("c")
-        if "s" in scatter_kwargs and size is None:
-            size = scatter_kwargs.pop("s")
+        hover_text = scatter_kwargs.pop("hover_text", None)
+        hover_tooltips = scatter_kwargs.pop("hover_tooltips", None)
+        hover_formatters = scatter_kwargs.pop("hover_formatters", None)
+        c_alias = scatter_kwargs.pop("c", None)
+        s_alias = scatter_kwargs.pop("s", None)
+        if color is None and c_alias is not None:
+            color = c_alias
+        if size is None and s_alias is not None:
+            size = s_alias
         if "edgecolors" in scatter_kwargs and "line_color" not in scatter_kwargs:
             scatter_kwargs["line_color"] = scatter_kwargs.pop("edgecolors")
         if "linewidths" in scatter_kwargs and "line_width" not in scatter_kwargs:
@@ -555,8 +687,161 @@ class Map:
         if color is not None and "color" not in scatter_kwargs:
             scatter_kwargs["color"] = _normalize_mpl_color(color)
         if size is not None and "size" not in scatter_kwargs:
-            scatter_kwargs["size"] = size
-        return self.figure.scatter(x=x, y=y, **scatter_kwargs)
+            scatter_kwargs["size"] = _mpl_scatter_size_to_bokeh(size)
+        if "line_color" in scatter_kwargs:
+            scatter_kwargs["line_color"] = _normalize_mpl_color(scatter_kwargs["line_color"])
+        if hover_text is not None and "source" not in scatter_kwargs:
+            x_arr = np.atleast_1d(x)
+            y_arr = np.atleast_1d(y)
+            hover_arr = np.atleast_1d(hover_text).astype(str)
+            if hover_arr.size == 1 and x_arr.size > 1:
+                hover_arr = np.repeat(hover_arr, x_arr.size)
+            source_data = {"x": x_arr, "y": y_arr, "hover_text": hover_arr}
+            size_val = scatter_kwargs.get("size")
+            if isinstance(size_val, (list, tuple, np.ndarray)):
+                size_arr = np.atleast_1d(np.asarray(size_val, dtype=float))
+                if size_arr.size == 1 and x_arr.size > 1:
+                    size_arr = np.repeat(size_arr, x_arr.size)
+                source_data["size"] = size_arr
+                scatter_kwargs["size"] = "size"
+            source = ColumnDataSource(source_data)
+            scatter_kwargs["source"] = source
+            x = "x"
+            y = "y"
+            if hover_tooltips is None:
+                hover_tooltips = [("label", "@hover_text")]
+        renderer = self.figure.scatter(x=x, y=y, **scatter_kwargs)
+        return self._add_hover_tool(renderer, hover_tooltips, hover_formatters)
+
+    def plot_heatmap(
+        self,
+        *args,
+        grid_size=HEATMAP_DEFAULTS["grid_size"],
+        cmap=HEATMAP_DEFAULTS["cmap"],
+        alpha=HEATMAP_DEFAULTS["alpha"],
+        vmin=HEATMAP_DEFAULTS["vmin"],
+        vmax=HEATMAP_DEFAULTS["vmax"],
+        **kwargs,
+    ):
+        """Plot a map density heatmap (catalog or lat/lon arrays), mirroring MPL usage."""
+        try:
+            if len(args) == 1 and hasattr(args[0], "events"):
+                catdata = prep_catalog_data_mpl(args[0], time_format="matplotlib")
+                lat = np.asarray(catdata["lat"].values, dtype=float)
+                lon = np.asarray(catdata["lon"].values, dtype=float)
+            elif len(args) >= 2:
+                lat = np.asarray(args[0], dtype=float)
+                lon = np.asarray(args[1], dtype=float)
+            else:
+                raise ValueError(
+                    "Usage: plot_heatmap(catalog, ...) or plot_heatmap(lat, lon, [depth], ...)"
+                )
+
+            if lat.size == 0 or lon.size == 0:
+                return None
+
+            finite_mask = np.isfinite(lat) & np.isfinite(lon)
+            if not np.any(finite_mask):
+                return None
+            lat = lat[finite_mask]
+            lon = lon[finite_mask]
+
+            lon_min, lon_max = float(np.nanmin(lon)), float(np.nanmax(lon))
+            lat_min, lat_max = float(np.nanmin(lat)), float(np.nanmax(lat))
+            if lon_max <= lon_min or lat_max <= lat_min:
+                return None
+
+            data_range_lon = lon_max - lon_min
+            data_range_lat = lat_max - lat_min
+            extent_short = min(data_range_lon, data_range_lat)
+            colorbar = kwargs.pop("colorbar", True)
+            colorbar_title = kwargs.pop("colorbar_title", "Event count")
+            colorbar_location = kwargs.pop("colorbar_location", "right")
+            max_heatmap_bins = int(kwargs.pop("max_heatmap_bins", 120))
+            grid_size_deg = heatmap_bin_step(
+                extent_short, float(grid_size), floor=1e-5, max_bins=max_heatmap_bins
+            )
+
+            lon_pad = data_range_lon * 0.1
+            lat_pad = data_range_lat * 0.1
+            lon_grid = np.arange(
+                lon_min - lon_pad, lon_max + lon_pad + grid_size_deg, grid_size_deg
+            )
+            lat_grid = np.arange(
+                lat_min - lat_pad, lat_max + lat_pad + grid_size_deg, grid_size_deg
+            )
+            if lon_grid.size < 2 or lat_grid.size < 2:
+                return None
+
+            hist, lon_edges, lat_edges = np.histogram2d(lon, lat, bins=[lon_grid, lat_grid])
+            if hist.size == 0 or np.all(hist == 0):
+                return None
+
+            left: list[float] = []
+            right: list[float] = []
+            bottom: list[float] = []
+            top: list[float] = []
+            counts: list[float] = []
+            for i_lon in range(hist.shape[0]):
+                for i_lat in range(hist.shape[1]):
+                    val = float(hist[i_lon, i_lat])
+                    if val <= 0:
+                        continue
+                    x0, y0 = _lonlat_to_mercator(lon_edges[i_lon], lat_edges[i_lat])
+                    x1, y1 = _lonlat_to_mercator(
+                        lon_edges[i_lon + 1], lat_edges[i_lat + 1]
+                    )
+                    left.append(float(min(x0, x1)))
+                    right.append(float(max(x0, x1)))
+                    bottom.append(float(min(y0, y1)))
+                    top.append(float(max(y0, y1)))
+                    counts.append(val)
+
+            if not counts:
+                return None
+
+            source = ColumnDataSource(
+                {
+                    "left": left,
+                    "right": right,
+                    "bottom": bottom,
+                    "top": top,
+                    "count": counts,
+                }
+            )
+            palette = palette_for_heatmap_cmap(cmap)
+            low = float(vmin) if vmin is not None else float(np.nanmin(counts))
+            high = float(vmax) if vmax is not None else float(np.nanmax(counts))
+            if not np.isfinite(low) or not np.isfinite(high):
+                return None
+            if high <= low:
+                high = low + 1.0
+            color_mapper = LinearColorMapper(palette=palette, low=low, high=high)
+            line_alpha = kwargs.pop("line_alpha", 0.0)
+            renderer = self.figure.quad(
+                left="left",
+                right="right",
+                bottom="bottom",
+                top="top",
+                source=source,
+                fill_color={"field": "count", "transform": color_mapper},
+                fill_alpha=alpha,
+                line_alpha=line_alpha,
+                **kwargs,
+            )
+            if colorbar:
+                remove_layout_annotation(self.figure, self._heatmap_colorbar)
+                bar = ColorBar(
+                    color_mapper=color_mapper,
+                    title=colorbar_title,
+                    margin=10,
+                    padding=2,
+                )
+                self.figure.add_layout(bar, colorbar_location)
+                self._heatmap_colorbar = bar
+            return renderer
+        except Exception:
+            return None
 
     def plot_catalog(
         self,
@@ -572,6 +857,8 @@ class Map:
         """Plot earthquake catalog on the map."""
         _ = cmap
         _ = transform
+        hover_tooltips = kwargs.pop("hover_tooltips", None)
+        hover_formatters = kwargs.pop("hover_formatters", None)
         catdata = prep_catalog_data_mpl(catalog, time_format="matplotlib")
         if s == "magnitude":
             s = catdata["size"]
@@ -583,15 +870,35 @@ class Map:
         x, y = _lonlat_to_mercator(catdata["lon"].values, catdata["lat"].values)
         plot_kwargs = dict(kwargs)
         plot_kwargs.setdefault("alpha", alpha)
+        size_bokeh = _mpl_scatter_size_to_bokeh(s)
 
         # Numeric color arrays use linear color mapping in Bokeh.
         c_array = np.asarray(c) if hasattr(c, "__len__") and not isinstance(c, str) else None
+        source_data = {
+            "x": x,
+            "y": y,
+            "size": size_bokeh,
+            "time_str": np.asarray([str(t) for t in catdata["time"]]),
+            "mag_str": np.asarray([_stringify_hover_value(v) for v in catdata["mag"]]),
+            "depth_str": np.asarray([_stringify_hover_value(v) for v in catdata["depth"]]),
+            "lat_str": np.asarray([_stringify_hover_value(v) for v in catdata["lat"]]),
+            "lon_str": np.asarray([_stringify_hover_value(v) for v in catdata["lon"]]),
+        }
+        if hover_tooltips is None:
+            hover_tooltips = [
+                ("time", "@time_str"),
+                ("mag", "@mag_str"),
+                ("depth (km)", "@depth_str"),
+                ("lat", "@lat_str"),
+                ("lon", "@lon_str"),
+            ]
         if c_array is not None and c_array.size == len(x):
             c_min = float(np.nanmin(c_array))
             c_max = float(np.nanmax(c_array))
             mapper = linear_cmap("cval", Viridis256, low=c_min, high=c_max)
-            source = ColumnDataSource({"x": x, "y": y, "cval": c_array, "size": s})
-            return self.figure.scatter(
+            source_data["cval"] = c_array
+            source = ColumnDataSource(source_data)
+            renderer = self.figure.scatter(
                 x="x",
                 y="y",
                 size="size",
@@ -600,10 +907,18 @@ class Map:
                 line_color=mapper,
                 **plot_kwargs,
             )
+            return self._add_hover_tool(renderer, hover_tooltips, hover_formatters)
 
-        return self.figure.scatter(
-            x=x, y=y, size=s, color=_normalize_mpl_color(c), **plot_kwargs
+        source = ColumnDataSource(source_data)
+        renderer = self.figure.scatter(
+            x="x",
+            y="y",
+            size="size",
+            color=_normalize_mpl_color(c),
+            source=source,
+            **plot_kwargs,
         )
+        return self._add_hover_tool(renderer, hover_tooltips, hover_formatters)
 
     def plot_inventory(
         self,
@@ -616,18 +931,28 @@ class Map:
     ):
         """Plot seismic station inventory on the map."""
         _ = transform
+        hover_tooltips = kwargs.pop("hover_tooltips", None)
+        hover_formatters = kwargs.pop("hover_formatters", None)
         station_lats = []
         station_lons = []
+        network_codes = []
+        station_codes = []
+        elevations = []
         for network in inventory:
             for station in network:
                 if hasattr(station, "latitude") and hasattr(station, "longitude"):
                     station_lats.append(station.latitude)
                     station_lons.append(station.longitude)
+                    network_codes.append(getattr(network, "code", "") or "")
+                    station_codes.append(getattr(station, "code", "") or "")
+                    elevations.append(getattr(station, "elevation", None))
         if not station_lats:
             print("No valid station coordinates found in inventory")
             return None
         plot_kwargs = {**PLOT_INVENTORY_DEFAULTS, **kwargs}
-        plot_kwargs.update({"size": s, "color": c, "alpha": alpha})
+        plot_kwargs.update(
+            {"size": _mpl_scatter_size_to_bokeh(s), "color": c, "alpha": alpha}
+        )
         plot_kwargs.pop("s", None)
         plot_kwargs.pop("c", None)
         if "edgecolors" in plot_kwargs:
@@ -636,21 +961,56 @@ class Map:
         if mk:
             plot_kwargs["marker"] = _bokeh_marker(mk) or mk
         x, y = _lonlat_to_mercator(station_lons, station_lats)
-        return self.figure.scatter(x=x, y=y, **plot_kwargs)
+        source = ColumnDataSource(
+            {
+                "x": x,
+                "y": y,
+                "network": np.asarray(network_codes, dtype=str),
+                "station": np.asarray(station_codes, dtype=str),
+                "station_id": np.asarray(
+                    [f"{n}.{s}" if n else s for n, s in zip(network_codes, station_codes)],
+                    dtype=str,
+                ),
+                "lat_str": np.asarray([_stringify_hover_value(v) for v in station_lats]),
+                "lon_str": np.asarray([_stringify_hover_value(v) for v in station_lons]),
+                "elev_str": np.asarray([_stringify_hover_value(v) for v in elevations]),
+            }
+        )
+        if hover_tooltips is None:
+            hover_tooltips = [
+                ("station", "@station_id"),
+                ("lat", "@lat_str"),
+                ("lon", "@lon_str"),
+                ("elev (m)", "@elev_str"),
+            ]
+        renderer = self.figure.scatter(x="x", y="y", source=source, **plot_kwargs)
+        return self._add_hover_tool(renderer, hover_tooltips, hover_formatters)
 
     def plot_volcano(self, lat, lon, elev=0, transform=None, **kwargs):
         """Plot volcano location on the map."""
         _ = elev
         _ = transform
         plot_kwargs = {**PLOT_VOLCANO_DEFAULTS, **kwargs}
-        return self.scatter(lat, lon, plot_kwargs.pop("s", 64), plot_kwargs.pop("c", "orangered"), **plot_kwargs)
+        return self.scatter(
+            lat,
+            lon,
+            plot_kwargs.pop("s", 64),
+            plot_kwargs.pop("c", "orangered"),
+            **plot_kwargs,
+        )
 
     def plot_peak(self, lat, lon, elev=0, transform=None, **kwargs):
         """Plot peak location on the map."""
         _ = elev
         _ = transform
         plot_kwargs = {**PLOT_PEAK_DEFAULTS, **kwargs}
-        return self.scatter(lat, lon, plot_kwargs.pop("s", 64), plot_kwargs.pop("c", "floralwhite"), **plot_kwargs)
+        return self.scatter(
+            lat,
+            lon,
+            plot_kwargs.pop("s", 64),
+            plot_kwargs.pop("c", "floralwhite"),
+            **plot_kwargs,
+        )
 
     def plot_line(
         self,
@@ -674,3 +1034,50 @@ class Map:
             self.figure.add_layout(Label(x=x[0], y=y[0], text=label, text_align=ha))
             self.figure.add_layout(Label(x=x[1], y=y[1], text=f"{label}'", text_align=ha))
         return renderer
+
+    def plot_cross_section(
+        self,
+        points=None,
+        origin=None,
+        radius_km=40.0,
+        azimuth=270.0,
+        label="A",
+        color="k",
+        linewidth=1.5,
+        va="center",
+        ha="center",
+        transform=None,
+        **kwargs,
+    ):
+        """
+        Plot a cross-section/transect line and endpoint labels (A and A').
+
+        Provide either ``points=[(lat1, lon1), (lat2, lon2)]`` or ``origin`` with
+        ``radius_km`` + ``azimuth``.
+        """
+        _ = va
+        _ = transform
+        if points is None:
+            if origin is None:
+                raise ValueError("Provide either points or origin.")
+            radius_m = float(radius_km) * 1000.0
+            p1 = sight_point_pyproj(origin, azimuth, radius_m)
+            p2 = sight_point_pyproj(origin, np.mod(azimuth + 180.0, 360.0), radius_m)
+        else:
+            if len(points) != 2:
+                raise ValueError("points must contain exactly two (lat, lon) tuples.")
+            p1, p2 = points
+        self.plot_line(
+            p1,
+            p2,
+            color=color,
+            linewidth=linewidth,
+            label=label,
+            ha=ha,
+            **kwargs,
+        )
+        return p1, p2
+
+    def plot_transect(self, *args, **kwargs):
+        """Alias for :meth:`plot_cross_section`."""
+        return self.plot_cross_section(*args, **kwargs)

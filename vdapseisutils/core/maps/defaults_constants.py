@@ -9,7 +9,7 @@ Figure style registration lives in :mod:`vdapseisutils.core.maps.defaults`.
 HEATMAP_DEFAULTS = {
     "cmap": "plasma",
     "alpha": 0.7,
-    "grid_size": 0.01,  # Default to 0.05 degrees (≈5km) for VolcanoFigure
+    "grid_size": 0.01,  # Degrees on map / degrees scaled to km on cross-section (see plot_heatmap docs)
     "vmin": None,
     "vmax": None,
 }
