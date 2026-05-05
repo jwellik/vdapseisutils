@@ -10,7 +10,8 @@ from functools import lru_cache
 from typing import Any
 
 import numpy as np
-from bokeh.models import ColumnDataSource, WMTSTileSource
+from bokeh.layouts import row
+from bokeh.models import ColumnDataSource, Title, WMTSTileSource
 from bokeh.models.annotations import Label
 from bokeh.plotting import figure as bk_figure
 from bokeh.transform import linear_cmap
@@ -22,6 +23,9 @@ from vdapseisutils.core.maps.defaults import (
     PLOT_INVENTORY_DEFAULTS,
     PLOT_PEAK_DEFAULTS,
     PLOT_VOLCANO_DEFAULTS,
+    SUBTITLE_DEFAULTS,
+    TITLE_DEFAULTS,
+    WORLD_LOCATION_MAP_DEFAULTS,
     default_volcano,
 )
 from vdapseisutils.core.maps.map_tiles import (
@@ -31,8 +35,8 @@ from vdapseisutils.core.maps.map_tiles import (
     CARTO_LIGHT_NOLABELS_URL,
     _calculate_auto_zoom_arcgis,
 )
-from vdapseisutils.core.maps.utils import prep_catalog_data_mpl
-from vdapseisutils.utils.geoutils import radial_extent2map_extent
+from vdapseisutils.core.maps.utils import choose_scale_bar_length, prep_catalog_data_mpl
+from vdapseisutils.utils.geoutils import backazimuth, radial_extent2map_extent
 
 # PROJ4 strings avoid EPSG lookups so imports work when ``proj.db`` is missing or
 # misconfigured (CRSError: no database context specified).
@@ -124,6 +128,40 @@ def _normalize_mpl_color(color):
         "w": "white",
     }
     return cmap.get(color, color)
+
+
+def _mpl_fontsize_to_pt(size: Any) -> str:
+    """Map matplotlib-style font sizes to Bokeh ``pt`` strings."""
+    if isinstance(size, (int, float)):
+        return f"{float(size)}pt"
+    key = str(size).lower()
+    table = {
+        "xx-small": "7pt",
+        "x-small": "8pt",
+        "smaller": "8pt",
+        "small": "9pt",
+        "medium": "12pt",
+        "large": "14pt",
+        "x-large": "16pt",
+        "xx-large": "18pt",
+        "larger": "18pt",
+    }
+    return table.get(key, "14pt")
+
+
+def _bokeh_marker(marker: str | None) -> str | None:
+    """Map common matplotlib marker letters to Bokeh marker names."""
+    if marker is None:
+        return None
+    m = {
+        "v": "inverted_triangle",
+        "^": "triangle",
+        "s": "square",
+        "o": "circle",
+        "D": "diamond",
+        "d": "diamond",
+    }
+    return m.get(str(marker), str(marker))
 
 
 def _wmts_url_for_bokeh(url: str) -> str:
@@ -218,6 +256,18 @@ class Map:
         else:
             self.figure = fig
 
+        self._world_figure = None
+        self._world_position: str | None = None
+
+    @property
+    def layout(self):
+        """Bokeh layout: ``row`` of main map + world inset when used; else ``figure``."""
+        if self._world_figure is not None and self._world_position is not None:
+            if self._world_position == "upper right":
+                return row(self.figure, self._world_figure, sizing_mode="stretch_width")
+            return row(self._world_figure, self.figure, sizing_mode="stretch_width")
+        return self.figure
+
     def info(self) -> None:
         """Print map properties (same idea as the matplotlib :class:`~vdapseisutils.core.maps.map.Map`)."""
         print("::: BOKEH MAP :::")
@@ -276,6 +326,194 @@ class Map:
         self.figure.add_tile(base)
         self.figure.add_tile(overlay, alpha=0.5)
 
+    def set_title(self, title_text: str, **kwargs: Any):
+        """Set the main plot title (MPL-compatible kwargs merged with ``TITLE_DEFAULTS``)."""
+        title_params = {**TITLE_DEFAULTS, **kwargs}
+        fs = _mpl_fontsize_to_pt(title_params["fontsize"])
+        weight = title_params.get("fontweight", "bold")
+        if weight == "bold":
+            font_style = "bold"
+        else:
+            font_style = "normal"
+        self.figure.title = Title(
+            text=title_text,
+            text_font_size=fs,
+            text_font_style=font_style,
+            text_color=title_params.get("color", "black"),
+            align="center",
+        )
+        return self
+
+    def set_subtitle(self, subtitle_text: str, **kwargs: Any):
+        """Add a second title row above the map (Bokeh ``Title`` in ``above``)."""
+        subtitle_params = {**SUBTITLE_DEFAULTS, **kwargs}
+        fs = _mpl_fontsize_to_pt(subtitle_params["fontsize"])
+        weight = subtitle_params.get("fontweight", "normal")
+        font_style = "bold" if weight == "bold" else "normal"
+        subt = Title(
+            text=subtitle_text,
+            text_font_size=fs,
+            text_font_style=font_style,
+            text_color=subtitle_params.get("color", "black"),
+            align="center",
+            standoff=2,
+        )
+        self.figure.add_layout(subt, "above")
+        return self
+
+    def set_catalog_subtitle(self, catalog, **kwargs: Any):
+        """Subtitle from catalog summary (same as matplotlib ``Map``)."""
+        from vdapseisutils.obspy_ext.catalog import VCatalog
+
+        if not isinstance(catalog, VCatalog):
+            vcatalog = VCatalog(catalog)
+        else:
+            vcatalog = catalog
+        summary_str = vcatalog.short_summary_str()
+        return self.set_subtitle(summary_str, **kwargs)
+
+    def add_scalebar(
+        self,
+        scale_length_km="auto",
+        position="lower right",
+        color="black",
+        fontsize=10,
+        pad=0.5,
+        frameon=False,
+        **_ignored,
+    ):
+        """Approximate MPL scale bar using Mercator line + label (``frameon`` ignored)."""
+        _ = frameon
+        extent = self.properties["map_extent"]
+        map_lon_l, map_lon_r = extent[0], extent[1]
+        map_mid_lat = (extent[2] + extent[3]) / 2.0
+        _, d_m = backazimuth((map_mid_lat, map_lon_l), (map_mid_lat, map_lon_r))
+        map_width_km = d_m / 1000.0
+
+        if scale_length_km == "auto":
+            scale_length_km = choose_scale_bar_length(map_width_km, 0.25)
+
+        if scale_length_km < 1:
+            scale_length_m = int(scale_length_km * 1000)
+            scale_label = f"{scale_length_m} m"
+        elif scale_length_km == int(scale_length_km):
+            scale_label = f"{int(scale_length_km)} km"
+        else:
+            scale_label = f"{scale_length_km} km"
+
+        from pyproj import Geod
+
+        geod = Geod(ellps="WGS84")
+        lon_c = (map_lon_l + map_lon_r) / 2.0
+        lon_e, lat_e, _ = geod.fwd(lon_c, map_mid_lat, 90.0, float(scale_length_km) * 1000.0)
+        x_start, _ = _lonlat_to_mercator(lon_c, map_mid_lat)
+        x_end, _ = _lonlat_to_mercator(lon_e, lat_e)
+        bar_dx = abs(x_end - x_start)
+
+        xr = self.figure.x_range
+        yr = self.figure.y_range
+        span_x = float(xr.end) - float(xr.start)
+        span_y = float(yr.end) - float(yr.start)
+        pad_x = pad * span_x * 0.08 if pad <= 1 else pad
+        pad_y = pad * span_y * 0.08 if pad <= 1 else pad
+
+        if "left" in position:
+            x_left = float(xr.start) + pad_x
+        elif position == "lower center":
+            x_left = float(xr.start) + span_x / 2.0 - bar_dx / 2.0
+        else:
+            x_left = float(xr.end) - pad_x - bar_dx
+
+        y_line = float(yr.start) + pad_y
+        self.figure.segment(
+            x0=[x_left],
+            y0=[y_line],
+            x1=[x_left + bar_dx],
+            y1=[y_line],
+            line_color=_normalize_mpl_color(color),
+            line_width=3,
+        )
+        cx = x_left + bar_dx / 2.0
+        off_y = span_y * 0.012
+        self.figure.add_layout(
+            Label(
+                x=cx,
+                y=y_line + off_y,
+                text=scale_label,
+                text_align="center",
+                text_baseline="bottom",
+                text_font_size=f"{fontsize}pt",
+                text_color=_normalize_mpl_color(color),
+            )
+        )
+        return self
+
+    def add_world_location_map(
+        self,
+        size=0.18,
+        position="upper left",
+        **kwargs,
+    ):
+        """
+        Small world locator map beside the main map (``layout`` becomes a ``row``).
+
+        Uses Web Mercator tiles plus a marker at the main map centre / ``origin``.
+        """
+        style_params = {**WORLD_LOCATION_MAP_DEFAULTS, **kwargs}
+
+        map_extent = self.properties["map_extent"]
+        center_lon = (map_extent[0] + map_extent[1]) / 2.0
+        center_lat = (map_extent[2] + map_extent[3]) / 2.0
+        origin = self.properties.get("origin")
+        if origin is not None:
+            main_lat, main_lon = origin
+        else:
+            main_lat, main_lon = center_lat, center_lon
+
+        w_main = getattr(self.figure, "width", 600) or 600
+        h_main = getattr(self.figure, "height", 400) or 400
+        inset_w = max(int(w_main * float(size)), 120)
+        inset_h = max(int(h_main * float(size)), 120)
+
+        world_extent = [-180.0, 180.0, -65.0, 65.0]
+        xr_w, yr_w = _extent_lonlat_to_mercator_ranges(world_extent)
+
+        wf = bk_figure(
+            x_range=xr_w,
+            y_range=yr_w,
+            x_axis_type="mercator",
+            y_axis_type="mercator",
+            width=inset_w,
+            height=inset_h,
+            toolbar_location=None,
+            outline_line_color="gray",
+            background_fill_color=style_params.get("ocean_color", "lightgrey"),
+            border_fill_color=style_params.get("ocean_color", "lightgrey"),
+        )
+        wf.axis.visible = False
+        wf.grid.visible = False
+
+        carto = WMTSTileSource(
+            url=_wmts_url_for_bokeh(CARTO_LIGHT_NOLABELS_URL),
+            attribution="",
+        )
+        wf.add_tile(carto, alpha=style_params.get("ocean_alpha", 0.8))
+
+        mx, my = _lonlat_to_mercator(main_lon, main_lat)
+        marker = style_params.get("marker_style", "square")
+        wf.scatter(
+            x=[mx],
+            y=[my],
+            marker=_bokeh_marker(marker),
+            size=int(style_params.get("marker_size", 6)) + 4,
+            fill_color=style_params.get("marker_color", "black"),
+            line_color="black",
+        )
+
+        self._world_figure = wf
+        self._world_position = position
+        return wf
+
     def plot(self, lat, lon, *args, transform=None, **kwargs):
         """Plot line data on the map (matplotlib-like signature)."""
         _ = transform
@@ -332,6 +570,7 @@ class Map:
         **kwargs,
     ):
         """Plot earthquake catalog on the map."""
+        _ = cmap
         _ = transform
         catdata = prep_catalog_data_mpl(catalog, time_format="matplotlib")
         if s == "magnitude":
@@ -393,6 +632,9 @@ class Map:
         plot_kwargs.pop("c", None)
         if "edgecolors" in plot_kwargs:
             plot_kwargs["line_color"] = plot_kwargs.pop("edgecolors")
+        mk = plot_kwargs.pop("marker", None)
+        if mk:
+            plot_kwargs["marker"] = _bokeh_marker(mk) or mk
         x, y = _lonlat_to_mercator(station_lons, station_lats)
         return self.figure.scatter(x=x, y=y, **plot_kwargs)
 

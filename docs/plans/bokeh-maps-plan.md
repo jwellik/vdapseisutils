@@ -129,7 +129,7 @@ REDPy does **not** use a bespoke raster pipeline for “terrain”; it uses **st
 - Remaining: **`plot_catalog()`, `plot_inventory()`, `plot_volcano()`, `plot_peak()`, `plot_line()`, `scatter()`, `plot()`** with the **same signatures** as MPL `Map`; lon/lat → Mercator inside.
 - **Explicitly deferred:** custom graticule / degree tick layout; rely on Bokeh defaults.
 
-**Gallery:** `gallery/bokeh/Mount_Augustine_map.ipynb` exercises `Map` + `add_terrain()` inline.
+**Gallery:** `gallery/Mapping_tutorial_bokeh.ipynb` exercises Bokeh `Map` (Augustine + Kīlauea examples, terrain, catalog/inventory).
 
 ### Phase 3 — Richer map layers
 

@@ -11,13 +11,13 @@ P26-05-05
 
 ## Accomplishments
 - Added **`vdapseisutils.core.maps.bokeh.Map`** and stabilized projection initialization for environments with missing `proj.db` EPSG context.
-- Implemented practical parity methods on Bokeh `Map`: **`plot()`**, **`scatter()`**, **`plot_catalog()`**, **`plot_inventory()`**, **`plot_volcano()`**, **`plot_peak()`**, and **`plot_line()`**.
+- Implemented practical parity methods on Bokeh `Map`: **`plot()`**, **`scatter()`**, **`plot_catalog()`**, **`plot_inventory()`**, **`plot_volcano()`**, **`plot_peak()`**, and **`plot_line()`**, plus **`add_scalebar()`**, **`set_title()`** / **`set_catalog_subtitle()`**, and **`add_world_location_map()`** (side-by-side layout).
 - Centralized ArcGIS/Carto terrain URL constants in **`map_tiles.py`** so Cartopy and Bokeh terrain paths share defaults.
-- Added and expanded **`gallery/bokeh/Mount_Augustine_map.ipynb`** with an additional regional-style example matching the Mapping tutorial pattern (without world map/scalebar).
+- **`gallery/Mapping_tutorial_bokeh.ipynb`**: Bokeh parallels to `Mapping_tutorial.ipynb` (Augustine, regional peaks, Kīlauea with IRIS inventory + catalog + locator layout).
 
 ## Planned work
 - Implement Bokeh `CrossSection` with MPL-compatible constructor and plotting methods.
-- Extend Bokeh `Map` with heatmap, scale bar, titles/subtitles helper methods, and optional hillshade raster support.
+- Extend Bokeh `Map` with **`plot_heatmap`**, optional hillshade raster support, and richer kwargs parity with MPL `Map`.
 - Add tests and more gallery examples for catalog/inventory workflows.
 
 ## Executed work
@@ -26,7 +26,7 @@ P26-05-05
 - Updated branch timeline metadata and accomplishments as progress landed.
 
 ## Back-and-forth / iteration notes
-- User requested nested naming (`vdapseisutils.core.maps.bokeh.Map`) and an inline Mount Augustine notebook example.
+- User requested nested naming (`vdapseisutils.core.maps.bokeh.Map`), Mount Augustine demos, then **`gallery/Mapping_tutorial_bokeh.ipynb`** beside **`Mapping_tutorial.ipynb`** with a Kīlauea figure matching the matplotlib tutorial cells.
 - Grid/tick customization remains intentionally deferred for now.
 
 ## Problems + resolutions
@@ -34,7 +34,7 @@ P26-05-05
 - Environment had stale pip uninstall metadata; documented cleanup steps and kernel restart guidance in notebook.
 
 ## Validation
-- Smoke tests pass for Bokeh `Map` import, terrain rendering call, and new plotting methods (`plot`, `scatter`, `plot_line`, `plot_volcano`, `plot_peak`, `plot_inventory`).
+- Smoke tests pass for Bokeh `Map` import, terrain rendering call, and plotting methods (`plot`, `scatter`, `plot_line`, `plot_volcano`, `plot_peak`, `plot_inventory`, `plot_catalog`). Notebook exercises **`show(fig.layout)`** for the world-locator case.
 
 ## Final changelog-style outcome
 - Pending merge: adds a new Bokeh map API surface under `vdapseisutils.core.maps.bokeh` plus gallery examples and terrain-sharing utilities.
