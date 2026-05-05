@@ -8,6 +8,7 @@
 - **Merged into**: -
 - **Merge strategy**: -
 P26-05-05
+P26-05-05
 
 ## Accomplishments
 - Added **`vdapseisutils.core.maps.bokeh.Map`** and stabilized projection initialization for environments with missing `proj.db` EPSG context.
