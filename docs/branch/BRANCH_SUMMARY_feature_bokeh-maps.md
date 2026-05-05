@@ -7,7 +7,7 @@
 - **Closed on**: 2026-05-05
 - **Merged into**: main
 - **Merge strategy**: fast-forward
-P26-05-05
+- **Last updated**: 2026-05-05
 
 ## Accomplishments
 - **Bokeh `Map` / `CrossSection`**: Mercator figures with **`add_terrain`** (Esri + Carto stack), **`add_google_*`** XYZ tiles, core plotting (**`plot_heatmap`**, catalog/inventory scatter-family parity tested), **`add_scalebar`**, titles, locator layout (**`add_world_location_map`**), gallery notebooks beside matplotlib tutorials.
