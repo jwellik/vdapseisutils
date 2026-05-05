@@ -11,8 +11,20 @@ Focus for this document: **Clipboard** first; **Helicorder** is scoped as a foll
 2. Reuse **backend-neutral** waveform and spectrogram preparation (`prepare_waveform_series`, `compute_spectrogram` from `vdapseisutils.compute.waveforms`) so numerical results stay aligned with existing MPL code paths.
 3. Mirror **meaningful API surface** from the reference matplotlib types (constructor inputs, modes, sync behavior, common overlays), following the precedent set by Bokeh **`Map` / `CrossSection`** under `vdapseisutils.core.maps.bokeh` (see `docs/plans/bokeh-maps-plan.md`).
 4. Ship **documentation**: gallery notebook (`gallery/Clipboard_tutorial_bokeh.ipynb` or similar) and smoke tests once primitives exist.
+5. First **usable** milestone must support **`save`/standalone HTML** (Bokeh `output_file` + `save`, or equivalent embedding pattern used in maps gallery notebooks—not notebooks-only).
 
 Non-goals for Clipboard v1 (unless explicitly promoted): full Swarm desktop parity (pick editing, clipboard buffers), server-scale streaming, pixel-perfect matplotlib styling, and restoring the stale **`vdapseisutils.swarmbk`** reference in the repo-root `__init__.py` (that import path does not exist today).
+
+---
+
+## Decisions (2026-05-05)
+
+| Topic | Decision |
+|-------|----------|
+| API parity target | **`SwarmClipboard`** matplotlib type first; legacy **`ClipboardClass`** compatibility deferred unless explicitly requested. |
+| Downsampling | **Automatic downsampling is allowed** for interactive and exported figures; exact algorithm, caps, and user-visible toggles remain **open for discussion** after initial prototyping (document defaults and rationale in module docstrings). |
+| Delivery | Primary iteration in **notebooks**, but **HTML export / `save`** is required on the **first usable drop** (same seriousness as maps Bokeh work). |
+| Package layout | **`vdapseisutils.core.swarmmpl.bokeh`**, mirroring **`vdapseisutils.core.maps.bokeh`**; optional **`[bokeh]`** extra if the core package stays matplotlib-first for minimal installs. |
 
 ---
 
@@ -93,9 +105,9 @@ Custom `matplotlib.axes.Axes` for generic time-series + **`plot_catalog`** using
 
 ### Recommended parity target (Clipboard)
 
-**Phase A:** Implement Bokeh figures that match **`SwarmClipboard`** semantics first (multi-panel, metadata targeting, catalog hooks), because it is the documented canonical path and closest to long-term maintenance.
+**Phase A (locked):** Implement Bokeh figures that match **`SwarmClipboard`** semantics (multi-panel, metadata targeting, catalog hooks)—canonical path per stakeholder decision.
 
-**Phase B (optional):** Add a thin **`BokehClipboardLegacy`** or compatibility kwargs layer that maps **`ClipboardClass`** arguments (`tick_type="datetime"`, `sync_waves`, `force_length`) onto the same internal Bokeh layout engine—reduces user confusion between tutorials (`gallery/SwarmMPL/Clipboard_Tutorial_A.ipynb`) and the new backend.
+**Phase B (optional / later):** Add a thin legacy-compat layer mapping **`ClipboardClass`** kwargs (`tick_type="datetime"`, `sync_waves`, `force_length`) onto the same internal layout engine if notebook users ask for drop-in parity with **`gallery/SwarmMPL/Clipboard_Tutorial_A.ipynb`**.
 
 ### Layout model
 
@@ -122,8 +134,13 @@ Custom `matplotlib.axes.Axes` for generic time-series + **`plot_catalog`** using
 
 Follow maps precedent:
 
-- Module namespace candidate: **`vdapseisutils.core.swarmmpl.bokeh`** (or **`vdapseisutils.plot.bokeh_swarm`**) exporting e.g. **`SwarmClipboardBk`** / **`BokehSwarmClipboard`** with docstring cross-links to MPL types.
+- **Locked:** **`vdapseisutils.core.swarmmpl.bokeh`** exporting a Bokeh clipboard type (e.g. **`SwarmClipboardBk`** / **`BokehSwarmClipboard`**) with docstring cross-links to **`SwarmClipboard`**.
 - Optional **`[bokeh]` extra** in `pyproject.toml` if Bokeh remains optional for minimal installs (match how maps/tests gate Bokeh).
+
+### HTML export (first usable drop)
+
+- Expose a small, documented API surface for **`save(path)`** and/or **`to_html()`** on the figure/grid wrapper, delegating to Bokeh **`save`** with **`CDN`** resources unless offline bundles are explicitly requested later.
+- Gallery notebook cells should demonstrate both **`show(notebook)`** (or inline) and **writing a `.html`** next to maps notebooks.
 
 ---
 
@@ -131,15 +148,17 @@ Follow maps precedent:
 
 ### Phase 0 — Scaffold
 
-- [ ] Choose module path and **class names** (avoid shadowing MPL `Clipboard` on wildcard imports).
+- [ ] ~~Choose module path~~ — use **`vdapseisutils.core.swarmmpl.bokeh`**; pick **class names** that avoid shadowing MPL **`Clipboard`** on wildcard imports.
 - [ ] Add **`examples/` or extend `examples/swarm_clipboard_minimal.py`** with a commented Bokeh target API sketch.
 - [ ] Dependency check: Bokeh version pins aligned with maps gallery notebooks.
+- [ ] Stub **HTML save** path early so the first milestone is never notebook-only.
 
 ### Phase 1 — Waveform-only multi-panel
 
 - [ ] Build N-panel vertical layout for `mode="w"`.
 - [ ] Implement `sync_waves` True/False range linking.
 - [ ] Map **`tick_type`** behavior (absolute datetime vs relative seconds) to Bokeh formatters.
+- [ ] Add **waveform downsampling** behind kwargs with conservative defaults; document remaining design choices (**max_points**, algorithm choice—discussion milestone).
 - [ ] Smoke test: synthetic stream, two traces, mismatched start times.
 
 ### Phase 2 — Spectrograms
@@ -177,11 +196,10 @@ Follow maps precedent:
 
 ---
 
-## Open questions (for product / API decisions)
+## Follow-up discussion
 
-1. **Canonical target:** Confirm whether v1 should prioritize **`SwarmClipboard`** parity only, or ship **legacy `ClipboardClass`** compatibility in the same milestone.
-2. **Downsampling policy:** Is automatic LTTB/decimation acceptable for waveforms in interactive mode, or must raw samples always be drawable?
-3. **Output context:** Notebooks only for v1, or **`show()` / HTML export** requirements from day one?
-4. **Helicorder coupling:** Should Clipboard and Helicorder share a **`vdapseisutils.core.swarmmpl.bokeh`** package from the start to avoid duplicate datetime axis utilities?
+1. **Downsampling details:** Algorithm (**max-count decimation vs LTTB** vs frequency-aware decimation), per-panel **`max_points`**, whether overlays/catalog picks force full-resolution windows, and how **`save`** output interacts with downsampling (same renderer vs optional high-res path).
 
-Once these are answered, Phase 0 naming and Phase 1 scope can be frozen without rework.
+2. **Legacy Clipboard tutorials:** If users demand **`ClipboardClass`** keyword parity without migrating to **`SwarmClipboard`**, scope Phase B compat layer effort.
+
+3. **Helicorder coupling:** Prefer **`vdapseisutils.core.swarmmpl.bokeh`** shared utilities (**datetime conversion**, toolbars, grid layout helpers) when the Helicorder milestone starts—no separate package fork.
