@@ -29,6 +29,7 @@
 - **`ColorBar`** rejected **`location='below'`** on this Bokeh version — use **`bottom_center`** when **`orientation='horizontal'`**.
 - **`Span`** annotations attach to **`figure.center`**, not glyph **`renderers`** — tests count spans accordingly.
 - **`bokeh.io.save`** left **`SwarmHelicorderBk`** roots attached to a **`Document`**, so **`save()` then `show()`** in Jupyter raised “Models must be owned by only a single document” — **`save`** now uses **`file_html(..., _always_new=True)`** (same idea as notebook embedding).
+- **`Helicorder_tutorial_bokeh.ipynb`** defined **`disable_navigation`** as **`toolbar.tools = []`**, which removed **`HoverTool`** instances — **`strip_navigation_tools()`** drops pan/zoom only and **`disable_navigation`** now delegates there.
 
 ## Validation
 - **`python3 -m pytest tests/test_swarm_clipboard_bokeh.py`** passes (15 tests).
