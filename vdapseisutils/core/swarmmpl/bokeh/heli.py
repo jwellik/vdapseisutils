@@ -4,8 +4,8 @@ Bokeh-backed Swarm-style helicorder (chunk-1 core renderer + API subset).
 
 from __future__ import annotations
 
+import html as html_lib
 import math
-from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -14,7 +14,7 @@ from bokeh.events import MouseMove, Tap
 from bokeh.io import save as bokeh_save
 from bokeh.io import show as bokeh_show
 from bokeh.layouts import column
-from bokeh.models import BoxZoomTool, Div, FixedTicker, WheelZoomTool, ZoomInTool, ZoomOutTool
+from bokeh.models import BoxZoomTool, ColumnDataSource, Div, FixedTicker, HoverTool, WheelZoomTool, ZoomInTool, ZoomOutTool
 from bokeh.plotting import figure as bk_figure
 from bokeh.resources import CDN, Resources
 from obspy import Stream, UTCDateTime
@@ -28,6 +28,11 @@ _DEFAULT_HEIGHT_PX = 650
 _LINE_WIDTH = 0.8
 _LINE_ALPHA = 0.95
 _STRIP_HALF_HEIGHT = 0.45
+_DECIMATE_NONE = "none"
+_DECIMATE_STRIDE = "stride"
+_DECIMATE_ENVELOPE = "envelope"
+_DEFAULT_PERCENTILE_SAMPLE_CAP = 200_000
+_DEFAULT_POINTS_PER_PIXEL = 8
 
 
 def _normalize_interval_minutes(interval: float | int) -> int:
@@ -71,16 +76,23 @@ def _restrict_zoom_to_x_axis(fig: Any) -> None:
             tool.dimensions = "width"
 
 
+def _utc_hover_str(time: Any) -> str:
+    return str(UTCDateTime(time))
+
+
 class SwarmHelicorderBk:
     """
-    Chunk-1 Bokeh helicorder implementation focused on rendering parity subset.
+    Bokeh helicorder aligned with :class:`vdapseisutils.core.swarmmpl.heli.Helicorder`.
 
-    Known chunk-1 parity deltas:
-    - Timezone footer labels are represented with bottom y-tick labels and a compact text
-      footer, not with full MPL left/right mirrored axis handling.
-    - Multi-trace composition is additive across traces without ObsPy dayplot-specific
-      decimation.
-    - Clipboard attachment uses a centered focus window policy
+    Parity notes:
+    - ``plot_tags``, ``highlight``, ``plot_catalog`` / ``plot_events``, ``set_tticks``,
+      ``set_tzticklabel``, ``info``, and ``save`` mirror the MPL workflow; waveform glyphs use
+      this renderer instead of ObsPy's matplotlib dayplot.
+    - ``save`` writes standalone HTML (use a browser screenshot or Bokeh export stack for static
+      raster output).
+    - Timezone footer labels use y-tick overrides plus a compact HTML footer (not full mirrored
+      MPL left/right styling).
+    - Clipboard attachment uses a centered focus window
       ``[focus_time - window_s/2, focus_time + window_s/2]``.
     """
 
@@ -122,6 +134,18 @@ class SwarmHelicorderBk:
         self.height_px = int(height_px or _DEFAULT_HEIGHT_PX)
         self.toolbar_location = toolbar_location
         self.zoom_x_only = bool(zoom_x_only)
+        self.decimate = str(kwargs.get("decimate", _DECIMATE_ENVELOPE)).strip().lower()
+        if self.decimate not in {_DECIMATE_NONE, _DECIMATE_STRIDE, _DECIMATE_ENVELOPE}:
+            raise ValueError("decimate must be one of {'none', 'stride', 'envelope'}")
+        max_points_per_strip = kwargs.get("max_points_per_strip")
+        if max_points_per_strip is None:
+            # ObsPy dayplot-like envelope strategy: min/max per x-bin with a denser
+            # default budget for higher-fidelity long-trace rendering.
+            self.max_points_per_strip = int(max(100, self.width_px * _DEFAULT_POINTS_PER_PIXEL))
+        else:
+            self.max_points_per_strip = int(max_points_per_strip)
+        self.fast_percentile = bool(kwargs.get("fast_percentile", True))
+        self.percentile_sample_cap = int(kwargs.get("percentile_sample_cap", _DEFAULT_PERCENTILE_SAMPLE_CAP))
 
         self.one_bar_range = self._calculate_vertical_scaling_range(one_bar_range)
         self.clip_threshold = self._resolve_clip_threshold(clip_threshold)
@@ -181,19 +205,26 @@ class SwarmHelicorderBk:
         for i in range(max(n_intervals, 1)):
             i0 = self.starttime + i * self.interval
             i1 = min(i0 + self.interval, self.endtime)
-            vals: list[float] = []
+            vals_chunks: list[np.ndarray] = []
             for tr in self.stream:
                 sr = float(tr.stats.sampling_rate)
                 sidx = max(0, int((i0 - tr.stats.starttime) * sr))
                 eidx = min(len(tr.data), int((i1 - tr.stats.starttime) * sr))
                 if sidx < eidx:
-                    vals.extend(np.asarray(tr.data[sidx:eidx], dtype=float).tolist())
-            if vals:
-                interval_percentiles.append(float(np.percentile(np.abs(vals), percentile)))
+                    vals_chunks.append(np.abs(np.asarray(tr.data[sidx:eidx], dtype=float)))
+            if vals_chunks:
+                vals = np.concatenate(vals_chunks)
+                if self.fast_percentile and vals.size > self.percentile_sample_cap > 0:
+                    step = int(math.ceil(vals.size / float(self.percentile_sample_cap)))
+                    vals = vals[::step]
+                interval_percentiles.append(float(np.percentile(vals, percentile)))
         if interval_percentiles:
             return max(interval_percentiles)
-        all_data = np.concatenate([np.asarray(tr.data, dtype=float) for tr in self.stream])
-        return float(np.percentile(np.abs(all_data), percentile)) if all_data.size else 1.0
+        all_data = np.concatenate([np.abs(np.asarray(tr.data, dtype=float)) for tr in self.stream])
+        if self.fast_percentile and all_data.size > self.percentile_sample_cap > 0:
+            step = int(math.ceil(all_data.size / float(self.percentile_sample_cap)))
+            all_data = all_data[::step]
+        return float(np.percentile(all_data, percentile)) if all_data.size else 1.0
 
     def _build_strip_rows(self) -> list[tuple[UTCDateTime, UTCDateTime]]:
         total = max(float(self.endtime - self.starttime), 0.0)
@@ -216,29 +247,63 @@ class SwarmHelicorderBk:
         )
         if self.zoom_x_only:
             _restrict_zoom_to_x_axis(fig)
-        fig.xaxis.axis_label = "Seconds within strip"
+        fig.xaxis.axis_label = "Minutes"
         fig.yaxis.axis_label = ""
         fig.x_range.start = 0.0
-        fig.x_range.end = float(self.interval)
+        fig.x_range.end = float(self.interval) / 60.0
         fig.y_range.start = -0.75
         fig.y_range.end = max(float(self.nlines), 1.0)
         return fig
 
+    def _decimate_strip(self, xs: np.ndarray, ys: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        if self.decimate == _DECIMATE_NONE:
+            return xs, ys
+        max_points = int(self.max_points_per_strip)
+        if max_points <= 0 or xs.size <= max_points:
+            return xs, ys
+        if self.decimate == _DECIMATE_STRIDE:
+            step = int(math.ceil(xs.size / float(max_points)))
+            return xs[::step], ys[::step]
+
+        # Envelope decimation preserves spikes by retaining min/max samples per x-bin.
+        n_bins = max(2, max_points // 2)
+        if n_bins >= xs.size:
+            return xs, ys
+        edges = np.linspace(0, xs.size, num=n_bins + 1, dtype=int)
+        selected_indices: list[int] = [0, xs.size - 1]
+        for start, end in zip(edges[:-1], edges[1:]):
+            if end <= start:
+                continue
+            seg = ys[start:end]
+            if seg.size == 0:
+                continue
+            i_min = int(start + int(np.argmin(seg)))
+            i_max = int(start + int(np.argmax(seg)))
+            if i_min <= i_max:
+                selected_indices.extend([i_min, i_max])
+            else:
+                selected_indices.extend([i_max, i_min])
+        idx = np.unique(np.asarray(selected_indices, dtype=int))
+        if idx.size > max_points:
+            step = int(math.ceil(idx.size / float(max_points)))
+            idx = idx[::step]
+        return xs[idx], ys[idx]
+
     def _build_helicorder_lines(self) -> None:
         if self.one_bar_range <= 0:
             self.one_bar_range = 1.0
-        strip_xs: dict[int, list[float]] = defaultdict(list)
-        strip_ys: dict[int, list[float]] = defaultdict(list)
+        strip_xs: list[list[np.ndarray]] = [[] for _ in range(self.nlines)]
+        strip_ys: list[list[np.ndarray]] = [[] for _ in range(self.nlines)]
+        total_duration = float(self.endtime - self.starttime)
         for tr in self.stream:
             sr = float(tr.stats.sampling_rate)
             data = np.asarray(tr.data, dtype=float)
             npts = len(data)
             if npts == 0:
                 continue
-            t0 = tr.stats.starttime
-            ts = np.arange(npts, dtype=float) / sr
-            abs_s = np.asarray([float((t0 + float(dt)) - self.starttime) for dt in ts], dtype=float)
-            valid = (abs_s >= 0.0) & (abs_s <= float(self.endtime - self.starttime))
+            t0_offset = float(tr.stats.starttime - self.starttime)
+            abs_s = t0_offset + (np.arange(npts, dtype=float) / sr)
+            valid = (abs_s >= 0.0) & (abs_s <= total_duration)
             if not np.any(valid):
                 continue
             abs_s = abs_s[valid]
@@ -254,25 +319,48 @@ class SwarmHelicorderBk:
             if strip_idx.size == 0:
                 continue
 
-            x_local = abs_s - (strip_idx * float(self.interval))
+            x_local = (abs_s - (strip_idx * float(self.interval))) / 60.0
             amp_norm = np.clip(data / float(self.one_bar_range), -1.0, 1.0)
             y_center = self.nlines - strip_idx - 0.5
             y_local = y_center + amp_norm * _STRIP_HALF_HEIGHT
 
-            for sidx, xv, yv in zip(strip_idx.tolist(), x_local.tolist(), y_local.tolist()):
-                strip_xs[sidx].append(float(xv))
-                strip_ys[sidx].append(float(yv))
+            order = np.argsort(strip_idx, kind="mergesort")
+            s_sorted = strip_idx[order]
+            x_sorted = x_local[order]
+            y_sorted = y_local[order]
+            change_points = np.flatnonzero(np.diff(s_sorted)) + 1
+            starts = np.concatenate(([0], change_points))
+            ends = np.concatenate((change_points, [s_sorted.size]))
+            for start, end in zip(starts, ends):
+                sidx = int(s_sorted[start])
+                strip_xs[sidx].append(x_sorted[start:end])
+                strip_ys[sidx].append(y_sorted[start:end])
 
+        xs_lines: list[list[float]] = []
+        ys_lines: list[list[float]] = []
+        line_colors: list[str] = []
         for sidx in range(self.nlines):
-            xs = strip_xs.get(sidx, [])
-            ys = strip_ys.get(sidx, [])
-            if not xs:
+            if not strip_xs[sidx]:
                 continue
-            order = np.argsort(np.asarray(xs))
-            xs_ord = np.asarray(xs)[order].tolist()
-            ys_ord = np.asarray(ys)[order].tolist()
-            line_color = self.colors[sidx % len(self.colors)]
-            self.figure.line(xs_ord, ys_ord, line_color=line_color, line_width=_LINE_WIDTH, line_alpha=_LINE_ALPHA)
+            xs = np.concatenate(strip_xs[sidx])
+            ys = np.concatenate(strip_ys[sidx])
+            order = np.argsort(xs, kind="mergesort")
+            xs = xs[order]
+            ys = ys[order]
+            xs, ys = self._decimate_strip(xs, ys)
+            if xs.size == 0:
+                continue
+            xs_lines.append(xs.tolist())
+            ys_lines.append(ys.tolist())
+            line_colors.append(self.colors[sidx % len(self.colors)])
+        if xs_lines:
+            self.figure.multi_line(
+                xs=xs_lines,
+                ys=ys_lines,
+                line_color=line_colors,
+                line_width=_LINE_WIDTH,
+                line_alpha=_LINE_ALPHA,
+            )
 
     def _refresh_layout(self) -> None:
         core = [self.figure, self._footer]
@@ -308,7 +396,7 @@ class SwarmHelicorderBk:
         abs_s = float(t - self.starttime)
         strip_idx = int(np.floor(abs_s / float(self.interval)))
         strip_idx = int(np.clip(strip_idx, 0, max(self.nlines - 1, 0)))
-        x_local = abs_s - float(strip_idx * self.interval)
+        x_local = (abs_s - float(strip_idx * self.interval)) / 60.0
         y_center = float(self.nlines - strip_idx - 0.5)
         return float(x_local), y_center
 
@@ -323,9 +411,9 @@ class SwarmHelicorderBk:
         row_idx = int(np.floor(float(self.nlines) - y))
         if row_idx < 0 or row_idx >= self.nlines:
             return None
-        x_offset = float(np.clip(x, 0.0, float(self.interval)))
+        x_offset_min = float(np.clip(x, 0.0, float(self.interval) / 60.0))
         row_start_time = self.starttime + row_idx * self.interval
-        t = row_start_time + x_offset
+        t = row_start_time + (x_offset_min * 60.0)
         if t < self.starttime or t > self.endtime:
             return None
         return t
@@ -408,6 +496,11 @@ class SwarmHelicorderBk:
             self._sync_clipboard_focus_window()
         return clipboard
 
+    def _attach_annotation_hover(self, renderer: Any, tooltips: list[tuple[str, str]]) -> HoverTool:
+        hover = HoverTool(renderers=[renderer], tooltips=tooltips)
+        self.figure.add_tools(hover)
+        return hover
+
     def plot_tags(
         self,
         times: Any,
@@ -416,17 +509,40 @@ class SwarmHelicorderBk:
         markersize: float = 10,
         markeredgecolor: str = "black",
         alpha: float = 0.9,
+        *,
+        hover_tooltips: bool = True,
+        hover_note: str | list[str] | tuple[str, ...] | None = None,
+        kind: str = "tag",
         **kwargs: Any,
     ) -> list[Any]:
+        kwargs.pop("source", None)
+        lw = kwargs.pop("linewidth", kwargs.pop("line_width", None))
+        scatter_kw: dict[str, Any] = dict(kwargs)
+        if lw is not None:
+            scatter_kw["line_width"] = float(lw)
+
         seq = times if isinstance(times, (list, tuple, np.ndarray)) else [times]
         xs: list[float] = []
         ys: list[float] = []
-        for t in seq:
+        utc_labels: list[str] = []
+        detail_labels: list[str] = []
+        kind_labels: list[str] = []
+        for i, t in enumerate(seq):
             xv, yv = self._time2xy(t)
             if xv is None or yv is None:
                 continue
             xs.append(float(xv))
             ys.append(float(yv))
+            utc_labels.append(_utc_hover_str(t))
+            if hover_note is None:
+                detail_labels.append("")
+            elif isinstance(hover_note, str):
+                detail_labels.append(hover_note)
+            elif isinstance(hover_note, (list, tuple)):
+                detail_labels.append(hover_note[i] if i < len(hover_note) else "")
+            else:
+                detail_labels.append(str(hover_note))
+            kind_labels.append(kind)
         if not xs:
             return []
         marker_name = str(marker or "circle")
@@ -436,18 +552,132 @@ class SwarmHelicorderBk:
             marker_name = "asterisk"
         if marker_name == "|":
             marker_name = "dash"
+        cds = ColumnDataSource(
+            data=dict(x=xs, y=ys, utc=utc_labels, details=detail_labels, kind=kind_labels)
+        )
         renderer = self.figure.scatter(
-            x=xs,
-            y=ys,
+            x="x",
+            y="y",
+            source=cds,
             marker=marker_name,
             size=float(markersize),
             fill_color=color,
             line_color=markeredgecolor,
             fill_alpha=float(alpha),
             line_alpha=float(alpha),
+            **scatter_kw,
+        )
+        self._overlay_renderers.append(renderer)
+        if hover_tooltips:
+            self._attach_annotation_hover(
+                renderer,
+                tooltips=[
+                    ("Kind", "@kind"),
+                    ("UTC", "@utc"),
+                    ("Details", "@details"),
+                ],
+            )
+        return [renderer]
+
+    def highlight(
+        self,
+        start_end_times: list[tuple[Any, Any]],
+        color: str = "yellow",
+        alpha: float = 0.7,
+        *,
+        hover_tooltips: bool = True,
+        **kwargs: Any,
+    ) -> list[Any]:
+        """
+        Shade time spans across strip rows (matplotlib :meth:`Helicorder.highlight` analogue).
+
+        Each rectangle segment receives hover fields for the overall UTC span and the along-strip
+        minute offsets on that row.
+        """
+        lefts: list[float] = []
+        rights: list[float] = []
+        bottoms: list[float] = []
+        tops: list[float] = []
+        utc_starts: list[str] = []
+        utc_ends: list[str] = []
+        segment_notes: list[str] = []
+
+        span_minutes = float(self.interval) / 60.0
+
+        for times in start_end_times:
+            t0 = UTCDateTime(times[0])
+            t1 = UTCDateTime(times[1])
+            if t1 < t0:
+                t0, t1 = t1, t0
+            t0_clamped = max(t0, self.starttime)
+            t1_clamped = min(t1, self.endtime)
+            if t1_clamped <= t0_clamped:
+                continue
+            span_utc_s = _utc_hover_str(t0)
+            span_utc_e = _utc_hover_str(t1)
+
+            for i in range(self.nlines):
+                row_start = self.starttime + i * self.interval
+                row_end = row_start + self.interval
+                seg_left_t = max(t0_clamped, row_start)
+                seg_right_t = min(t1_clamped, row_end)
+                if seg_right_t <= seg_left_t:
+                    continue
+                x_left = float(seg_left_t - row_start) / 60.0
+                x_right = float(seg_right_t - row_start) / 60.0
+                x_left = float(np.clip(x_left, 0.0, span_minutes))
+                x_right = float(np.clip(x_right, 0.0, span_minutes))
+                if x_right <= x_left:
+                    continue
+
+                y_c = float(self.nlines - i - 0.5)
+                bottom = y_c - _STRIP_HALF_HEIGHT
+                top = y_c + _STRIP_HALF_HEIGHT
+
+                lefts.append(x_left)
+                rights.append(x_right)
+                bottoms.append(bottom)
+                tops.append(top)
+                utc_starts.append(span_utc_s)
+                utc_ends.append(span_utc_e)
+                segment_notes.append(f"{x_left:.3f}–{x_right:.3f} min along strip")
+
+        if not lefts:
+            return []
+
+        cds = ColumnDataSource(
+            data=dict(
+                left=lefts,
+                right=rights,
+                bottom=bottoms,
+                top=tops,
+                utc_start=utc_starts,
+                utc_end=utc_ends,
+                segment_note=segment_notes,
+            )
+        )
+        renderer = self.figure.quad(
+            left="left",
+            right="right",
+            bottom="bottom",
+            top="top",
+            source=cds,
+            fill_color=color,
+            fill_alpha=float(alpha),
+            line_alpha=kwargs.pop("line_alpha", 0.0),
             **kwargs,
         )
         self._overlay_renderers.append(renderer)
+        if hover_tooltips:
+            self._attach_annotation_hover(
+                renderer,
+                tooltips=[
+                    ("Kind", "highlight span"),
+                    ("Span start (UTC)", "@utc_start"),
+                    ("Span end (UTC)", "@utc_end"),
+                    ("Segment", "@segment_note"),
+                ],
+            )
         return [renderer]
 
     def _event_origin_time(self, event: Event) -> UTCDateTime | None:
@@ -455,6 +685,32 @@ class SwarmHelicorderBk:
         if origin is None and getattr(event, "origins", None):
             origin = event.origins[0]
         return None if origin is None else UTCDateTime(origin.time)
+
+    def _catalog_origin_note(self, event: Event) -> str:
+        lines: list[str] = []
+        origin = event.preferred_origin() if hasattr(event, "preferred_origin") else None
+        if origin is None and getattr(event, "origins", None):
+            origin = event.origins[0]
+        if origin is not None:
+            try:
+                from obspy.geodetics import FlinnEngdahl
+
+                region = FlinnEngdahl().get_region(origin.longitude, origin.latitude)
+                lines.append(html_lib.escape(region))
+            except Exception:
+                pass
+        mag = event.preferred_magnitude() if hasattr(event, "preferred_magnitude") else None
+        if mag is None and getattr(event, "magnitudes", None):
+            mag = event.magnitudes[0]
+        if mag is not None:
+            try:
+                mval = float(getattr(mag, "mag", float("nan")))
+                mt = str(getattr(mag, "magnitude_type", "") or "")
+                mag_txt = f"{mval:.1f} {mt}".strip()
+                lines.append(html_lib.escape(mag_txt))
+            except Exception:
+                lines.append(html_lib.escape(str(mag)))
+        return "<br>".join(lines) if lines else ""
 
     def _matching_station_ids(self) -> set[str]:
         out: set[str] = set()
@@ -488,18 +744,25 @@ class SwarmHelicorderBk:
             catalog = Catalog([catalog])
         renderers: list[Any] = []
         known_ids = self._matching_station_ids()
+        markersize = float(kwargs.pop("markersize", 12))
+        catalog_markeredge = kwargs.pop("markeredgecolor", kwargs.pop("marker_edge_color", None))
+        tag_kwargs = dict(kwargs)
         for event in catalog:
             if plot_origins:
                 ot = self._event_origin_time(event)
                 if ot is not None:
+                    medge = origin_color if catalog_markeredge is None else catalog_markeredge
+                    origin_note = self._catalog_origin_note(event)
                     renderers.extend(
                         self.plot_tags(
                             [ot],
                             marker=origin_marker,
                             color=origin_color,
-                            markersize=float(kwargs.pop("markersize", 12)),
-                            markeredgecolor=origin_color,
-                            **kwargs,
+                            markersize=markersize,
+                            markeredgecolor=medge,
+                            hover_note=origin_note or "",
+                            kind="catalog origin",
+                            **tag_kwargs,
                         )
                     )
             if plot_picks:
@@ -518,6 +781,8 @@ class SwarmHelicorderBk:
                         continue
                     phase = str(getattr(pick, "phase_hint", "") or "").upper()
                     pcol = s_color if phase == "S" else p_color
+                    phase_note = html_lib.escape(phase) if phase else "Pick"
+                    pick_details = f"Phase {phase_note}<br>Station {html_lib.escape(sta or seed or '')}"
                     renderers.extend(
                         self.plot_tags(
                             [pick.time],
@@ -525,6 +790,9 @@ class SwarmHelicorderBk:
                             color=pcol,
                             markersize=pick_size,
                             markeredgecolor=pcol,
+                            hover_note=pick_details,
+                            kind="catalog pick",
+                            **tag_kwargs,
                         )
                     )
         return renderers
@@ -616,6 +884,21 @@ class SwarmHelicorderBk:
         self.figure.yaxis.major_label_overrides = {float(v): s for v, s in zip(yticks, labels)}
         self._footer.text = f"<div style='font-size:11px;color:#444;'>Left: {left_text} | Right: {right_text}</div>"
         return self
+
+    def info(self) -> None:
+        """Print helicorder metadata (same intent as :meth:`vdapseisutils.core.swarmmpl.heli.Helicorder.info`)."""
+        print("::: HELICORDER (Bokeh) :::")
+        print(f"Station : {self.stream[0].id}")
+        print(f"Start   : {self.starttime.strftime('%Y/%m/%d %H:%M')}")
+        print(f"End     : {self.endtime.strftime('%Y/%m/%d %H:%M')}")
+        duration_seconds = float(self.endtime - self.starttime)
+        hours = int(duration_seconds // 3600)
+        minutes = int((duration_seconds % 3600) // 60)
+        print(f"Duration       : {hours} hrs {minutes} min")
+        print(f"Interval       : {self.line_len_min} min")
+        print(f"One Bar Range  : {self.one_bar_range}")
+        print(f"Clip Threshold : {self.clip_threshold}")
+        print()
 
     def show(self, **kwargs: Any) -> None:
         bokeh_show(self.layout, **kwargs)
