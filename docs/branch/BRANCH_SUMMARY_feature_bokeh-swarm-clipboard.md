@@ -7,7 +7,7 @@
 - **Closed on**: -
 - **Merged into**: -
 - **Merge strategy**: -
-- **Last updated**: 2026-05-05
+- **Last updated**: 2026-05-06
 
 ## Accomplishments
 - Implemented **Phase 3** overlays and navigation on **`SwarmClipboardBk`**: **`axvline`** (metadata targeting and **`axes`** indices), **`plot_peak_value`** raster behind waveform axes, **`plot_trace`** / **`plot_horizontals`**, **`plot_catalog`**, **`scroll_traces`**, plus **`set_alim`** / **`set_flim`** for y-limits.

@@ -13,5 +13,6 @@ settings + **inferno_u** palette).
 from __future__ import annotations
 
 from .clipboard import SwarmClipboardBk
+from .heli import SwarmHelicorderBk
 
-__all__ = ["SwarmClipboardBk"]
+__all__ = ["SwarmClipboardBk", "SwarmHelicorderBk"]
