@@ -6,11 +6,11 @@ from __future__ import annotations
 
 import math
 from collections import defaultdict
-from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
 import numpy as np
+from bokeh.events import MouseMove, Tap
 from bokeh.io import save as bokeh_save
 from bokeh.io import show as bokeh_show
 from bokeh.layouts import column
@@ -18,7 +18,9 @@ from bokeh.models import BoxZoomTool, Div, FixedTicker, WheelZoomTool, ZoomInToo
 from bokeh.plotting import figure as bk_figure
 from bokeh.resources import CDN, Resources
 from obspy import Stream, UTCDateTime
+from obspy.core.event import Catalog, Event
 
+from vdapseisutils.core.swarmmpl.bokeh.clipboard import SwarmClipboardBk
 from vdapseisutils.core.swarmmpl.colors import earthworm_colors_hex, greyscale_hex, swarm_colors_hex
 
 _DEFAULT_WIDTH_PX = 900
@@ -127,10 +129,19 @@ class SwarmHelicorderBk:
 
         self.figure = self._build_figure()
         self._build_helicorder_lines()
+        self._overlay_renderers: list[Any] = []
         self._footer = Div(text="", width=self.width_px)
         self.set_tticks(update_tzlabels=True)
         self.set_tzticklabel()
+        self._layout_placement = "below"
+        self._attached_clipboard: SwarmClipboardBk | None = None
+        self._clipboard_window_s = 600.0
+        self._clipboard_sync_focus = True
+        self.focus_time: UTCDateTime | None = None
+        self._focus_data_provider = None
+        self._focus_interaction_enabled = bool(kwargs.get("enable_focus_interactions", True))
         self.layout = column(self.figure, self._footer, sizing_mode="stretch_width")
+        self._bind_focus_events()
 
     def _resolve_clip_threshold(self, clip_threshold: Any) -> float | None:
         if clip_threshold == "auto":
@@ -260,6 +271,264 @@ class SwarmHelicorderBk:
             ys_ord = np.asarray(ys)[order].tolist()
             line_color = self.colors[sidx % len(self.colors)]
             self.figure.line(xs_ord, ys_ord, line_color=line_color, line_width=_LINE_WIDTH, line_alpha=_LINE_ALPHA)
+
+    def _refresh_layout(self) -> None:
+        core = [self.figure, self._footer]
+        if self._attached_clipboard is None:
+            self.layout = column(*core, sizing_mode="stretch_width")
+            return
+        clip_layout = getattr(self._attached_clipboard, "layout", self._attached_clipboard)
+        if self._layout_placement == "above":
+            self.layout = column(clip_layout, *core, sizing_mode="stretch_width")
+        else:
+            self.layout = column(*core, clip_layout, sizing_mode="stretch_width")
+
+    def _bind_focus_events(self) -> None:
+        if not self._focus_interaction_enabled:
+            return
+        try:
+            self.figure.on_event(MouseMove, self._on_hover_focus)
+            self.figure.on_event(Tap, self._on_tap_focus)
+        except Exception:
+            # Keep static rendering robust in environments that don't expose event callbacks.
+            self._focus_interaction_enabled = False
+
+    def _on_hover_focus(self, event: Any) -> None:
+        self._update_focus_from_xy(getattr(event, "x", None), getattr(event, "y", None))
+
+    def _on_tap_focus(self, event: Any) -> None:
+        self._update_focus_from_xy(getattr(event, "x", None), getattr(event, "y", None))
+
+    def _time2xy(self, time: Any) -> tuple[float, float] | tuple[None, None]:
+        t = UTCDateTime(time)
+        if t < self.starttime or t > self.endtime:
+            return None, None
+        abs_s = float(t - self.starttime)
+        strip_idx = int(np.floor(abs_s / float(self.interval)))
+        strip_idx = int(np.clip(strip_idx, 0, max(self.nlines - 1, 0)))
+        x_local = abs_s - float(strip_idx * self.interval)
+        y_center = float(self.nlines - strip_idx - 0.5)
+        return float(x_local), y_center
+
+    def _xy_to_time(self, x_value: Any, y_value: Any) -> UTCDateTime | None:
+        try:
+            x = float(x_value)
+            y = float(y_value)
+        except (TypeError, ValueError):
+            return None
+        if self.nlines <= 0:
+            return None
+        row_idx = int(np.floor(float(self.nlines) - y))
+        if row_idx < 0 or row_idx >= self.nlines:
+            return None
+        x_offset = float(np.clip(x, 0.0, float(self.interval)))
+        row_start_time = self.starttime + row_idx * self.interval
+        t = row_start_time + x_offset
+        if t < self.starttime or t > self.endtime:
+            return None
+        return t
+
+    def _update_focus_from_xy(self, x_value: Any, y_value: Any) -> UTCDateTime | None:
+        t = self._xy_to_time(x_value, y_value)
+        if t is None:
+            return None
+        self.set_focus_time(t)
+        return t
+
+    def set_focus_data_provider(self, provider: Any) -> SwarmHelicorderBk:
+        """
+        Register an optional future provider hook for focus-window data retrieval.
+
+        Static mode remains default; provider integration is intentionally minimal in chunk 2.
+        """
+        self._focus_data_provider = provider
+        return self
+
+    def _maybe_fetch_focus_window_data(self, left: UTCDateTime, right: UTCDateTime) -> Any:
+        provider = self._focus_data_provider
+        if provider is None:
+            return None
+        if callable(provider):
+            return provider(self, left, right)
+        fetch = getattr(provider, "fetch_window", None)
+        if callable(fetch):
+            return fetch(self, left, right)
+        return None
+
+    def _sync_clipboard_focus_window(self) -> None:
+        if (
+            self._attached_clipboard is None
+            or not self._clipboard_sync_focus
+            or self.focus_time is None
+        ):
+            return
+        window = float(self._clipboard_window_s)
+        if window <= 0:
+            return
+        half = window / 2.0
+        left = self.focus_time - half
+        right = self.focus_time + half
+        _ = self._maybe_fetch_focus_window_data(left, right)
+        self._attached_clipboard.set_xlim(left=left, right=right)
+
+    def set_focus_time(self, focus_time: Any, *, sync_clipboard: bool = True) -> SwarmHelicorderBk:
+        self.focus_time = UTCDateTime(focus_time) if focus_time is not None else None
+        if sync_clipboard:
+            self._sync_clipboard_focus_window()
+        return self
+
+    def attach_clipboard(
+        self,
+        clipboard: SwarmClipboardBk | None = None,
+        *,
+        focus_time: Any = None,
+        mode: str = "wg",
+        window_s: float = 600,
+        sync_focus: bool = True,
+        create_if_missing: bool = True,
+        placement: str = "below",
+    ) -> SwarmClipboardBk | None:
+        if clipboard is None and create_if_missing:
+            clipboard = SwarmClipboardBk(data=self.stream.copy(), mode=mode, tick_type="absolute")
+        if clipboard is None:
+            self._attached_clipboard = None
+            self._refresh_layout()
+            return None
+        self._attached_clipboard = clipboard
+        self._clipboard_window_s = float(window_s)
+        self._clipboard_sync_focus = bool(sync_focus)
+        self._layout_placement = "above" if str(placement).lower() == "above" else "below"
+        self._refresh_layout()
+        if focus_time is not None:
+            self.set_focus_time(focus_time, sync_clipboard=sync_focus)
+        elif self.focus_time is not None and sync_focus:
+            self._sync_clipboard_focus_window()
+        return clipboard
+
+    def plot_tags(
+        self,
+        times: Any,
+        marker: str = "circle",
+        color: str = "red",
+        markersize: float = 10,
+        markeredgecolor: str = "black",
+        alpha: float = 0.9,
+        **kwargs: Any,
+    ) -> list[Any]:
+        seq = times if isinstance(times, (list, tuple, np.ndarray)) else [times]
+        xs: list[float] = []
+        ys: list[float] = []
+        for t in seq:
+            xv, yv = self._time2xy(t)
+            if xv is None or yv is None:
+                continue
+            xs.append(float(xv))
+            ys.append(float(yv))
+        if not xs:
+            return []
+        marker_name = str(marker or "circle")
+        if marker_name == "o":
+            marker_name = "circle"
+        if marker_name == "*":
+            marker_name = "asterisk"
+        if marker_name == "|":
+            marker_name = "dash"
+        renderer = self.figure.scatter(
+            x=xs,
+            y=ys,
+            marker=marker_name,
+            size=float(markersize),
+            fill_color=color,
+            line_color=markeredgecolor,
+            fill_alpha=float(alpha),
+            line_alpha=float(alpha),
+            **kwargs,
+        )
+        self._overlay_renderers.append(renderer)
+        return [renderer]
+
+    def _event_origin_time(self, event: Event) -> UTCDateTime | None:
+        origin = event.preferred_origin() if hasattr(event, "preferred_origin") else None
+        if origin is None and getattr(event, "origins", None):
+            origin = event.origins[0]
+        return None if origin is None else UTCDateTime(origin.time)
+
+    def _matching_station_ids(self) -> set[str]:
+        out: set[str] = set()
+        for tr in self.stream:
+            out.add(str(getattr(tr.stats, "station", "")))
+            out.add(str(getattr(tr.stats, "network", "")))
+            out.add(str(tr.id))
+            n = str(getattr(tr.stats, "network", ""))
+            s = str(getattr(tr.stats, "station", ""))
+            l = str(getattr(tr.stats, "location", ""))
+            c = str(getattr(tr.stats, "channel", ""))
+            out.add(f"{n}.{s}.{l}.{c}")
+            out.add(f"{n}.{s}.{l}")
+        return out
+
+    def plot_catalog(
+        self,
+        catalog: Catalog | Event,
+        *,
+        plot_picks: bool = True,
+        plot_origins: bool = True,
+        origin_marker: str = "diamond",
+        origin_color: str = "black",
+        pick_marker: str = "dash",
+        p_color: str = "red",
+        s_color: str = "blue",
+        pick_size: float = 14,
+        **kwargs: Any,
+    ) -> list[Any]:
+        if isinstance(catalog, Event):
+            catalog = Catalog([catalog])
+        renderers: list[Any] = []
+        known_ids = self._matching_station_ids()
+        for event in catalog:
+            if plot_origins:
+                ot = self._event_origin_time(event)
+                if ot is not None:
+                    renderers.extend(
+                        self.plot_tags(
+                            [ot],
+                            marker=origin_marker,
+                            color=origin_color,
+                            markersize=float(kwargs.pop("markersize", 12)),
+                            markeredgecolor=origin_color,
+                            **kwargs,
+                        )
+                    )
+            if plot_picks:
+                for pick in getattr(event, "picks", []):
+                    wid = getattr(pick, "waveform_id", None)
+                    sta = getattr(wid, "station_code", None) if wid is not None else None
+                    seed = (
+                        wid.get_seed_string() if (wid is not None and hasattr(wid, "get_seed_string")) else None
+                    )
+                    if sta is None and seed is None:
+                        continue
+                    if sta not in known_ids and (seed is None or seed not in known_ids):
+                        continue
+                    phase = str(getattr(pick, "phase_hint", "") or "").upper()
+                    pcol = s_color if phase == "S" else p_color
+                    renderers.extend(
+                        self.plot_tags(
+                            [pick.time],
+                            marker=pick_marker,
+                            color=pcol,
+                            markersize=pick_size,
+                            markeredgecolor=pcol,
+                        )
+                    )
+        return renderers
+
+    def plot_events(self, events: Catalog | Event | list[Event], **kwargs: Any) -> list[Any]:
+        if isinstance(events, Event):
+            return self.plot_catalog(Catalog([events]), **kwargs)
+        if isinstance(events, Catalog):
+            return self.plot_catalog(events, **kwargs)
+        return self.plot_catalog(Catalog(list(events)), **kwargs)
 
     def _format_tticklabels(self, ticktimes: list[UTCDateTime]) -> list[str]:
         dts = [t.datetime for t in ticktimes]
