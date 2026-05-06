@@ -194,8 +194,12 @@ Reuse the **same example data files** as Tutorial A where paths exist under **`v
 
 ### Phase 5 — Helicorder (separate milestone)
 
-- [ ] Audit **`vdapseisutils.core.swarmmpl.heli`** (and pyplot `Helicorder`) the same way.
-- [ ] Bokeh day-long scrolling strips, optional channel stacking—reuse waveform prep and datetime axis patterns from Clipboard work.
+- [x] Audit **`vdapseisutils.core.swarmmpl.heli`** (and pyplot `Helicorder`) the same way.
+- [x] Bokeh day-long scrolling strips, optional channel stacking—reuse waveform prep and datetime axis patterns from Clipboard work.
+- [x] Added **`gallery/SwarmMPL/Helicorder_tutorial_bokeh.ipynb`** (Examples 1–3: basic strips, interval/styling/ticks, tags/catalog + HTML export).
+- [x] Added README Swarm subsection for Bokeh helicorder (`show` / `save` / optional `attach_clipboard`).
+- [x] Documented parity deltas (timezone footer rendering, centered focus window policy, pick match precedence: full SEED ID then station fallback).
+- [x] Validation pass run for focused helicorder and Bokeh clipboard tests.
 
 ---
 

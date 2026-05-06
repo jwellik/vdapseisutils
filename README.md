@@ -144,3 +144,24 @@ cb.plot_peak_value(
 
 **Bokeh clipboard:** For notebooks and standalone HTML, use **`SwarmClipboardBk`** from **`vdapseisutils.core.swarmmpl.bokeh`**. It mirrors **`SwarmClipboard`** semantics (modes **`w`** / **`g`** / **`wg`**, **`tick_type`** absolute vs relative, **`sync_waves`**, aligned waveform/spectrogram compute), plus overlays such as **`axvline`**, **`plot_trace`** / **`plot_horizontals`**, **`plot_peak_value`**, **`plot_catalog`**, **`scroll_traces`**, and **`save()`** for exported plots. Worked examples are in **`gallery/SwarmMPL/Clipboard_tutorial_bokeh.ipynb`** (Examples 1–3 align with **`gallery/SwarmMPL/Clipboard_Tutorial_A.ipynb`**).
 
+**Bokeh helicorder:** For strip-style dayplots in Bokeh, import `SwarmHelicorderBk` from `vdapseisutils.core.swarmmpl.bokeh`:
+
+```python
+from obspy import read, UTCDateTime
+from vdapseisutils.core.swarmmpl.bokeh import SwarmHelicorderBk
+
+st = read("data/waveforms/gareloi_test_data_20220710-010000.mseed")
+st.trim(UTCDateTime("2022-07-10T01:00:00"), UTCDateTime("2022-07-10T02:00:00"))
+heli = SwarmHelicorderBk(st, interval=30, color="swarm")
+heli.show()
+heli.save("heli_bokeh.html")
+```
+
+To add an attached clipboard view around the decoded focus time:
+
+```python
+cb = heli.attach_clipboard(mode="wg", window_s=600, sync_focus=True)
+```
+
+See `gallery/SwarmMPL/Helicorder_tutorial_bokeh.ipynb` for three worked examples (basic strips, tick/style controls, and tags/catalog markers with HTML export). Current Bokeh parity deltas vs MPL are documented there: timezone footer rendering differs, focus-sync window is centered on `focus_time`, and catalog pick matching prefers full SEED ID with station fallback.
+

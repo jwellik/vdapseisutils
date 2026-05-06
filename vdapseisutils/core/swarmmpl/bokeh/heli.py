@@ -80,6 +80,8 @@ class SwarmHelicorderBk:
       footer, not with full MPL left/right mirrored axis handling.
     - Multi-trace composition is additive across traces without ObsPy dayplot-specific
       decimation.
+    - Clipboard attachment uses a centered focus window policy
+      ``[focus_time - window_s/2, focus_time + window_s/2]``.
     """
 
     name = "helicorder_bokeh"
@@ -365,6 +367,7 @@ class SwarmHelicorderBk:
         window = float(self._clipboard_window_s)
         if window <= 0:
             return
+        # Focus policy for Bokeh helicorder/clipboard sync: centered around focus_time.
         half = window / 2.0
         left = self.focus_time - half
         right = self.focus_time + half
@@ -508,7 +511,10 @@ class SwarmHelicorderBk:
                     )
                     if sta is None and seed is None:
                         continue
-                    if sta not in known_ids and (seed is None or seed not in known_ids):
+                    # Trace matching precedence: full seed ID first, then station fallback.
+                    seed_match = seed is not None and seed in known_ids
+                    station_match = sta is not None and sta in known_ids
+                    if not seed_match and not station_match:
                         continue
                     phase = str(getattr(pick, "phase_hint", "") or "").upper()
                     pcol = s_color if phase == "S" else p_color
