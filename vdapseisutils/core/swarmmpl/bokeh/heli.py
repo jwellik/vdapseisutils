@@ -597,7 +597,7 @@ class SwarmHelicorderBk:
                 renderer,
                 tooltips=[
                     ("Kind", "@kind"),
-                    ("UTC", "@utc"),
+                    ("Start", "@utc"),
                     ("Details", "@details"),
                 ],
             )
@@ -615,8 +615,7 @@ class SwarmHelicorderBk:
         """
         Shade time spans across strip rows (matplotlib :meth:`Helicorder.highlight` analogue).
 
-        Each rectangle segment receives hover fields for the overall UTC span and the along-strip
-        minute offsets on that row.
+        Each rectangle shares hover metadata for the overall UTC span of that logical highlight.
         """
         lefts: list[float] = []
         rights: list[float] = []
@@ -624,7 +623,6 @@ class SwarmHelicorderBk:
         tops: list[float] = []
         utc_starts: list[str] = []
         utc_ends: list[str] = []
-        segment_notes: list[str] = []
 
         span_minutes = float(self.interval) / 60.0
 
@@ -664,7 +662,6 @@ class SwarmHelicorderBk:
                 tops.append(top)
                 utc_starts.append(span_utc_s)
                 utc_ends.append(span_utc_e)
-                segment_notes.append(f"{x_left:.3f}–{x_right:.3f} min along strip")
 
         if not lefts:
             return []
@@ -677,7 +674,6 @@ class SwarmHelicorderBk:
                 top=tops,
                 utc_start=utc_starts,
                 utc_end=utc_ends,
-                segment_note=segment_notes,
             )
         )
         renderer = self.figure.quad(
@@ -696,10 +692,9 @@ class SwarmHelicorderBk:
             self._attach_annotation_hover(
                 renderer,
                 tooltips=[
-                    ("Kind", "highlight span"),
-                    ("Span start (UTC)", "@utc_start"),
-                    ("Span end (UTC)", "@utc_end"),
-                    ("Segment", "@segment_note"),
+                    ("Kind", "highlight"),
+                    ("Start (UTC)", "@utc_start"),
+                    ("End (UTC)", "@utc_end"),
                 ],
             )
         return [renderer]
