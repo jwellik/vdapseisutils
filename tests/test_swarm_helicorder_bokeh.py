@@ -138,6 +138,17 @@ def test_plot_tags_registers_hover_tool():
     assert after > before
 
 
+def test_strip_navigation_keeps_hover_tools():
+    st = Stream([_trace(npts=7200, sr=1.0)])
+    heli = SwarmHelicorderBk(st, interval=60)
+    heli.plot_tags([heli.starttime + 300.0])
+    hover_count = len([t for t in heli.figure.toolbar.tools if isinstance(t, HoverTool)])
+    assert hover_count >= 1
+    heli.strip_navigation_tools()
+    assert len([t for t in heli.figure.toolbar.tools if isinstance(t, HoverTool)]) == hover_count
+    assert not any(type(t).__name__ == "PanTool" for t in heli.figure.toolbar.tools)
+
+
 def test_highlight_adds_quad_and_hover():
     st = Stream([_trace(npts=24 * 3600, sr=1.0)])
     heli = SwarmHelicorderBk(st, interval=60)

@@ -16,7 +16,19 @@ from bokeh.events import MouseMove, Tap
 from bokeh.io import show as bokeh_show
 from bokeh.io.state import curstate as bokeh_curstate
 from bokeh.layouts import column
-from bokeh.models import BoxZoomTool, ColumnDataSource, Div, FixedTicker, HoverTool, WheelZoomTool, ZoomInTool, ZoomOutTool
+from bokeh.models import (
+    BoxZoomTool,
+    ColumnDataSource,
+    Div,
+    FixedTicker,
+    HoverTool,
+    PanTool,
+    ResetTool,
+    SaveTool,
+    WheelZoomTool,
+    ZoomInTool,
+    ZoomOutTool,
+)
 from bokeh.plotting import figure as bk_figure
 from bokeh.resources import CDN, Resources
 from obspy import Stream, UTCDateTime
@@ -35,6 +47,16 @@ _DECIMATE_STRIDE = "stride"
 _DECIMATE_ENVELOPE = "envelope"
 _DEFAULT_PERCENTILE_SAMPLE_CAP = 200_000
 _DEFAULT_POINTS_PER_PIXEL = 8
+
+_NAV_TOOL_TYPES = (
+    PanTool,
+    WheelZoomTool,
+    BoxZoomTool,
+    ZoomInTool,
+    ZoomOutTool,
+    ResetTool,
+    SaveTool,
+)
 
 
 def _normalize_interval_minutes(interval: float | int) -> int:
@@ -904,6 +926,29 @@ class SwarmHelicorderBk:
 
     def show(self, **kwargs: Any) -> None:
         bokeh_show(self.layout, **kwargs)
+
+    def strip_navigation_tools(self, *, hide_toolbar_when_empty: bool = True) -> SwarmHelicorderBk:
+        """
+        Remove pan/zoom/reset/save tools while keeping inspectors such as
+        :class:`~bokeh.models.tools.HoverTool` (annotation tooltips).
+
+        Gallery notebooks often strip navigation for static-looking captures; clearing
+        ``toolbar.tools`` entirely would also remove hover inspectors added by
+        :meth:`plot_tags` / :meth:`highlight`.
+        """
+        fig = self.figure
+        kept = [t for t in fig.toolbar.tools if not isinstance(t, _NAV_TOOL_TYPES)]
+        fig.toolbar.tools = kept
+        fig.toolbar.active_drag = None
+        fig.toolbar.active_scroll = None
+        fig.toolbar.active_tap = None
+        fig.toolbar.active_multi = None
+        hovers = [t for t in kept if isinstance(t, HoverTool)]
+        fig.toolbar.active_inspect = hovers
+        if not kept and hide_toolbar_when_empty:
+            fig.toolbar_location = None
+            fig.toolbar.logo = None
+        return self
 
     def save(
         self,
