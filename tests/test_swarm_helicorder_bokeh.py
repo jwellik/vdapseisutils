@@ -72,6 +72,20 @@ def test_save_creates_nontrivial_html(tmp_path):
     assert "Bokeh" in txt or "bk-root" in txt
 
 
+def test_save_does_not_bind_models_for_notebook_show(tmp_path):
+    """Regression: bokeh.io.save left roots in a Document and broke show() afterward."""
+    st = Stream([_trace()])
+    heli = SwarmHelicorderBk(st, interval=60)
+    heli.plot_tags([heli.starttime + 120.0])
+    out = tmp_path / "heli_bind.html"
+    heli.save(out)
+    assert heli.layout.document is None
+    for renderer in heli.figure.renderers:
+        ds = getattr(renderer, "data_source", None)
+        if ds is not None:
+            assert ds.document is None
+
+
 def test_attach_clipboard_creates_default_wg_mode():
     st = Stream([_trace()])
     heli = SwarmHelicorderBk(st, interval=60)

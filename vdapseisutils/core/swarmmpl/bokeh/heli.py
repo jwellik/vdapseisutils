@@ -10,9 +10,11 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from bokeh.core.templates import FILE as BOKEH_FILE_TEMPLATE
+from bokeh.embed.standalone import file_html as bokeh_file_html
 from bokeh.events import MouseMove, Tap
-from bokeh.io import save as bokeh_save
 from bokeh.io import show as bokeh_show
+from bokeh.io.state import curstate as bokeh_curstate
 from bokeh.layouts import column
 from bokeh.models import BoxZoomTool, ColumnDataSource, Div, FixedTicker, HoverTool, WheelZoomTool, ZoomInTool, ZoomOutTool
 from bokeh.plotting import figure as bk_figure
@@ -910,12 +912,32 @@ class SwarmHelicorderBk:
         resources: Resources | None = None,
         **kwargs: Any,
     ) -> None:
+        """
+        Write standalone HTML without permanently attaching models to a :class:`~bokeh.document.Document`.
+
+        ``bokeh.io.save`` defaults leave roots owned by a document, which breaks a later ``show()``
+        in Jupyter (models may only belong to one document). This uses ``file_html(...,
+        _always_new=True)`` so inline notebook display still works after saving.
+        """
+        template = kwargs.pop("template", BOKEH_FILE_TEMPLATE)
+        template_variables = kwargs.pop("template_variables", {})
+        suppress_callback_warning = bool(kwargs.pop("suppress_callback_warning", False))
+        state = kwargs.pop("state", None)
+        if kwargs:
+            raise TypeError(f"save() got unexpected keyword arguments: {sorted(kwargs)!r}")
+
         out = Path(path)
         out.parent.mkdir(parents=True, exist_ok=True)
-        bokeh_save(
+        io_state = state or bokeh_curstate()
+        theme = io_state.document.theme
+        html = bokeh_file_html(
             self.layout,
-            filename=str(out),
-            title=title or (self.title or "Swarm helicorder"),
             resources=resources if resources is not None else CDN,
-            **kwargs,
+            title=title or (self.title or "Swarm helicorder"),
+            template=template,
+            template_variables=template_variables,
+            theme=theme,
+            suppress_callback_warning=suppress_callback_warning,
+            _always_new=True,
         )
+        out.write_text(html, encoding="utf-8")
