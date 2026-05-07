@@ -7,7 +7,7 @@
 - **Closed on**: -
 - **Merged into**: -
 - **Merge strategy**: -
-- **Last updated**: 2026-05-06
+- **Last updated**: 2026-05-07
 
 ## Accomplishments
 - Extended **`SwarmHelicorderBk`** toward MPL **`Helicorder`** parity: **`highlight`**, annotation **`HoverTool`** instances on **`plot_tags`** / **`highlight`** / **`plot_catalog`**, **`info`**, fixed **`plot_catalog`** `markersize` handling, and documented the Goma parity cell in **`gallery/SwarmMPL/Helicorder_tutorial_bokeh.ipynb`**.

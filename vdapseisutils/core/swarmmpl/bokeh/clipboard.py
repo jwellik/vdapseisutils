@@ -680,6 +680,26 @@ class SwarmClipboardBk:
             return None
         return min(tr.stats.starttime for tr in self._traces)
 
+    def add_panel(
+        self,
+        trace: Trace | None = None,
+        height_ratios: list[int] | None = None,
+    ) -> _PanelRecord:
+        """
+        Add a new panel (trace) and rebuild the Bokeh layout.
+
+        For Bokeh we ignore ``height_ratios`` currently and keep the class-level
+        waveform/spectrogram split; the argument exists for API parity.
+        """
+        _ = height_ratios
+        if trace is None:
+            raise ValueError("SwarmClipboardBk.add_panel requires a Trace.")
+        if not isinstance(trace, Trace):
+            raise TypeError("trace must be an ObsPy Trace.")
+        self._traces.append(trace.copy())
+        self._build_layout()
+        return self._panels[-1]
+
     def _resolve_target_panels(
         self,
         panels: list[int] | int | None,
@@ -806,6 +826,70 @@ class SwarmClipboardBk:
                 rec.spec_figure.y_range.start = lo
                 rec.spec_figure.y_range.end = hi
         return self
+
+    def set_tick_type(self, tick_type: str) -> SwarmClipboardBk:
+        """
+        Update tick type and rebuild panel figures.
+
+        Mirrors ``SwarmClipboard.set_tick_type`` behavior at the class level.
+        """
+        self.tick_type = tick_type
+        self._tick = _normalize_tick_type(tick_type)
+        self._build_layout()
+        return self
+
+    def set_xlim(self, left: Any = None, right: Any = None) -> SwarmClipboardBk:
+        """Set x-range limits for all panel axes."""
+        if left is None or right is None:
+            return self
+
+        def _to_x(v: Any) -> float:
+            if self._tick == "absolute":
+                if isinstance(v, UTCDateTime):
+                    return float(v.timestamp) * 1000.0
+                return float(UTCDateTime(v).timestamp) * 1000.0
+            if isinstance(v, UTCDateTime):
+                return float(v - self._t0_global()) if self.sync_waves and self._t0_global() else float(v.timestamp)
+            return float(v)
+
+        x0 = _to_x(left)
+        x1 = _to_x(right)
+        for rec in self._panels:
+            for fig in self._figures_for_axes(rec, None):
+                fig.x_range.start = x0
+                fig.x_range.end = x1
+        return self
+
+    def set_wlim(self, limits: tuple[float, float] | list[float]) -> SwarmClipboardBk:
+        """Alias for waveform y-limits (parity with ``SwarmClipboard.set_wlim``)."""
+        return self.set_alim(limits)
+
+    def set_slim(self, limits: tuple[float, float] | list[float]) -> SwarmClipboardBk:
+        """Alias for spectrogram y-limits (parity with ``SwarmClipboard.set_slim``)."""
+        return self.set_flim(limits)
+
+    def get_panel(self, index: int) -> _PanelRecord:
+        """Return panel record by index."""
+        return self._panels[index]
+
+    def get_timeaxes(self, panel_index: int, axes_index: int) -> Any:
+        """
+        Return waveform/spectrogram figure by panel and axes index.
+
+        In ``mode='wg'`` indices are 0=waveform, 1=spectrogram.
+        In ``mode='w'`` or ``mode='g'`` use 0.
+        """
+        rec = self._panels[panel_index]
+        figs = self._figures_for_axes(rec, None)
+        return figs[axes_index]
+
+    @property
+    def all_axes(self) -> list[Any]:
+        """Return all Bokeh figure axes across all panels."""
+        out: list[Any] = []
+        for rec in self._panels:
+            out.extend(self._figures_for_axes(rec, None))
+        return out
 
     def scroll_traces(self, idx: list[int], seconds: list[float]) -> SwarmClipboardBk:
         """
